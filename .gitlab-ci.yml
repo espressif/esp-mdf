@@ -1,0 +1,75 @@
+stages:
+  - build
+
+variables:
+# System environment
+
+  # Common parameters for the 'make' during CI tests
+  MAKEFLAGS: "-j5 --no-keep-going"
+
+# GitLab-CI environment
+
+  # more attempts for more robust
+  GET_SOURCES_ATTEMPTS: "10"
+  ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
+
+  # We use get_sources.sh script to fetch the submodules and/or re-fetch the repo
+  # if it was corrupted (if submodule update fails this can happen)
+  GIT_STRATEGY: clone
+  GIT_SUBMODULE_STRATEGY: none
+  MDF_PATH: "$CI_PROJECT_DIR"
+  IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
+
+before_script:
+  # add gitlab ssh key
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  # replace submodule esp-idf to internal repository to speedup cloning
+  - sed -i "s%https://github.com/espressif/esp-idf.git%${GITLAB_SSH_SERVER}/idf/esp-idf.git%" .gitmodules
+  - git submodule update --init
+  # (the same regular expressions are used to set these are used in 'only:' sections below
+  - source esp-idf/tools/ci/configure_ci_environment.sh
+
+  # fetch the submodules (& if necessary re-fetch repo) from gitlab
+  - time ./esp-idf/tools/ci/get-full-sources.sh
+
+.build_template: &build_template
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    ARTIFACTS_NAME: "default"
+    DEFAULT_CONFIG: ""
+  artifacts:
+    when: always
+    paths:
+      - sdkconfig
+      - build/*.bin
+      - build/*.elf
+      - build/*.map
+      - build/bootloader/*.bin
+      - build/download.config
+    expire_in: 1 month
+    name: $ARTIFACTS_NAME
+  script:
+    - cd $EXAMPLE_PATH
+    - make defconfig
+    - make -j5
+    - make print_flash_cmd | tail -n 1 > build/download.config
+
+build_example_light_bulb:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "light"
+    EXAMPLE_PATH: "examples/light_bulb"
+
+build_example_factory:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "factory"
+    EXAMPLE_PATH: "examples/factory"

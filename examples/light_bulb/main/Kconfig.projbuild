@@ -1,0 +1,226 @@
+menu "light bulb Config"
+
+menuconfig MDF_WIFI_MESH_ENABLE
+    bool "Enable wifi-mesh"
+    default y
+    help
+       Enable wifi-mesh
+
+config WIFI_MESH_MAX_LAYER
+    int "Max layer"
+    default 4
+    depends on MDF_WIFI_MESH_ENABLE
+    help
+        Configure max layer of mesh network
+
+config WIFI_MESH_AP_CONNECTIONS
+    int "AP max connection value"
+    default 6
+    depends on MDF_WIFI_MESH_ENABLE
+    help
+        Configure mesh AP max connection value
+
+config WIFI_MESH_VOTE_PERCENTAGE
+    int "Vote percentage threshold"
+    default 60
+    depends on MDF_WIFI_MESH_ENABLE
+    help
+        Configure vote percentage threshold for approval of being a root
+
+config MDF_AP_ASSOC_EXPIRE
+    int "AP associate expired time(s)"
+    default 10
+    depends on MDF_WIFI_MESH_ENABLE
+    help
+        Configure mesh AP associate expired time
+
+config WIFI_MESH_AP_ASSOC_EXPIRE
+    int "Attempt's scan time(s)"
+    default 10
+    depends on MDF_WIFI_MESH_ENABLE
+    help
+        Configure attempt's scan time for mesh self-organized networking
+
+config MDF_TASK_DEFAULT_PRIOTY
+    int "Task's priority "
+    default 6
+    help
+        Configure the priority of all mesh tasks
+
+config MDF_HTTP_SERVER_PORT
+    int "HTTP Server Port"
+    default 80
+    help
+        HTTP Server port to connect to.
+        Should be chosen not to conflict with any other port used
+        on the system.
+
+config MDF_CONNECT_NUM
+    int "Maximum number of connections"
+    default 8
+    help
+        Maximum number of connections
+
+config MDF_CONNECT_BUF_SIZE
+    int "The size of each connection buffer"
+    default 3072
+    help
+        The size of each connection buffer
+
+config MDF_UDP_BROADCAST_PORT
+    int "UDP Broadcast Port"
+    default 3232
+    help
+        Udp broadcast port to send udp broadcast pkt.
+
+config MDF_USE_UDP_SERVER
+    bool "Device discovery through udp server"
+    default y
+    help
+       Device discovery through udp server
+
+config MDF_UDP_SERVER_PORT
+    int "UDP server Port"
+    default 1025
+    depends on MDF_USE_UDP_SERVER
+    help
+        Udp server port to send udp pkt.
+
+config MDF_USE_DEFAULT_NETWORK_CONFIG
+    bool "Enables connection to a fixed network"
+    default n
+    help
+       If you enable this configuration, you will not need to configure
+       the routing for the mesh.
+
+config MDF_DEFAULT_ROUTER_SSID
+    string "WiFi SSID"
+    default "router_ssid"
+    depends on MDF_USE_DEFAULT_NETWORK_CONFIG
+    help
+        SSID (network name) for the mesh to connect to.
+
+config MDF_DEFAULT_ROUTER_PASSWD
+    string "WiFi Password"
+    default "router_password"
+    depends on MDF_USE_DEFAULT_NETWORK_CONFIG
+    help
+        WiFi password (WPA or WPA2) for the mesh to use.
+        Can be left blank if the network has no security set.
+
+config MDF_USE_HTTPS
+    bool "Enables user data encryption"
+    default n
+    help
+       If you enable this configuration, data will be sent via https.
+
+config MDF_HTTPS_SERVER_PORT
+    int "HTTPS Server Port"
+    default 443
+    depends on MDF_USE_HTTPS
+    help
+        HTTP Server port to connect to.
+        Should be chosen not to conflict with any other port used
+        on the system.
+
+config MDF_USE_HTTP_TOKEN
+    bool "Enables user authentication"
+    default n
+    help
+       If you enable this configuration, data transfer must carry token.
+
+config MDF_ESPNOW_PMK
+    string "ESPNOW primary master key"
+    default "pmk1234567890123"
+    help
+        ESPNOW primary master for the example to use. The length of ESPNOW primary master must be 16 bytes.
+
+config MDF_ESPNOW_LMK
+    string "ESPNOW local master key"
+    default "lmk1234567890123"
+    help
+        ESPNOW local master for the example to use. The length of ESPNOW local master must be 16 bytes.
+
+config RELEASE_BLE_MEMORY
+    bool "Release ble memory"
+    default n
+    help
+        Release ble memory after mesh connected, it will increase system free heap about 30KB.
+        But, when ble memory has been released, blufi network config module will not work afterwards.
+
+config MDF_COREDUMP_DETECT
+    bool "Detect coredump partition when chip startup"
+    default n
+    help
+        Detect coredump partition.
+        If coredump data exists, trancfer coredump data to specific server.
+
+config MDF_ESPNOW_DEBUG
+    bool "Enable espnow debug module in mesh"
+    default y
+    help
+        Espnow was designed to communicate messages connectionless.
+
+config MDF_ESPNOW_DEBUG_ALL_TIME
+    bool "Enable ESPNOW debug (logging) even not connected with AP"
+    default y
+    depends on MDF_ESPNOW_DEBUG
+    help
+        Usually we only send log with ESPNOW when connected to AP.
+        If this option is enabled, we'll switch to MDF_ESPNOW_DEFAULT_CHANNEL to send log when not connected to AP.
+
+config MDF_ESPNOW_DEFAULT_DEBUG_PRIMARY_CHANNEL
+    int "ESPNOW default primary channel when not connected to AP"
+    default 11
+    help
+        The default primary channel to communicate with log receiver App via ESPNOW.
+        The channel should be the same primary channel as AP which will connect to.
+
+config MDF_ESPNOW_DEFAULT_DEBUG_SECONDARY_CHANNEL
+    int "ESPNOW default secondary channel when not connected to AP"
+    default 0
+    help
+        The default secondary channel to communicate with log receiver App via ESPNOW.
+        The channel should be the same secondary channel as AP which will connect to.
+        Available values: 0: None; 1: above; 2: below.
+
+config MDF_CONSOLE_DEBUG
+    bool "Enable console debug module in mesh"
+    default n
+    help
+        Console module is designed to interactive with mesh devices.
+
+choice MDF_LOG_LEVEL
+    bool "Configure the mesh application layer's log"
+    default MDF_LOG_LEVEL_DEBUG
+    help
+       Specify how much output to see in logs by default.
+       Note that this setting limits which log statements
+       are compiled into the program. So setting this to, say,
+       "Warning" would mean that changing log level to "Debug"
+       at runtime will not be possible.
+
+config MDF_LOG_LEVEL_NONE
+   bool "No output"
+config MDF_LOG_LEVEL_ERROR
+   bool "Error"
+config MDF_LOG_LEVEL_WARN
+   bool "Warning"
+config MDF_LOG_LEVEL_INFO
+   bool "Info"
+config MDF_LOG_LEVEL_DEBUG
+   bool "Debug"
+config MDF_LOG_LEVEL_VERBOSE
+   bool "Verbose"
+endchoice
+
+config MDF_LOG_LEVEL
+    int
+    default 0 if MDF_LOG_LEVEL_NONE
+    default 1 if MDF_LOG_LEVEL_ERROR
+    default 2 if MDF_LOG_LEVEL_WARN
+    default 3 if MDF_LOG_LEVEL_INFO
+    default 4 if MDF_LOG_LEVEL_DEBUG
+    default 5 if MDF_LOG_LEVEL_VERBOSE
+
+endmenu

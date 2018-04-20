@@ -1,0 +1,32 @@
+.config
+*.o
+*.pyc
+
+# gtags
+GTAGS
+GRTAGS
+GPATH
+
+# emacs
+.dir-locals.el
+
+# emacs temp file suffixes
+*~
+.#*
+\#*#
+
+# eclipse setting
+.settings
+
+# sublime
+.tags
+.tags_sorted_by_file
+*.sublime-project
+*.sublime-workspace
+
+# Application project files
+examples/*/sdkconfig
+examples/*/sdkconfig.old
+examples/*/build/
+examples/*/serial_log/
+examples/*/bin/
