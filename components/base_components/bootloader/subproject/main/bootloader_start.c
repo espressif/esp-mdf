@@ -57,12 +57,12 @@ extern int _bss_end;
 extern int _data_start;
 extern int _data_end;
 
-#define TRIGGER_CNT_MIN   (5)
-#define TRIGGER_CNT_MAX   (10)
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+static uint32_t g_secure_flag    = 0;
+static uint32_t g_bootloader_cnt = 0;
+static uint32_t g_flag_prt_addr  = 0;
 
-static uint32_t secure_flag;
-static uint32_t bootloader_cnt = 0;
-static uint32_t flag_prt_addr  = 0;
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
 
 static const char *TAG = "boot";
 
@@ -193,10 +193,14 @@ bool load_partition_table(bootloader_state_t *bs)
         ESP_LOGD(TAG, "type=%x subtype=%x", partition->type, partition->subtype);
         partition_usage = "unknown";
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+
         /**< get flag partition address */
-        if (!memcmp(partition->label, "flag", sizeof("flag"))) {
-            flag_prt_addr = partition->pos.offset;
+        if (!strcmp((const char *)partition->label, "factory_flag")) {
+            g_flag_prt_addr = partition->pos.offset;
         }
+
+#endif
 
         /* valid partition table */
         switch (partition->type) {
@@ -278,11 +282,9 @@ static bool ota_select_valid(const esp_ota_select_entry_t *s)
 
 /* indexes used by index_to_partition are the OTA index
    number, or these special constants */
-#define FACTORY_INDEX (-1)
-#define OTA0_INDEX    (0)
-#define OTA1_INDEX    (1)
+#define FACTORY_INDEX  (-1)
 #define TEST_APP_INDEX (-2)
-#define INVALID_INDEX (-99)
+#define INVALID_INDEX  (-99)
 
 /* Given a partition index, return the partition position data from the bootloader_state_t structure */
 static esp_partition_pos_t index_to_partition(const bootloader_state_t *bs, int index)
@@ -360,13 +362,21 @@ static int get_selected_boot_partition(const bootloader_state_t *bs)
         if (sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) {
             ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF)");
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+#define OTA0_INDEX (0)
+#define OTA1_INDEX (1)
+
             if (bs->ota[0].offset != 0) {
                 ESP_LOGI(TAG, "Enter ota0 image");
                 return OTA0_INDEX;
             } else if (bs->ota[1].offset != 0) {
                 ESP_LOGI(TAG, "Enter ota1 image");
                 return OTA1_INDEX;
-            } else if (bs->factory.offset != 0) {
+            }
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
+            if (bs->factory.offset != 0) {
                 ESP_LOGI(TAG, "Defaulting to factory image");
                 return FACTORY_INDEX;
             } else {
@@ -488,27 +498,28 @@ static bool load_boot_image(const bootloader_state_t *bs, int start_index, esp_i
     return false;
 }
 
-// -----------------------------------------------------
-// | bootloader_cnt A | bootloader_cnt B | secure_flag |
-// -----------------------------------------------------
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+// -----------------------------------------------------------
+// | g_bootloader_cnt A | g_bootloader_cnt B | g_secure_flag |
+// -----------------------------------------------------------
 static void bootlooder_cnt_save(void)
 {
-    bootloader_flash_read(flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
 
-    if (secure_flag == 0) {
-        bootloader_flash_erase_sector(flag_prt_addr / SPI_SEC_SIZE + 1);
-        bootloader_flash_write(flag_prt_addr + SPI_SEC_SIZE * 1, &bootloader_cnt, sizeof(bootloader_cnt), false);
+    if (g_secure_flag == 0) {
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 1);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 1, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
 
-        secure_flag = 1;
-        bootloader_flash_erase_sector(flag_prt_addr / SPI_SEC_SIZE + 2);
-        bootloader_flash_write(flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+        g_secure_flag = 1;
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
     } else {
-        bootloader_flash_erase_sector(flag_prt_addr / SPI_SEC_SIZE);
-        bootloader_flash_write(flag_prt_addr, &bootloader_cnt, sizeof(bootloader_cnt), false);
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE);
+        bootloader_flash_write(g_flag_prt_addr, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
 
-        secure_flag = 0;
-        bootloader_flash_erase_sector(flag_prt_addr / SPI_SEC_SIZE + 2);
-        bootloader_flash_write(flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+        g_secure_flag = 0;
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
     }
 
     return true;
@@ -516,34 +527,36 @@ static void bootlooder_cnt_save(void)
 
 static void bootlooder_cnt_load(void)
 {
-    bootloader_flash_read(flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
 
-    if (secure_flag == 0) {
-        bootloader_flash_read(flag_prt_addr, &bootloader_cnt, sizeof(bootloader_cnt), false);
+    if (g_secure_flag == 0) {
+        bootloader_flash_read(g_flag_prt_addr, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
     } else {
-        bootloader_flash_read(flag_prt_addr + SPI_SEC_SIZE * 1, &bootloader_cnt, sizeof(bootloader_cnt), false);
+        bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 1, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
     }
 }
 
 // esp32-mdf use the flag to decide whether return to factory partition,
-// must be after load_partition_table(), because flag_prt_addr was assigned in it.
+// must be after load_partition_table(), because g_flag_prt_addr was assigned in it.
 static void update_bootloader_cnt(void)
 {
     bootlooder_cnt_load();
 
-    // if customer want to disable factory partition, set bootloader_cnt 0
-    if (bootloader_cnt) {
-        if (bootloader_cnt == 0xffffffff) {
+    // if customer want to disable factory partition, set g_bootloader_cnt 0
+    if (g_bootloader_cnt) {
+        if (g_bootloader_cnt == UINT32_MAX) {
             // first time power-on or been erased
-            bootloader_cnt = 1;
+            g_bootloader_cnt = 1;
         } else {
-            bootloader_cnt++;
+            g_bootloader_cnt++;
         }
 
-        ESP_LOGI(TAG, "bootloader_cnt: %d", bootloader_cnt);
+        ESP_LOGI(TAG, "g_bootloader_cnt: %d", g_bootloader_cnt);
         bootlooder_cnt_save();
     }
 }
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
 
 /**
  *  @function :     bootloader_main
@@ -617,7 +630,9 @@ void bootloader_main()
         return;
     }
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
     update_bootloader_cnt();
+#endif
 
     int boot_index = get_selected_boot_partition(&bs);
 
@@ -632,11 +647,13 @@ void bootloader_main()
         return;
     }
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
     bootlooder_cnt_load();
 
-    if (bootloader_cnt) {
-        if (bootloader_cnt >= TRIGGER_CNT_MIN && bootloader_cnt <= TRIGGER_CNT_MAX) {
-            ESP_LOGI(TAG, "bootloader_cnt: %d, enter factory app", bootloader_cnt);
+    if (g_bootloader_cnt) {
+        if (g_bootloader_cnt >= CONFIG_MDF_BOOTLOADER_COUNT_MIN
+                && g_bootloader_cnt <= CONFIG_MDF_BOOTLOADER_COUNT_MAX) {
+            ESP_LOGI(TAG, "g_bootloader_cnt: %d, enter factory app", g_bootloader_cnt);
 
             memset(&image_data, 0, sizeof(esp_image_metadata_t));
 
@@ -645,9 +662,11 @@ void bootloader_main()
             }
         }
 
-        bootloader_cnt = 0xffffffff;
+        g_bootloader_cnt = UINT32_MAX;
         bootlooder_cnt_save();
     }
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
 
 #ifdef CONFIG_SECURE_BOOT_ENABLED
     /* Generate secure digest from this bootloader to protect future
