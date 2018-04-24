@@ -211,8 +211,6 @@ The configuration of networking parameters for mesh lights, Bluetooth networking
 5. Mesh Light Control: color Control, upgrade, reboot, etc.
 6. Networking mode: reboot the device for three consecutive times.
 
-> For a user guide to mesh app, please refer to [App User Guide](mesh_app_android_user_guide_v0.7.4.md)
-
 ## Update ESP-MDF
 
 After some time of using ESP-MDF, you may want to update it to take advantage of new features or bug fixes. The simplest way to do so is by deleting existing `esp-mdf` folder and cloning it again, which is same as when doing initial installation described in sections `Get ESP-MDF`.
