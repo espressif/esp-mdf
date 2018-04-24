@@ -111,9 +111,9 @@ cp -r $MDF_PATH/examples/light_bulb .
 
 In the `light_bulb` example, we lead out six pins of ESP32 DevKitC V4 and connect them to an RGBCW light respectively to show the controlling effect of the lights (color and status):
 
-| Pin         | GND  | IO4  | IO16  | IO5  | IO19       | IO23 |
-| :---------- | :--- | :--- | :---  | :--- | :--------  | :--- |
-| Description | GND  | Red  | Green | Blue | Cold White | Warm |
+| Pin         | GND  | IO4  | IO16  | IO5  | IO19              | IO23       |
+| :---------- | :--- | :--- | :---  | :--- | :---------------- | :--------- |
+| Description | GND  | Red  | Green | Blue | Color Temperature | Brightness |
 
 ## Connect and Configure
 
