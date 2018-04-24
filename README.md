@@ -113,4 +113,4 @@ Check folder [examples](https://github.com/espressif/esp-mdf/blob/master/example
 
 * The [esp32.com forum](https://esp32.com/) is a place to ask questions and find community resources.
 
-* If you're interested in contributing to ESP-MDF, please check the [Contributions Guide](https://esp-idf.readthedocs.io/en/latest/contribute/index.html).
+* If you're interested in contributing to ESP-MDF, please goto [Contributions Guide](docs/contribute.md).
