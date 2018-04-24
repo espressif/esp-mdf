@@ -1,5 +1,20 @@
-# Play mp3 file with a custom callback
+# Light Bulb
 
-This example plays a sample 7 second mp3 file provided in 'main' folder. The file gets embedded in the application during compilation. After application upload the file is then played from ESP32's internal flash.
+## Overview
+This is a smart light example that you can run on ESP SMART LIGHT or [ESP32-DevKitC V4](https://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4).
 
-To run this example you need ESP32 LyraT or compatible board with speakers or headphones connected.
+## Output Pin
+| Pin         | GND  | IO4  | IO16  | IO5  | IO19              | IO23       |
+| :---------- | :--- | :--- | :---  | :--- | :---------------- | :--------- |
+| Description | GND  | Red  | Green | Blue | Color Temperature | Brightness |
+
+## Device Status:
+* Network Configuration: Blinking Yellow
+* Networking: Blinking Green
+* Upgrade: Blinking Blue
+* Exceptions: Blinking Red
+
+## Related Links
+* Compiling: [ESP-MDF Get Started](https://github.com/espressif/esp-mdf/blob/master/docs/get-started.md)。
+* Device Driver: [esp-iot-solution](https://github.com/espressif/esp-iot-solution/tree/master/components/general/light)
+* App User Guide：[Mesh APP User Guide Started](https://github.com/espressif/esp-mdf/blob/master/docs/mesh_app_android_user_guide_v0.7.4.md.md)
