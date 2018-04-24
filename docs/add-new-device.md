@@ -1,11 +1,11 @@
 
-This document is intended as a user guide to help developers to add a new device into the mesh network based on the ESP-MDF.
+This document is intended as a user guide to help developers to add a new type of device into the mesh network based on the ESP-MDF.
 
-## Overview
+## ESP-MDF Overview
 
 ESP-MDF is an integrated solution for Internet of Things developed based on [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework).
 
-The integrated solution for Internet of Things developed includes a complete set of functions including device networking, local & remote control, firmware upgrade, linkage control between devices, and low-power consumption solutions. Users can develop multiple types of smart devices based on the ESP-MDF framework, including smart lights, buttons, sockets, smart door locks, smart curtains, etc.
+It includes a complete set of functions including device networking, local & remote control, firmware upgrade, linkage control between devices, and low-power consumption solutions. Users can develop multiple types of smart devices based on the ESP-MDF framework, including smart lights, buttons, sockets, smart door locks, smart curtains, etc.
 
 ## 1. ESP-MDF Device Workflow
 
@@ -27,16 +27,17 @@ ESP_ERROR_CHECK(light_init(GPIO_NUM_4, GPIO_NUM_16, GPIO_NUM_5, GPIO_NUM_19, GPI
 
 ### 1.2. Adding Characteristics to Device
 
-Different type of devices are assigned different Type ID (TID) and characteristic ID (CID). For example, light and button are different types of device and have different characteristics. The light has the charactersitics of color, shade, and switch while the button only has switches.
+Different types of devices are assigned different Type ID (TID) and characteristic ID (CID). For example, light and button are different types of device and have different characteristics. The light has the charactersitics of color, shade, and switch while the button only has switches.
 
-The app or the server needs to acquire the device TID and CID in order to configure the mesh device status. The following figure shows the CID list of the mesh light on the mobile phone app.
+The app or the server needs to acquire the device TID and CID to configure the mesh device status. The following figure shows the CID list of the mesh light on the mobile phone app.
 
 <div align=center>
 <img src="_static/app-light-cid.png" width="400">
 <p> Light Bulb CID List </p>
 </div>
 
-Using function of `mdf_device_add_characteristics(...)` to add device characteristics. Take the `light_bulb` as an example, add the device attribute with the function `mdf_device_add_characteristics(...)`.
+
+Take the `light_bulb` as an example, the device characterstics are added with the function `mdf_device_add_characteristics(...)`.
 
 ```c
 ESP_ERROR_CHECK(mdf_device_add_characteristics(STATUS_CID, "on", PERMS_READ_WRITE_TRIGGER, 0, 1, 1));
@@ -49,9 +50,7 @@ ESP_ERROR_CHECK(mdf_device_add_characteristics(BRIGHTNESS_CID, "brightness", PER
 
 ### 1.3. Registering Status Update Interfaces
 
-The app or server operates on the CID value with the API (`*_get_value, *_set_value`) provided by the device.
-
-The two interfaces need to be user-defined and added to the device's `mdf_device_request_task` through registration. Take the `light_bulb` as an example, the operate is showd blow:
+The app or server configures the CID value with the API (`*_get_value, *_set_value`) provided by the device. The two APIs need to be user-defined and added to the device's `mdf_device_request_task` through registration. Take the `light_bulb` as an example:
 
 ```c
 ESP_ERROR_CHECK(mdf_device_init_handle(light_bulb_event_loop_cb, light_bulb_get_value, light_bulb_set_value));
@@ -59,7 +58,7 @@ ESP_ERROR_CHECK(mdf_device_init_handle(light_bulb_event_loop_cb, light_bulb_get_
 
 ### 1.4. Software Initialization
 
-This step prepares the device for starting networking or initiating the ESP-MESH communication, and it is also the key to the synchronization of the components during the running precess of the device.
+This step prepares the device for starting networking or initiating the ESP-MESH communication, and it is also key to the synchronization of components when the device is running.
 
 * `mdf_event_loop_init(event_cb);` initialization of application-layer event notification function
 * `mdf_reboot_event_init();` device reboot event handling
@@ -99,7 +98,7 @@ for (;;) {
 
 ### 1.6. Establishing Mesh Network
 
-At this stage, ESP-MESH implements a networking method of manual networking and self-organized networking. Users can specify the root node, leaf node, and parent node. Other unspecified nodes are connected in a self-organized way. For more information on the ESP-MESH networking process, please refer to [Mesh Networking](https://espressif-docs.readthedocs-hosted.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-networking).
+The ESP-MESH implements manual networking and self-organized networking. Users can specify the root node, leaf nodes, and parent node. Other unspecified nodes are connected in a self-organized way. For more information on the ESP-MESH networking process, please refer to [Mesh Networking](https://espressif-docs.readthedocs-hosted.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-networking).
 
 ### 1.7. Creating Device Handle Task
 
@@ -132,7 +131,7 @@ for (int i = 0; g_device_handle_list[i].func; i++) {
 
 * The device replies the result of the command execution:
 
-The device deceides, whether or not, to reply its `command execution status` to the app according to `status_code`.
+The device decides, whether or not, to reply its `command execution status` to the app according to `status_code`.
 
 ```c
 mdf_wifi_mesh_send(&dest_addr, &data_type, device_data.response, device_data.response_size);
@@ -140,11 +139,11 @@ mdf_wifi_mesh_send(&dest_addr, &data_type, device_data.response, device_data.res
 
 ### 1.8. Creating HTTP Server, UDP Server and Starting mDNS Service
 
-After the node becomes the root node, the tasks and the services that are created include:
-* `HTTP Server Task` Used for communication between the root node and external devices, includes: `mdf_http_request_task` and `mdf_http_response_task`;
-* `UDP Server Task` Used for device discovery. Receive UDP broadcast and response;
-* `UDP Client Task` Used to broadcast the device's status;
-* `mDNS Device Discovery Service` Used to be searched by the app on LAN;
+After the node becomes the root node, the tasks and the services that are created in company include:
+* `HTTP Server Task`, used for communication between the root node and external devices, which includes: `mdf_http_request_task` and `mdf_http_response_task`;
+* `UDP Server Task`, used for device discovery, receiving UDP broadcast and response;
+* `UDP Client Task`, used to broadcast the device's status;
+* `mDNS Device Discovery Service`, used for enabling the device to be searched by the app on LAN;
 
 For detailed code, please refer to `$MDF_PASTH/functions/mdf_server/mdf_server.c`.
 
@@ -261,4 +260,4 @@ ESP-IDF and ESP-MDF are composed by [components](https://esp-idf.readthedocs.io/
 
 * The [esp32.com forum](https://esp32.com/) is a place to ask questions and find community resources.
 
-* This [ESP Mesh Development Framework](https://github.com/espressif/esp-mdf) inherits from [ESP IoT Development Framework](https://github.com/espressif/esp-id) and you can learn about it in [ESP-IDF documentation](https://esp-idf.readthedocs.io).
+* [ESP Mesh Development Framework](https://github.com/espressif/esp-mdf) is based on [ESP IoT Development Framework](https://github.com/espressif/esp-id). For details, please refer to [ESP-IDF documentation](https://esp-idf.readthedocs.io).

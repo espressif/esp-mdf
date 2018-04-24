@@ -111,9 +111,9 @@ cp -r $MDF_PATH/examples/light_bulb .
 
 In the `light_bulb` example, we lead out six pins of ESP32 DevKitC V4 and connect them to an RGBCW light respectively to show the controlling effect of the lights (color and status):
 
-| Pin         | GND  | IO4  | IO16  | IO5  | IO19       | IO23 |
-| :---------- | :--- | :--- | :---  | :--- | :--------  | :--- |
-| Description | GND  | Red  | Green | Blue | Cold White | Warm |
+| Pin         | GND  | IO4  | IO16  | IO5  | IO19              | IO23       |
+| :---------- | :--- | :--- | :---  | :--- | :---------------- | :--------- |
+| Description | GND  | Red  | Green | Blue | Color Temperature | Brightness |
 
 ## Connect and Configure
 
@@ -210,8 +210,6 @@ The configuration of networking parameters for mesh lights, Bluetooth networking
 4. Get device information: return to the home page to check the list of all networked devices.
 5. Mesh Light Control: color Control, upgrade, reboot, etc.
 6. Networking mode: reboot the device for three consecutive times.
-
-> For a user guide to mesh app, please refer to [App User Guide](mesh_app_android_user_guide_v0.7.4.md)
 
 ## Update ESP-MDF
 
