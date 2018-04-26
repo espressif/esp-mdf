@@ -29,6 +29,10 @@
 #include "mdf_info_store.h"
 #include "mdf_device_handle.h"
 
+#define NETWORK_NETWORK_ADDR_MAX_SIZE  MDF_ETH_ALEN
+#define NETWORK_ESPNOW_SEND_RETRY_NUM  5
+#define NETWORK_ESPNOW_SEND_DELAY_TIME 100
+
 typedef struct {
     uint8_t oui[4];     /**< filtering useless packets */
     int8_t rssi;        /**< signal strength */
@@ -36,18 +40,19 @@ typedef struct {
 } auto_network_data_t;
 
 typedef struct {
-    uint16_t num;               /**< the number of device */
-    wifi_mesh_addr_t data[0];   /**< device address */
+    uint16_t num;       /**< the number of device */
+    uint8_t data[0];    /**< the address of the device */
 } auto_network_addrs_t;
 
 static const char *TAG                      = "mdf_network_config";
 static QueueHandle_t g_network_config_queue = NULL;
 static bool g_mdf_network_enable_auto_flag  = false;
 static bool g_mdf_network_enable_blufi_flag = false;
+ /**< 'M', 'E', 'S', 'H', this is a fixed value used to determine the presence of a mesh device  */
 static const uint8_t MDF_AUTO_NETWORK_OUI[] = { 0x45, 0x53, 0x50, 0x4D };
 
-static const void *g_auto_network_whitelist_lock = NULL;
-static auto_network_addrs_t *g_auto_network_whitelist    = NULL;
+static const void *g_auto_network_whitelist_lock      = NULL;
+static auto_network_addrs_t *g_auto_network_whitelist = NULL;
 
 static bool auto_network_whitelist_lock()
 {
@@ -67,23 +72,45 @@ static bool auto_network_whitelist_unlock()
     return xSemaphoreGive(g_auto_network_whitelist_lock);
 }
 
-esp_err_t mdf_network_add_whitelist(const uint8_t device_addr[6], uint32_t num)
+esp_err_t mdf_network_add_whitelist(const uint8_t *device_addr, uint32_t num)
 {
+    MDF_PARAM_CHECK(device_addr);
+    MDF_PARAM_CHECK(num);
+
     auto_network_whitelist_lock();
 
     if (g_auto_network_whitelist) {
-        auto_network_addrs_t *auto_network_whitelist_tmp = mdf_malloc(sizeof(auto_network_addrs_t) + (g_auto_network_whitelist->num + num) * 6);
+        if (num + g_auto_network_whitelist->num > MDF_NETWORK_WHITELIST_MAX_NUM) {
+            num = MDF_NETWORK_WHITELIST_MAX_NUM - g_auto_network_whitelist->num;
+        }
+
+        auto_network_addrs_t *auto_network_whitelist_tmp = mdf_malloc(sizeof(auto_network_addrs_t)
+                + (g_auto_network_whitelist->num + num) * MDF_NETWORK_NETWORK_ADDR_SIZE);
         memcpy(auto_network_whitelist_tmp, g_auto_network_whitelist,
-               sizeof(auto_network_addrs_t) + g_auto_network_whitelist->num * 6);
-        memcpy((uint8_t *)auto_network_whitelist_tmp + (sizeof(auto_network_addrs_t) + g_auto_network_whitelist->num * 6),
-               device_addr, num * 6);
+               sizeof(auto_network_addrs_t) + g_auto_network_whitelist->num * MDF_NETWORK_NETWORK_ADDR_SIZE);
+
+        uint8_t *data_tmp = auto_network_whitelist_tmp->data + g_auto_network_whitelist->num * MDF_NETWORK_NETWORK_ADDR_SIZE;
+
+        for (int i = 0; i < num; ++i, device_addr += NETWORK_NETWORK_ADDR_MAX_SIZE) {
+            memcpy(data_tmp + MDF_NETWORK_NETWORK_ADDR_SIZE * i,
+                   device_addr + (NETWORK_NETWORK_ADDR_MAX_SIZE - MDF_NETWORK_NETWORK_ADDR_SIZE), MDF_NETWORK_NETWORK_ADDR_SIZE);
+        }
+
         mdf_free(g_auto_network_whitelist);
         g_auto_network_whitelist       = auto_network_whitelist_tmp;
         g_auto_network_whitelist->num += num;
     } else {
-        g_auto_network_whitelist = mdf_calloc(1, sizeof(auto_network_addrs_t) + num * 6);
-        memcpy(g_auto_network_whitelist->data, device_addr, num * 6);
+        if (num > MDF_NETWORK_WHITELIST_MAX_NUM) {
+            num = MDF_NETWORK_WHITELIST_MAX_NUM;
+        }
+
+        g_auto_network_whitelist      = mdf_calloc(1, sizeof(auto_network_addrs_t) + num * MDF_NETWORK_NETWORK_ADDR_SIZE);
         g_auto_network_whitelist->num = num;
+
+        for (int i = 0; i < num; ++i, device_addr += NETWORK_NETWORK_ADDR_MAX_SIZE) {
+            memcpy(g_auto_network_whitelist->data + MDF_NETWORK_NETWORK_ADDR_SIZE * i,
+                   device_addr + (NETWORK_NETWORK_ADDR_MAX_SIZE - MDF_NETWORK_NETWORK_ADDR_SIZE), MDF_NETWORK_NETWORK_ADDR_SIZE);
+        }
     }
 
     MDF_LOGD("g_auto_network_whitelist->num: %d", g_auto_network_whitelist->num);
@@ -93,7 +120,24 @@ esp_err_t mdf_network_add_whitelist(const uint8_t device_addr[6], uint32_t num)
     return ESP_OK;
 }
 
-bool mdf_auto_network_find_whitelist(const uint8_t device_addr[6])
+esp_err_t mdf_network_add_whitelist_addrs(auto_network_addrs_t *network_addrs)
+{
+    MDF_PARAM_CHECK(network_addrs);
+
+    size_t network_whitelist_size = (sizeof(auto_network_addrs_t) + network_addrs->num * MDF_NETWORK_NETWORK_ADDR_SIZE);
+
+    auto_network_whitelist_lock();
+
+    mdf_free(g_auto_network_whitelist);
+    g_auto_network_whitelist = mdf_malloc(network_whitelist_size);
+    memcpy(g_auto_network_whitelist, network_addrs, network_whitelist_size);
+
+    auto_network_whitelist_unlock();
+
+    return ESP_OK;
+}
+
+bool mdf_auto_network_find_whitelist(const uint8_t *device_addr)
 {
     if (!g_auto_network_whitelist) {
         return false;
@@ -102,14 +146,16 @@ bool mdf_auto_network_find_whitelist(const uint8_t device_addr[6])
     auto_network_whitelist_lock();
 
     for (int i = 0; i < g_auto_network_whitelist->num; ++i) {
-        uint8_t addr_tmp[6] = {0};
+        uint8_t addr_tmp[NETWORK_NETWORK_ADDR_MAX_SIZE] = {0};
 
-        memcpy(addr_tmp, g_auto_network_whitelist->data + i, 6);
+        memcpy(addr_tmp + (NETWORK_NETWORK_ADDR_MAX_SIZE - MDF_NETWORK_NETWORK_ADDR_SIZE),
+               g_auto_network_whitelist->data + i * MDF_NETWORK_NETWORK_ADDR_SIZE, MDF_NETWORK_NETWORK_ADDR_SIZE);
         *((int *)(addr_tmp + 2)) = htonl(htonl(*((int *)(addr_tmp + 2))) - 2);
         MDF_LOGV("num: %d, addr_tmp: "MACSTR", device_addr: "MACSTR,
                  g_auto_network_whitelist->num, MAC2STR(addr_tmp), MAC2STR(device_addr));
 
-        if (!memcmp(addr_tmp, device_addr, 6)) {
+        if (!memcmp(addr_tmp + (NETWORK_NETWORK_ADDR_MAX_SIZE - MDF_NETWORK_NETWORK_ADDR_SIZE),
+                    device_addr + (NETWORK_NETWORK_ADDR_MAX_SIZE - MDF_NETWORK_NETWORK_ADDR_SIZE), MDF_NETWORK_NETWORK_ADDR_SIZE)) {
             auto_network_whitelist_unlock();
             return true;
         }
@@ -247,12 +293,12 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
 {
     MDF_PARAM_CHECK(network_config);
 
-    esp_err_t ret                     = ESP_OK;
+    esp_err_t ret                      = ESP_OK;
     auto_network_data_t *request_data  = mdf_calloc(1, ESP_NOW_MAX_DATA_LEN);
     auto_network_data_t *response_data = mdf_calloc(1, ESP_NOW_MAX_DATA_LEN);
-    char *privkey_pem                 = mdf_calloc(1, MDF_RSA_PRIVKEY_PEM_SIZE);
-    char *pubkey_pem                  = mdf_calloc(1, MDF_RSA_PUBKEY_PEM_SIZE);
-    uint8_t dest_addr[6]   = {0};
+    char *privkey_pem                  = mdf_calloc(1, MDF_RSA_PRIVKEY_PEM_SIZE);
+    char *pubkey_pem                   = mdf_calloc(1, MDF_RSA_PUBKEY_PEM_SIZE);
+    uint8_t dest_addr[6]               = {0};
 
     if (!g_network_config_queue) {
         g_network_config_queue = xQueueCreate(1, sizeof(network_config_t));
@@ -293,38 +339,47 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
         ESP_ERROR_CHECK(mdf_espnow_add_peer_no_encrypt(dest_addr));
 
         do {
-            vTaskDelay(retry_count * 10 / portTICK_RATE_MS);
+            vTaskDelay(retry_count * NETWORK_ESPNOW_SEND_DELAY_TIME / portTICK_RATE_MS);
             ret = mdf_espnow_write(MDF_ESPNOW_NETCONFIG, dest_addr,
                                    request_data, MDF_RSA_PUBKEY_PEM_DATA_SIZE + sizeof(auto_network_data_t), 0);
-        } while (ret <= 0 && retry_count++ < 5);
+        } while (ret <= 0 && retry_count++ < NETWORK_ESPNOW_SEND_RETRY_NUM);
 
         ESP_ERROR_CHECK(mdf_espnow_del_peer(dest_addr));
         MDF_ERROR_CONTINUE(ret < 0, "mdf_espnow_write, ret: %d", ret);
 
         ESP_ERROR_CHECK(mdf_espnow_add_peer_default_encrypt(dest_addr));
         ret = mdf_espnow_read(MDF_ESPNOW_NETCONFIG, dest_addr,
-                              response_data, WIFI_MESH_PACKET_MAX_SIZE, 5000 / portTICK_RATE_MS);
+                              response_data, ESP_NOW_MAX_DATA_LEN, 5000 / portTICK_RATE_MS);
 
-        if (ret < 0) {
+        if (ret < 0 || ret != MDF_RSA_CIPHERTEXT_SIZE + sizeof(auto_network_data_t)) {
             ESP_ERROR_CHECK(mdf_espnow_del_peer(dest_addr));
             MDF_LOGW("mdf_espnow_read, ret: %d", ret);
             continue;
         }
 
-        uint8_t *device_addr = mdf_calloc(AUTO_NETWORK_WHITELIST_MAX_NUM, 6);
-        ret = mdf_espnow_read(MDF_ESPNOW_NETCONFIG, dest_addr, device_addr,
-                              AUTO_NETWORK_WHITELIST_MAX_NUM * 6, 1000 / portTICK_RATE_MS);
+#ifdef CONFIG_USE_DEFAULT_NETWORK_CONFIG
+
+        size_t network_whitelist_size = sizeof(auto_network_addrs_t) + MDF_NETWORK_WHITELIST_MAX_NUM * MDF_NETWORK_NETWORK_ADDR_SIZE;
+        auto_network_addrs_t *device_addr = mdf_calloc(1, network_whitelist_size);
+
+        do {
+            ret = mdf_espnow_read(MDF_ESPNOW_NETCONFIG, dest_addr, device_addr,
+                                  network_whitelist_size, 3000 / portTICK_RATE_MS);
+        } while (ret == MDF_RSA_CIPHERTEXT_SIZE + sizeof(auto_network_data_t));
+
         ESP_ERROR_CHECK(mdf_espnow_del_peer(dest_addr));
 
-        if (ret <= 0 || ret % 6) {
+        if (ret <= 0 || ret != device_addr->num * MDF_NETWORK_NETWORK_ADDR_SIZE + sizeof(auto_network_addrs_t)) {
             MDF_LOGW("mdf_espnow_read auto network whitelist, ret: %d, device addr: " MACSTR,
-                     ret, MAC2STR(device_addr));
+                     ret, MAC2STR(device_addr->data));
             mdf_free(device_addr);
         } else {
-            ret = mdf_network_add_whitelist(device_addr, ret / 6);
+            ret = mdf_network_add_whitelist_addrs(device_addr);
             mdf_free(device_addr);
             MDF_ERROR_CONTINUE(ret < 0, "mdf_network_add_whitelist, ret: %d", ret);
         }
+
+#endif /**< CONFIG_USE_DEFAULT_NETWORK_CONFIG */
 
         ret = mdf_rsa_decrypt(response_data->data, (uint8_t *)privkey_pem,
                               network_config, sizeof(network_config_t));
@@ -362,7 +417,7 @@ esp_err_t mdf_network_get_config(network_config_t *network_config)
 
     strncpy(network_config->ssid, MDF_DEFAULT_ROUTER_SSID, MDF_SSID_LEN);
     strncpy(network_config->password, MDF_DEFAULT_ROUTER_PASSWD, MDF_PASSWD_LEN);
-    memcpy(network_config->mdf_id, MDF_DEFAULT_ID, 6);
+    memcpy(network_config->mdf_id, MDF_DEFAULT_ID, NETWORK_NETWORK_ADDR_MAX_SIZE);
 
     if (mdf_channel_get(network_config->ssid, &network_config->channel) == ESP_OK) {
         mdf_blufi_mem_release();
@@ -433,16 +488,20 @@ static void mdf_auto_network_task(void *arg)
 
         if (ret < 0) {
             ret = mdf_espnow_write(MDF_ESPNOW_RESERVED, WIFI_MESH_BROADCAST_ADDR,
-                                   MDF_AUTO_NETWORK_OUI, sizeof(MDF_AUTO_NETWORK_OUI), 100 / portTICK_RATE_MS);
+                                   MDF_AUTO_NETWORK_OUI, sizeof(MDF_AUTO_NETWORK_OUI), portMAX_DELAY);
             MDF_ERROR_CONTINUE(ret < 0, "mdf_espnow_write, ret: %d", ret);
             continue;
         }
+
+#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
 
         if (!mdf_auto_network_find_whitelist(source_addr)) {
             MDF_LOGW("this device("MACSTR") is not on the whitelist of the device configuration network device",
                      MAC2STR(source_addr));
             continue;
         }
+
+#endif
 
         if (ret != sizeof(auto_network_data_t) + MDF_RSA_PUBKEY_PEM_DATA_SIZE) {
             MDF_LOGW("receive, size: %d, data:\n%s", ret, request_data->data);
@@ -459,10 +518,10 @@ static void mdf_auto_network_task(void *arg)
 
         ssize_t write_size = -1;
 
-        for (int i = 0; i < 5 && write_size <= 0; i++) {
-            vTaskDelay(i * 10 / portTICK_RATE_MS);
+        for (int i = 0; i < NETWORK_ESPNOW_SEND_RETRY_NUM && write_size <= 0; i++) {
+            vTaskDelay(i * NETWORK_ESPNOW_SEND_DELAY_TIME / portTICK_RATE_MS);
             write_size = mdf_espnow_write(MDF_ESPNOW_NETCONFIG, source_addr, response_data,
-                                          MDF_RSA_CIPHERTEXT_SIZE + sizeof(auto_network_data_t), 100 / portTICK_RATE_MS);
+                                          MDF_RSA_CIPHERTEXT_SIZE + sizeof(auto_network_data_t), portMAX_DELAY);
         }
 
         if (write_size <= 0) {
@@ -471,19 +530,27 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-        write_size = -1;
+#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+        write_size                    = 0;
+        size_t network_whitelist_size = sizeof(auto_network_addrs_t) + g_auto_network_whitelist->num * MDF_NETWORK_NETWORK_ADDR_SIZE;
 
-        for (int i = 0; i < 5 && g_auto_network_whitelist && write_size <= 0; i++) {
-            vTaskDelay(i * 10 / portTICK_RATE_MS);
-            write_size = mdf_espnow_write(MDF_ESPNOW_NETCONFIG, source_addr, g_auto_network_whitelist->data,
-                                          g_auto_network_whitelist->num * 6, 100 / portTICK_RATE_MS);
+        for (int i = 0; i < NETWORK_ESPNOW_SEND_RETRY_NUM && write_size != network_whitelist_size; i++) {
+            vTaskDelay(i * NETWORK_ESPNOW_SEND_DELAY_TIME / portTICK_RATE_MS);
+            ret = mdf_espnow_write(MDF_ESPNOW_NETCONFIG, source_addr, (uint8_t *)g_auto_network_whitelist + write_size,
+                                   network_whitelist_size - write_size, portMAX_DELAY);
+
+            write_size += (ret > 0) ? ret : 0;
         }
 
         ESP_ERROR_CHECK(mdf_espnow_del_peer(source_addr));
 
-        if (write_size <= 0) {
-            MDF_LOGW("mdf_espnow_write whitelist, ret: %d", ret);
+        if (write_size != network_whitelist_size) {
+            MDF_LOGW("mdf_espnow_write whitelist, write_size: %d", write_size);
         }
+
+#else
+        ESP_ERROR_CHECK(mdf_espnow_del_peer(source_addr));
+#endif /**< CONFIG_MDF_USE_NETWORK_WHITELIST */
     }
 
     ESP_ERROR_CHECK(mdf_espnow_del_peer(WIFI_MESH_BROADCAST_ADDR));
@@ -503,14 +570,18 @@ EXIT:
 
 esp_err_t mdf_network_enable_auto(uint32_t timeout)
 {
+#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+
     if (!g_auto_network_whitelist) {
         return ESP_OK;
     }
 
+#endif /**< CONFIG_MDF_USE_NETWORK_WHITELIST */
+
     if (!g_mdf_network_enable_auto_flag) {
         g_mdf_network_enable_auto_flag = true;
         xTaskCreate(mdf_auto_network_task, "mdf_auto_network_task", 4 * 1024,
-                    (void *)timeout, 6 - 3, NULL);
+                    (void *)timeout, MDF_TASK_DEFAULT_PRIOTY, NULL);
     }
 
     return ESP_OK;
@@ -566,7 +637,7 @@ esp_err_t mdf_network_enable_blufi()
     if (!g_mdf_network_enable_blufi_flag && !mdf_blufi_mem_is_release()) {
         g_mdf_network_enable_blufi_flag = true;
         xTaskCreate(mdf_blufi_network_task, "mdf_blufi_network_task", 3 * 1024,
-                    NULL, MDF_TASK_DEFAULT_PRIOTY - 3, NULL);
+                    NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
     } else {
         MDF_LOGW("blufi memory released, cannot enter blufi config mode rightnow");
         return ESP_FAIL;

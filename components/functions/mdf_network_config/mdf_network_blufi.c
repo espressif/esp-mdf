@@ -434,9 +434,7 @@ static void mdf_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_pa
                         break;
 
                     case MDF_BLUFI_DATA_DEVICE_WHITELIST: {
-                        int auto_network_whitelist_num = (blufi_data->len / 6 > AUTO_NETWORK_WHITELIST_MAX_NUM) ?
-                                                         AUTO_NETWORK_WHITELIST_MAX_NUM : (blufi_data->len / 6);
-                        ret = mdf_network_add_whitelist(blufi_data->data, auto_network_whitelist_num);
+                        ret = mdf_network_add_whitelist(blufi_data->data, blufi_data->len / MDF_ETH_ALEN);
                         MDF_ERROR_BREAK(ret < 0, "mdf_network_add_whitelist, ret: %d", ret);
                         MDF_LOGD("recv mdf_addr, len: %d, data:" MACSTR,
                                  blufi_data->len, MAC2STR(blufi_data->data));
