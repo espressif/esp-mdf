@@ -305,7 +305,7 @@ size_t mdf_espnow_write(mdf_espnow_pkt_type_t type, const uint8_t dest_addr[ESP_
 EXIT:
     mdf_espnow_free(trans_pkt);
     xSemaphoreGive(s_send_mutex);
-    return write_len == data_len ? data_len : ESP_FAIL;
+    return write_len;
 }
 
 esp_err_t mdf_espnow_deinit(void)

@@ -99,7 +99,7 @@ static void mdf_server_init_task(void *arg)
     ESP_ERROR_CHECK(mdf_notice_udp_init());
 
     xTaskCreate(mdf_http_request_task, "mdf_http_server_request", 4096, NULL,
-                MDF_TASK_DEFAULT_PRIOTY + 1, NULL);
+                MDF_TASK_DEFAULT_PRIOTY - 3, NULL);
 
     if (!g_http_response_task_handle) {
         xTaskCreate(mdf_http_response_task, "mdf_http_server_response", 4096, NULL,

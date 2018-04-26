@@ -36,10 +36,10 @@
 #include "freertos/timers.h"
 #include "freertos/event_groups.h"
 
+#include "esp_log.h"
 #include "esp_event_loop.h"
 #include "esp_partition.h"
 #include "esp_system.h"
-#include "esp_log.h"
 
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
@@ -67,6 +67,8 @@ extern "C" {
 #ifndef CONFIG_MDF_LOG_LEVEL
 #define CONFIG_MDF_LOG_LEVEL ESP_LOG_DEBUG
 #endif /**< CONFIG_MDF_LOG_LEVEL */
+
+#define MDF_ETH_ALEN    6 /*!< length of MAC address */
 
 #undef LOG_LOCAL_LEVEL
 #define LOG_LOCAL_LEVEL CONFIG_MDF_LOG_LEVEL

@@ -129,6 +129,27 @@ config MDF_DEFAULT_ROUTER_PASSWD
         WiFi password (WPA or WPA2) for the mesh to use.
         Can be left blank if the network has no security set.
 
+config MDF_USE_NETWORK_WHITELIST
+    bool "Enables network config whitelist"
+    default y
+    help
+       When configuring the network, the devices on the non-white list will be filtered.
+
+config MDF_NETWORK_WHITELIST_MAX_NUM
+    int "Configure the size of the white list"
+    default 200
+    depends on MDF_USE_NETWORK_WHITELIST
+    help
+        The size of the white list will affect the network configuration time.
+
+config MDF_NETWORK_NETWORK_ADDR_SIZE
+    int "The number of bits in the address check"
+    default 3
+    range 1 6
+    depends on MDF_USE_NETWORK_WHITELIST
+    help
+        The maximum value is 6 and the minimum value is 1.
+
 config MDF_USE_HTTPS
     bool "Enables user data encryption"
     default n
