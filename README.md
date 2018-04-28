@@ -14,8 +14,8 @@ In order to meet the growing needs for wireless networking for the Internet of T
 The decentralized ESP-MESH network topology features:
 
 * High reliability: the structure is robust, because even when some nodes fail in the network, other nodes can still self-organize dynamically to form a network.
-* Extensive coverage: any two mesh nodes can communicate with each other, which is suitanle for the networking demands in large venues and places with multiple layers.
-* Great network capacity: over 10,000 devices can be connected into the wireless entwork.
+* Extensive coverage: any two mesh nodes can communicate with each other, which is suitable for the networking demands in large venues and places with multiple layers.
+* Great network capacity: over 10,000 devices can be connected into the wireless network.
 
 <div align=center>
 <img src="docs/_static/network-structure.png" width="800">
@@ -66,11 +66,11 @@ Introduction to ESP32-DevKitC V4:
 <p> ESP32-DevKitC V4 </p>
 </div>
 
-#### ESP SMART LIGHT
+#### ESP32 MeshKit Light
 
-ESP SMART LIGHT are smart lights based on ESP-MDF which to get developers familiar with the features of ESP-MDF. Secondary development can be done to the program of ESP SMART LIGHT.
+ESP32 MeshKit Lights are smart lights based on ESP-MDF, with which developers can get familiar with the features of ESP-MDF. Secondary development can be done to the program of ESP32 MeshKit Light.
 
-> This ESP SMART LIGHT will soon be released.
+> This ESP32 MeshKit Light will soon be released.
 
 <div align=center>
 <img src="docs/_static/esp-smart-light.png" width="400">
@@ -86,20 +86,20 @@ ESP-MDF is an upper-layer development framework developed based on the ESP-MESH 
 
 #### Phone & Pad
 
-Please download [Mesh APP](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk) before specific use. Currently, only andoird version of app for phones and pads are provided.
+Please download [Mesh APP](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk) before use. Currently, only Andoird version of app for phones and pads are provided.
 
-> NOTES: currently only Android version app for phones and pads is supported, and the pad should have GPS functionality.
+> NOTE: currently only Android version app for phones and pads is supported, and the pad should have GPS functionality.
 
 * Turn on the Wi-Fi, Bluetooth and GPS.
 * Make sure that the phone/pad and the ESP-MDF devices are connected to the same router.
 
 ### ESP-IDF
 
-ESP-MDF is based on the application layer of [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework). So you need to first install the ESP-IDF and then use the ESP-MDF. Please take a look at [ESP-MDF Get Started](docs/get-started.md).
+ESP-MDF is based on the application layer of [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework). So you need to install the ESP-IDF before using ESP-MDF. Please take a look at [ESP-MDF Get Started](docs/get-started.md).
 
 ### Examples
 
-Check folder [examples](https://github.com/espressif/esp-mdf/blob/master/examples) to get start and understand the API features of the ESP-MDF.
+Check folder [examples](https://github.com/espressif/esp-mdf/blob/master/examples) to get started and learn about the API features of the ESP-MDF.
 
 # Resources
 
@@ -109,8 +109,8 @@ Check folder [examples](https://github.com/espressif/esp-mdf/blob/master/example
 
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) is the fundamental wireless communucation protocol of ESP-MDF.
 
-* Check the [Issues](https://github.com/espressif/esp-mdf/issues) section on github if you find a bug or have a feature request. Please check existing Issues before opening a new one.
+* Check the [Issues](https://github.com/espressif/esp-mdf/issues) section on github if you find a bug or have a feature request. Please check existing issues before opening a new one.
 
 * The [esp32.com forum](https://esp32.com/) is a place to ask questions and find community resources.
 
-* If you're interested in contributing to ESP-MDF, please goto [Contributions Guide](docs/contribute.md).
+* If you're interested in contributing to ESP-MDF, please go to [Contributions Guide](docs/contribute.md).
