@@ -132,16 +132,19 @@ static esp_err_t mdf_device_request(server_http_connect_t *conn)
         MDF_ERROR_GOTO(ret <= 0, EXIT, "socket send, ret: %d", ret);
     }
 
-    conn->chunk = conn->dest_addrs_num > 1 ? MDF_HTTP_CHUNK : MDF_HTTP_CHUNK_NONE;
+    conn->chunk     = conn->dest_addrs_num > 1 ? MDF_HTTP_CHUNK : MDF_HTTP_CHUNK_NONE;
+    conn->chunk_num = conn->dest_addrs_num > 1 ? conn->dest_addrs_num : 0;
 
     for (int i = 0; i < conn->dest_addrs_num; ++i) {
         ret = mdf_wifi_mesh_root_send(&conn->src_addr, conn->dest_addrs + i, &conn->type,
                                       conn->http_body, conn->http_body_size);
 
-        MDF_ERROR_CONTINUE(ret <= 0, "mdf_wifi_mesh_root_send, ret: %d", ret);
-        conn->chunk_num++;
+        if (ret <= 0) {
+            conn->chunk_num--;
+            MDF_LOGW("mdf_wifi_mesh_root_send, ret: %d, fail: %d",
+                     ret, (conn->dest_addrs_num - conn->chunk_num));
+        }
     }
-
 
     MDF_LOGD("mdf_wifi_mesh_root_send conn->chunk: %d, conn->chunk_num: %d",
              conn->chunk, conn->chunk_num)
