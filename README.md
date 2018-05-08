@@ -14,11 +14,10 @@ In order to meet the growing needs for wireless networking for the Internet of T
 The decentralized ESP-MESH network topology features:
 
 * High reliability: the structure is robust, because even when some nodes fail in the network, other nodes can still self-organize dynamically to form a network.
-* Extensive coverage: any two mesh nodes can communicate with each other, which is suitable for the networking demands in large venues and places with multiple layers.
-* Great network capacity: over 10,000 devices can be connected into the wireless network.
+* Great network capacity: over 1,000 devices can be connected into the wireless network.
 
 <div align=center>
-<img src="docs/_static/network-structure.png" width="800">
+<img src="docs/_static/network_structure.png" width="800">
 </div>
 
 ## Introduction of ESP-MDF
@@ -39,7 +38,7 @@ Below are the main features of ESP-MDF:
 The ESP-MESH festures can be illustrated by the following figure:
 
 <div align=center>
-<img src="docs/_static/esp-mdf-block-diagram.png" width="1000">
+<img src="docs/_static/esp_mdf_block_diagram.png" width="1000">
 </div>
 
 ## Developing with the ESP-MDF
@@ -62,7 +61,7 @@ Introduction to ESP32-DevKitC V4:
 | IO           | lead out most of the pins of ESP-WROOM-32 |
 
 <div align=center>
-<img src="docs/_static/esp32-devkitc-v4-front.jpg" width="400">
+<img src="docs/_static/esp32_devkitc_v4_front.jpg" width="400">
 <p> ESP32-DevKitC V4 </p>
 </div>
 
@@ -73,7 +72,7 @@ ESP32 MeshKit Lights are smart lights based on ESP-MDF, with which developers ca
 > This ESP32 MeshKit Light will soon be released.
 
 <div align=center>
-<img src="docs/_static/esp-smart-light.png" width="400">
+<img src="docs/_static/esp_smart_light.png" width="400">
 <p> ESP SMART LIGHT </p>
 </div>
 
@@ -95,7 +94,7 @@ Please download [Mesh APP](https://github.com/EspressifApp/Esp32MeshForAndroid/r
 
 ### ESP-IDF
 
-ESP-MDF is based on the application layer of [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework). So you need to install the ESP-IDF before using ESP-MDF. Please take a look at [ESP-MDF Get Started](docs/get-started.md).
+ESP-MDF is based on the application layer of [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework). So you need to install the ESP-IDF before using ESP-MDF. Please take a look at [ESP-MDF Get Started](docs/get_started.md).
 
 ### Examples
 

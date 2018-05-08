@@ -1,3 +1,4 @@
+
 This document is intended as a user guide to help developers to add a new type of device into the mesh network based on the ESP-MDF.
 
 ## ESP-MDF Overview
@@ -11,13 +12,13 @@ It includes a complete set of functions including device networking, local & rem
 Here's an introduction to the workflow of ESP-MDF devices:
 
 <div align=center>
-<img src="_static/esp-mdf-work-flow.png" width="800">
+<img src="_static/esp_mdf_work_flow.png" width="800">
 <p> ESP-MDF Device WorkFlow </p>
 </div>
 
 ### 1.1. Device Initialization
 
-The hardware initialization of ESP-MDF devices entails initializing the pins connected to a temperature sensor, and the pin corresponding to the PWM module, etc. Different types of devices need different drivers. Here's an example of the `light_bulb` driver:
+Hardware initialization of ESP-MDF devices includes the initialization of the pins connected to a temperature sensor, the initilization of the pin corresponding to the PWM module, etc. Different types of devices need different drivers. Here's an example of the `light_bulb` driver:
 
 ```c
 // init GPIO of light_bulb
@@ -31,7 +32,7 @@ Different types of devices are assigned different Type ID (TID) and characterist
 The app or the server needs to acquire the device TID and CID to configure the mesh device status. The following figure shows the CID list of the mesh light on the mobile phone app.
 
 <div align=center>
-<img src="_static/app-light-cid.png" width="400">
+<img src="_static/app_light_cid.png" width="400">
 <p> Light Bulb CID List </p>
 </div>
 
@@ -57,7 +58,7 @@ ESP_ERROR_CHECK(mdf_device_init_handle(light_bulb_event_loop_cb, light_bulb_get_
 
 ### 1.4. Software Initialization
 
-This step prepares the device for starting networking or initiating the ESP-MESH communication. It is also key to the synchronization of components when the device is running.
+This step prepares the device for starting networking or initiating the ESP-MESH communication, and it is also key to the synchronization of components when the device is running.
 
 * `mdf_event_loop_init(event_cb);` initialization of application-layer event notification function
 * `mdf_reboot_event_init();` device reboot event handling
@@ -68,13 +69,13 @@ This step prepares the device for starting networking or initiating the ESP-MESH
 
 ### 1.5. Network Configuration
 
-After the hardware initialization and software initialization of the device are completed, the system reads the networking configuration information from the NVS. If the read is successful (namely the device has already been configured with networking information), this step will be skipped.
+After the hardware initialization and software initialization of the device are completed, the system reads the networking configuration information from the NVS. If the read is successful (namely the device has already been configured with network), this step will be skipped.
 
-The device networking is achieved with Blufi networking and ESP-NOW chain networking, which is fast and convenient. The first device to be networked communicates with the app via Bluetooth, and the other devices are networked via ESP-NOW chain networking. The relevant code is located at `$MDF_PATH/components/mdf_network_config`.
+The device networking is completed through Blufi networking and ESP-NOW chain networking, which is fast and convenient. The first device to be networked communicates with the app via Bluetooth, and the other devices are networked via ESP-NOW chain networking. The relevant code is located at `$MDF_PATH/components/mdf_network_config`.
 
 ```c
 for (;;) {
-    /*!< receive network info from blufi */
+    /**< receive network info from blufi */
     if (xQueueReceive(g_network_config_queue, network_config, 0)) {
         MDF_LOGD("blufi network configured success");
         ret = MDF_OK;
@@ -83,7 +84,7 @@ for (;;) {
 
     ......
 
-    /*!< receive network info from espnow channel */
+    /**< receive network info from espnow channel */
     if (mdf_ap_info_get(&request_data->rssi, dest_addr) != MDF_OK) {
         MDF_LOGV("did not find the network equipment has been configured network");
         continue;
@@ -95,13 +96,13 @@ for (;;) {
 }
 ```
 
-### 1.6. Establishing a Mesh Network
+### 1.6. Establishing Mesh Network
 
 The ESP-MESH implements manual networking and self-organized networking. Users can specify the root node, leaf nodes, and parent node. Other unspecified nodes are connected in a self-organized way. For more information on the ESP-MESH networking process, please refer to [Mesh Networking](https://espressif-docs.readthedocs-hosted.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-networking).
 
 ### 1.7. Creating Device Handle Task
 
-The device receives the data from the app, then parses the data to acquire instructions, inquires about the instruction list and executes the instruction, and replies as needed. For detailed code, please see `$MDF_PATH/esp32-mesh/components/mdf_application/mdf_device_handle.c`, for the visualized process of data handling, please refer to Chapter 4 `HTTP Data Processing`. Below is the process of handling a data packet:
+The device receives the data from the app, then parses the data to acquire instruction, inquires about the instruction list and executes the instruction, and replies as needed. For detailed code, please see `$MDF_PATH/esp32-mesh/components/mdf_application/mdf_device_handle.c`, for visualized process of data handling, please refer to Chapter 4 `HTTP Data Processing`. Below is the process of handling a data packet:
 
 * The device receives data from the app:
 
@@ -118,7 +119,7 @@ mesh_json_parse(device_data.request, "request", func_name);
 * The device inquires about the instruction list and executes certain instruction:
 
 ```c
-/*!< if we can find this HTTP PATH from our list, we will handle this request. */
+/**< if we can find this HTTP PATH from our list, we will handle this request. */
 for (int i = 0; g_device_handle_list[i].func; i++) {
     if (!strncmp(func_name, g_device_handle_list[i].func_name, strlen(g_device_handle_list[i].func_name))) {
         status_code = g_device_handle_list[i].func(&device_data);
@@ -147,19 +148,19 @@ After the node becomes the root node, the tasks and the services that are create
 For detailed code, please refer to `$MDF_PASTH/functions/mdf_server/mdf_server.c`.
 
 ```c
-/*!< receive http request from app or remote server */
+/**< receive http request from app or remote server */
 xTaskCreate(mdf_http_request_task, "mdf_http_server_request", 4096, NULL, 6, NULL);
 
-/*!< send http response to app or remote server */
+/**< send http response to app or remote server */
 xTaskCreate(mdf_http_response_task, "mdf_http_server_response", 4096, NULL, 6, &g_http_response_task_handle);
 
-/*!< send notice(change of device's status) to lacal area network */
+/**< send notice(change of device's status) to lacal area network */
 xTaskCreate(mdf_notice_udp_client_task, "mdf_udp_client", 3072, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 
-/*!< receive UDP broadcast from app for device discovery */
+/**< receive UDP broadcast from app for device discovery */
 xTaskCreate(mdf_notice_udp_server_task, "mdf_udp_server", 2048, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 
-/*!< start mDNS service for device discovery in local area net */
+/**< start mDNS service for device discovery in local area net */
 mdf_mdns_init(void);
 ```
 
@@ -169,7 +170,7 @@ Two parts of ESP-MDF, `device driver` and `device status update interface` are r
 
 ### 2.1. Setting up a Project
 
-Clone an example of ESP-MDF into a new directory, or set up a project yourself. For details, please refer to [Get Started](get-started.md).
+Clone an example of ESP-MDF into a new directory, or set up a project yourself. For details, please refer to [Get Started](get_started.md).
 
 ### 2.2. Creating a Driver
 
@@ -196,7 +197,7 @@ mdf_err_t mdf_light_blink_set(uint8_t red, uint8_t green, uint8_t blue, int freq
 
 ### 2.3. Defining device's TID/CID and Creating Corresponding APIs
 
-The detailed description can be found in Section 1.2 `Adding Characteristics to Device` and Section 1.3 `Registration Status Update Interface`. Below is an exmaple of defining the characteristics of the light:
+The detailed description can be found in Chapter 1.2 `Adding Characteristics to Device` and Chapter 1.3 `Registration Status Update Interface`. Below is an exmaple of defining the characteristics of the light:
 
 ```c
 enum light_status_cid {
@@ -213,11 +214,11 @@ static esp_err_t light_bulb_set_value(uint8_t cid, int value);
 static esp_err_t light_bulb_get_value(uint8_t cid, int *value);
 ```
 
-API `light_set_value` and `light_get_value` are used by the app or server to set or get the status of the device.
+API `light_set_value`  and `light_get_value` are used by the app or server to set or get the status of the device.
 
 ### 2.4. Organization of app_main
 
-The `app_main` function includes device information configuration, device initialization, configuring ESP-MDF parameters, and registering callback functions. Below is an example of defining the app_main of of the `light_bulb`:
+The `app_main` function includes device information configuration, device initialization, configuring ESP-MDF parameters, and registering callback functions. Take the `light_bulb` as an example, the operate is showd blow:
 
 ```c
 void app_main()
@@ -240,20 +241,20 @@ void app_main()
 
 ## 3. Communication Between Root Node and App
 
-The root node is the only interface for the external communication of the mesh network. After becoming a root node, the node will first establish an HTTP server for external connection and data communication. The communication process is divided into the following three steps:
+Root node is the only interface for the external communication of the mesh network. After becoming a root node, the node will first establish an HTTP server for external connection and data communication. The communication process is divided into the following three steps:
 
 1. The app acquires the root node's IP and port
-2. The app inquires the root node for a list of devices to be networked
+2. The app inquires the root node for network device list
 3. The app communicates with the mesh devices
 
 <div align=center>
-<img src="_static/mesh_comm_protocol.png" width="800">
+<img src="_static/mesh_comm_procedure.png" width="800">
 <p> ESP-MDF Communication Procotol </p>
 </div>
 
 ## 4. Customization of components
 
-ESP-IDF and ESP-MDF are composed of [components](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#component-makefiles), which can be used in different projects and examples. Meanwhile, users can customize the device function by modifying different components in the project (under directory `$IDF_PATH/components`, `$MDF_PATH/components`). To do so, the users need to set up a directory for the customized components and clone certain components of ESP-IDF or ESP-MDF to the newly establshed directory. For details, please refer to ESP-IDF [Build System](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#build-system).
+ESP-IDF and ESP-MDF are composed by [components](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#component-makefiles), which can be used by different projects and examples. Meanwhile, users can customize the device function by modifying different components in the project (under directory `$IDF_PATH/components`, `$MDF_PATH/components`). To do so, the users need to set up a directory for the customized components and clone certain components of ESP-IDF or ESP-MDF to the newly establshed directory. For details, please refer to ESP-IDF [Build System](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#build-system).
 
 ## 5. Resources
 
