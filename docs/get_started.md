@@ -1,3 +1,4 @@
+
 ## ESP-MDF Get Started
 
 This document is intended to help users set up the software environment for the development of mesh applications using hardware based on the ESP32 by Espressif. It illustrates how to use ESP-MDF (Espressif Mesh Development Framework) with a simple example.
@@ -69,7 +70,7 @@ esp-mdf
 └── sdkconfig.defaults                       // project default configuration files
 ```
 
-## Set up ESP Toolchain
+## Setup ESP Toolchain
 
 To use ESP-MDF, you need set up the ESP-IDF first. Configure your PC according to [ESP32 Documentation](http://esp-idf.readthedocs.io/en/latest/?badge=latest). [Windows](http://esp-idf.readthedocs.io/en/latest/get-started/windows-setup.html), [Linux](http://esp-idf.readthedocs.io/en/latest/get-started/linux-setup.html) and [Mac OS](http://esp-idf.readthedocs.io/en/latest/get-started/macos-setup.html) operating systems are supported.
 
@@ -85,7 +86,7 @@ You have a choice to compile and upload code to the ESP32 by command line with [
 
 If this is your first exposure to the ESP32 and [ESP-IDF](https://github.com/espressif/esp-idf), then it is recommended to get familiar with [hello_world](https://github.com/espressif/esp-idf/tree/master/examples/get-started/hello_world) and [blink](https://github.com/espressif/esp-idf/tree/master/examples/get-started/blink) examples first. Once you can build, upload and run these two examples, then you are ready to proceed to the next section.
 
-## Set up Path to ESP-MDF
+## Setup Path to ESP-MDF
 
 The toolchain accesses ESP-MDF via MDF_PATH environment variable. This variable should be set up on your PC, otherwise the projects will not build. The process to set it up is analogous to setting up the `IDF_PATH` variable, please refer to instructions in ESP-IDF documentation under [Add IDF_PATH to User Profile](https://esp-idf.readthedocs.io/en/latest/get-started/add-idf_path-to-profile.html).
 
@@ -207,7 +208,7 @@ The configuration of networking parameters for mesh lights, Bluetooth networking
     * Enter configuration parameters
     * Network with the device
 4. Get device information: return to the home page to check the list of all networked devices.
-5. Mesh light control: color control, upgrade, reboot, etc.
+5. Mesh Light Control: color Control, upgrade, reboot, etc.
 6. Networking mode: reboot the device for three consecutive times.
 
 ## Update ESP-MDF
