@@ -21,14 +21,11 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
+
 #ifndef __MDF_ESPNOW_H__
 #define __MDF_ESPNOW_H__
 
-#include "freertos/portmacro.h"
-#include "errno.h"
-#include "esp_log.h"
 #include "esp_now.h"
-
 #include "mdf_common.h"
 
 #ifdef __cplusplus
@@ -47,72 +44,30 @@ extern "C" {
 #endif /**< CONFIG_MDF_ESPNOW_LMK */
 #define MDF_ESPNOW_LMK CONFIG_MDF_ESPNOW_LMK
 
-/**< TODO mdf_espnow_debug module use these MACRO too.
-    change ets_printf to ESP_LOG* or other log module
-    when transpservert to other project */
-#define MDF_ESPNOW_CHECK(con, err, format, ...) do { \
-        if (con) { \
-            ets_printf(format , ##__VA_ARGS__); \
-            if(errno) { ets_printf("errno: %d, errno_str: %s\n", errno, strerror(errno)); } \
-            return err; \
-        } \
-    }while (0)
-
-#define MDF_ESPNOW_CONTINUE(con, format, ...) do { \
-        if (con) { \
-            ets_printf(format , ##__VA_ARGS__); \
-            if(errno) { ets_printf("errno: %d, errno_str: %s\n", errno, strerror(errno)); } \
-            continue; \
-        } \
-    }while (0)
-
-#define MDF_ESPNOW_GOTO(con, label, format, ...) do { \
-        if (con) { \
-            ets_printf(format , ##__VA_ARGS__); \
-            if(errno) { ets_printf("errno: %d, errno_str: %s\n", errno, strerror(errno)); } \
-            goto label; \
-        } \
-    }while (0)
-
-#define MDF_ESPNOW_INFO(con, format, ...) do { \
-        if (con) { \
-            ets_printf(format , ##__VA_ARGS__); \
-            if(errno) { ets_printf("errno: %d, errno_str: %s\n", errno, strerror(errno)); } \
-        } \
-    }while (0)
-
-#define mdf_espnow_malloc(size) ({void *ptr = malloc(size); \
-        if(!ptr){ ets_printf("[%s, %d] malloc size: %d, ptr: %p, heap free: %d\n", \
-                                 __FUNCTION__, __LINE__ , size, ptr, esp_get_free_heap_size()); assert(ptr); } ptr;})
-
-#define mdf_espnow_calloc(n, size) ({void *ptr = calloc(n, size); \
-        if(!ptr){ ets_printf("[%s, %d] calloc size: %d, ptr: %p, heap free: %d\n", \
-                                 __FUNCTION__, __LINE__ , (n) * (size), ptr, esp_get_free_heap_size()); assert(ptr);} ptr;})
-
-#define mdf_espnow_free(ptr) {if(ptr){ free(ptr); ptr = NULL;}}while(0)
-
-typedef enum mdf_espnow_type {
-    MDF_ESPNOW_NONE = 0,    /**< espnow debug pkt: log, coredump, ack */
-    MDF_ESPNOW_DEBUG,       /**< espnow control pkt: set/get light color, properties, u/m/b cast to others */
-    MDF_ESPNOW_CONTROL,     /**< espnow netconfig pkt */
-    MDF_ESPNOW_NETCONFIG,   /**< reserve for other function */
-    MDF_ESPNOW_RESERVED,
+typedef enum mdf_espnow_pkt_type {
+    MDF_ESPNOW_NONE = 0,
+    MDF_ESPNOW_DEBUG,      /**< debug pkt: log, coredump, espnow_debug config, ack */
+    MDF_ESPNOW_CONTROL,    /**< control pkt: set/get device status */
+    MDF_ESPNOW_NETCONFIG,  /**< network configuration pkt */
+    MDF_ESPNOW_RESERVED,   /**< reserved for other functiond */
     MDF_ESPNOW_MAX,
 } mdf_espnow_pkt_type_t;
 
 /**
- * @brief  espnow add peer. it is convenient use simplify MACRO.
- *         if default_encrypt is true, use default lmk to encrypt espnow data;
- *         if default_encrypt is false and lmk is set, use customer lmk to encrypt espnow data;
- *         otherwise, not encrypt.
+ * @brief  add a peer to espnow peer list based on esp_now_add_peer(...). It is convenient to use simplified MACRO follows.
+ *
+ * @attention 1. If the peer is exist, it will be deleted firstly.
+ * @attention 2. If default_encrypt is true, use default lmk to encrypt espnow data;
+ *               if default_encrypt is false and lmk is set, use customized lmk to encrypt espnow data;
+ *               otherwise, not encrypt.
  *
  * @param  dest_addr       peer mac address
- * @param  default_encrypt if encrypt
+ * @param  default_encrypt whether to encrypt data with default MDF_ESPNOW_LMK
  * @param  lmk             local master key
  *
  * @return
- *          - ESP_OK
- *          - ESP_FAIL
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_add_peer_base(const uint8_t dest_addr[ESP_NOW_ETH_ALEN],
                                    bool default_encrypt, const uint8_t lmk[ESP_NOW_KEY_LEN]);
@@ -121,37 +76,42 @@ esp_err_t mdf_espnow_add_peer_base(const uint8_t dest_addr[ESP_NOW_ETH_ALEN],
 #define mdf_espnow_add_peer_default_encrypt(dest_addr) mdf_espnow_add_peer_base(dest_addr, true, NULL)
 
 /**
- * @brief  espnow delete peer
+ * @brief  delete a peer from espnow peer list.
  *
  * @param  dest_addr peer mac address
  *
  * @return
- *          - ESP_OK
- *          - ESP_FAIL
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_del_peer(const uint8_t dest_addr[ESP_NOW_ETH_ALEN]);
 
 /**
- * @brief  read data from espnow
- * @attention: when the data received from sourcer is encrypt, the device will not received
- *             befor add the device into espnow_peer.
+ * @brief  read data from espnow.
+ *         (1) when the data sent from source is encrypt,
+ *         the device will not receive befor adding the source into espnow peer.
+ *         (2) When the param data_len is shorter than received data len,
+ *         the data returned will be shorted to data_len.
  *
  * @param  type        mdf espnow packet type
  * @param  src_addr    source address
- * @param  data        point to receive data buffer
- * @param  data_len    receive data len
+ * @param  data        point to received data buffer
+ * @param  data_len    received data len
  * @param  block_ticks block ticks
  *
- * @return data_len: received data len
+ * @return data_len: actually received data len
  *         - ESP_FAIL: read fail
  */
 size_t mdf_espnow_read(mdf_espnow_pkt_type_t type, uint8_t src_addr[ESP_NOW_ETH_ALEN],
                        void *data, size_t data_len, TickType_t block_ticks);
 
 /**
- * @brief  send espnow pkt to destinatation
+ * @brief  write date package to espnow.
+ *         1. It is necessary to add device to espnow_peer befor send data to dest_addr.
+ *         2. When data_len to write is too long, it may fail duration some package and
+ *         and the return value is the data len that actually sended.
  *
- * @attention: the src_addr can be STA or AP interface of the device, and can be config in menuconfig
+ * @attention:
  *
  * @param  type        mdf espnow packet type
  * @param  dest_addr   destination address
@@ -159,8 +119,8 @@ size_t mdf_espnow_read(mdf_espnow_pkt_type_t type, uint8_t src_addr[ESP_NOW_ETH_
  * @param  data_len    send data len
  * @param  block_ticks block ticks
  *
- * @return - data_len: send data len
- *         - MEESH_FAIL: write fail
+ * @return data_len: send data len
+ *         - ESP_FAIL: write fail
  */
 size_t mdf_espnow_write(mdf_espnow_pkt_type_t type, const uint8_t dest_addr[ESP_NOW_ETH_ALEN],
                         const void *data, size_t data_len, TickType_t block_ticks);
@@ -169,8 +129,8 @@ size_t mdf_espnow_write(mdf_espnow_pkt_type_t type, const uint8_t dest_addr[ESP_
  * @brief  deinit espnow in mdf
  *
  * @return
- *          - ESP_OK
- *          - ESP_FAIL
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_deinit(void);
 
@@ -178,30 +138,30 @@ esp_err_t mdf_espnow_deinit(void);
  * @brief  init espnow in mdf
  *
  * @return
- *          - ESP_OK
- *          - ESP_FAIL
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_init(void);
 
 /**
- * @brief  enable given type of espnow queue
+ * @brief  enable given type of mdf espnow queue
  *
  * @param  type espnow queue type
  *
  * @return
- *          - ESP_OK
- *          - ESP_FAIL
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_enable(mdf_espnow_pkt_type_t type);
 
 /**
- * @brief  disable given type of espnow queue
+ * @brief  disable given type of mdf espnow queue
  *
  * @param  type espnow queue type
  *
  * @return
- *          - ESP_OK
- *          - ESP_FAIL
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_disable(mdf_espnow_pkt_type_t type);
 
