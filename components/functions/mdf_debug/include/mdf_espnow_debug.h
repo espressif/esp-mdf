@@ -30,6 +30,48 @@
 extern "C" {
 #endif /**< _cplusplus */
 
+enum mdf_espnow_debug_type {
+    MDF_ESPNOW_DEBUG_LOG = 0,  /**< log data */
+    MDF_ESPNOW_DEBUG_COREDUMP, /**< coredump data */
+    MDF_ESPNOW_DEBUG_CONFIG,   /**< config data */
+    MDF_ESPNOW_DEBUG_ACK,      /**< ack data*/
+};
+
+enum mdf_espnow_coredump_operator {
+    MDF_ESPNOW_COREDUMP_DETECT = 0, /**< detect coredump partition to check coredump data */
+    MDF_ESPNOW_COREDUMP_RSP,        /**< response to detector whether coredump data exist */
+    MDF_ESPNOW_COREDUMP_RETRANS,    /**< retransfer coredump data */
+    MDF_ESPNOW_COREDUMP_ERASE,      /**< erase coredump partition */
+};
+
+enum mdf_espnow_coredump_rsp_params {
+    MDF_ESPNOW_COREDUMP_START = 0,    /**< start transfer coredump data */
+    MDF_ESPNOW_COREDUMP_TRANSFERRING, /**< transferring coredump data */
+    MDF_ESPNOW_COREDUMP_END,          /**< end transfer coredump data */
+    MDF_ESPNOW_COREDUMP_NULL = 10,    /**< no coredump data found */
+};
+
+enum mdf_espnow_config_operator {
+    MDF_ESPNOW_CONFIG_LOG = 0,  /**< config espnow debug log level */
+    MDF_ESPNOW_CONFIG_DEST,     /**< config espnow debug destination address */
+    MDF_ESPNOW_CONFIG_ALL,      /**< config espnow debug log and destination address */
+};
+
+enum mdf_espnow_config_log_param {
+    MDF_ESPNOW_LOG_NONE,     /**< no output */
+    MDF_ESPNOW_LOG_ERROR,    /**< error log */
+    MDF_ESPNOW_LOG_WARN,     /**< warning log */
+    MDF_ESPNOW_LOG_INFO,     /**< info log */
+    MDF_ESPNOW_LOG_DEBUG,    /**< debug log */
+    MDF_ESPNOW_LOG_VERBOSE,  /**< verbose log */
+    MDF_ESPNOW_LOG_RESTORE,  /**< restore to original ESP_LOG* channel */
+};
+
+enum mdf_espnow_ack_params {
+    MDF_ESPNOW_RECV_OK = 0, /**< espnow package received is correct */
+    MDF_ESPNOW_RECV_FAIL,   /**< espnow package received is error */
+};
+
 typedef struct {
     uint8_t type;
     uint8_t oprt;
@@ -44,17 +86,18 @@ typedef struct {
 /**
  * @brief  get coredump partition info
  *
- * @param  length coredump data len, if length is "-1" means no coredump data
+ * @param  length coredump data len, if length is < 1024B means no coredump data
  *
- * @return        const pointer to coredump partition
+ * @return const pointer to coredump partition
  */
 const esp_partition_t *mdf_coredump_get_info(size_t *length);
 
 /**
  * @brief  erase coredump partition
  *
- * @return   ESP_OK: erase success
- *           ESP_FAIL: erase fail
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_coredump_erase(void);
 
@@ -63,16 +106,18 @@ esp_err_t mdf_coredump_erase(void);
  *
  * @param  espnow_config espnow config params
  *
- * @return   ESP_OK
- *           ESP_FAIL
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_set_config(const mdf_espnow_debug_pkt_t *espnow_config);
 
 /**
  * @brief  init espnow debug module
  *
- * @return   ESP_OK
- *           ESP_FAIL
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 esp_err_t mdf_espnow_debug_init(void);
 
