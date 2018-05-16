@@ -22,6 +22,8 @@ variables:
   IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
 
 before_script:
+  - export PATH="/opt/xtensa-esp32-elf/bin:$PATH"
+  - export PATH="/opt/esp32ulp-elf-binutils/bin:$PATH"
   # add gitlab ssh key
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
@@ -42,7 +44,7 @@ before_script:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - build
+    - iot
   variables:
     ARTIFACTS_NAME: "default"
     DEFAULT_CONFIG: ""

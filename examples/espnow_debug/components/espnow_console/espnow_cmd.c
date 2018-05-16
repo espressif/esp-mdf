@@ -79,9 +79,14 @@ static struct {
     struct arg_end *end;
 } channel_args;
 
-/* the remote peer could in scanning or espnow network config state
+typedef struct {
+    char ssid[32];
+    char password[64];
+} wifi_connect_t;
+
+/* the remote peer could be in scanning or espnow network config state
  * this means it will switch channel for every 100 ms
- * we'll try to send multiple time to make sure they can receive */
+ * the espnow terminal tries to send multiple times to make sure they can receive */
 #define ESPNOW_SEND_WAIT_COUNT     20
 #define ESPNOW_SEND_BACKOFF_MS     70
 
@@ -93,6 +98,7 @@ static struct {
 static uint8_t g_dev_num = 0;
 static uint8_t g_dev_mac[MAX_DEV_NUM][6]    = { { 0 }, };
 static bool    g_dev_mac_index[MAX_DEV_NUM] = { false }; /**< for del cmd operation */
+static wifi_connect_t g_wifi_connect        = { 0 };
 
 /**< declaration of functions */
 static void register_free();
@@ -100,6 +106,7 @@ static void register_restart();
 
 static void register_add();
 static void register_del();
+static void register_delr();
 static void register_list();
 static void register_log();
 static void register_dumpreq();
@@ -118,6 +125,7 @@ void register_cmds()
     /**< espnow */
     register_add();
     register_del();
+    register_delr();
     register_list();
     register_log();
     register_dumpreq();
@@ -165,7 +173,7 @@ static inline bool str_to_mac(const char *str, uint8_t *dest)
 static int free_mem(int argc, char **argv)
 {
     MDF_LOGI("free heap: %d", esp_get_free_heap_size());
-    return ESP_OK;
+    return 0;
 }
 static void register_free()
 {
@@ -183,7 +191,7 @@ static int restart(int argc, char **argv)
 {
     MDF_LOGI("Restarting ...");
     esp_restart();
-    return ESP_OK;
+    return 0;
 }
 static void register_restart()
 {
@@ -265,6 +273,22 @@ esp_err_t espnow_load_dev(void)
 {
     esp_err_t ret = ESP_OK;
 
+#ifndef CONFIG_AUTO_CONNECT_TO_DEFAULT_AP
+    wifi_config_t wifi_config = { 0 };
+
+    ret = mdf_info_load("wifi_connect", &g_wifi_connect, sizeof(wifi_connect_t));
+    if(ret != ESP_FAIL){
+        MDF_LOGI("wifi sta connect to %s", g_wifi_connect.ssid);
+        strncpy((char*) wifi_config.sta.ssid, g_wifi_connect.ssid, sizeof(g_wifi_connect.ssid));
+        strncpy((char*) wifi_config.sta.password, g_wifi_connect.password, sizeof(g_wifi_connect.password));
+
+        ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+        ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+        ESP_ERROR_CHECK( esp_wifi_disconnect() );
+        ESP_ERROR_CHECK( esp_wifi_connect() );
+    }
+#endif
+
     ret = mdf_info_load("dev_num", &g_dev_num, sizeof(uint8_t));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_load dev_num, ret: %d", ret);
 
@@ -283,6 +307,17 @@ esp_err_t espnow_load_dev(void)
     return ESP_OK;
 }
 
+static bool dev_exist(uint8_t mac[6])
+{
+    for(int i = 0; i < g_dev_num; i++){
+        if(!memcmp(mac, g_dev_mac[i], 6)){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static int add(int argc, char** argv)
 {
     int ret       = ESP_OK;
@@ -294,7 +329,7 @@ static int add(int argc, char** argv)
     nerrors = arg_parse(argc, argv, (void**) &add_args);
     if (nerrors) {
         arg_print_errors(stderr, add_args.end, argv[0]);
-        return ESP_FAIL;
+        return 1;
     }
 
     espnow_pkt = mdf_calloc(1, sizeof(mdf_espnow_debug_pkt_t) + 6);
@@ -306,6 +341,11 @@ static int add(int argc, char** argv)
 
     for (int i = 0; i < add_args.mac->count; i++) {
         if (str_to_mac(add_args.mac->sval[i], tmp_mac)) {
+            if(dev_exist(tmp_mac)){
+                MDF_LOGI("mac address already exist: %s", add_args.mac->sval[i]);
+                continue;
+            }
+
             ret = mdf_espnow_add_peer_no_encrypt(tmp_mac);
             MDF_ERROR_CONTINUE(ret < 0, "mdf_espnow_add_peer_no_encryptm g_dev_num: %d, mac: %s",
                                g_dev_num, add_args.mac->sval[i]);
@@ -324,7 +364,7 @@ static int add(int argc, char** argv)
     mdf_free(espnow_pkt);
     ESP_ERROR_CHECK(espnow_save_dev());
 
-    return ESP_OK;
+    return 0;
 }
 static void register_add()
 {
@@ -354,7 +394,7 @@ static int del(int argc, char** argv)
     nerrors = arg_parse(argc, argv, (void**) &del_args);
     if (nerrors) {
         arg_print_errors(stderr, del_args.end, argv[0]);
-        return ESP_FAIL;
+        return 1;
     }
     /**< del devices pkt */
     espnow_pkt = mdf_calloc(1, sizeof(mdf_espnow_debug_pkt_t) + 6);
@@ -378,7 +418,7 @@ static int del(int argc, char** argv)
             }
         }
     } else {
-        for (i = 0; i < add_args.mac->count; i++) {
+        for (i = 0; i < del_args.mac->count; i++) {
             if (str_to_mac(del_args.mac->sval[i], tmp_mac)) {
                 for (j = 0; j < g_dev_num; j++) {
                     if (!memcmp(g_dev_mac[j], tmp_mac, 6)) {
@@ -413,7 +453,7 @@ static int del(int argc, char** argv)
         g_dev_num -= removed_mac;
         ESP_ERROR_CHECK(espnow_save_dev());
     }
-    return ESP_OK;
+    return 0;
 }
 
 static void register_del()
@@ -432,6 +472,28 @@ static void register_del()
     ESP_ERROR_CHECK( esp_console_cmd_register(&del_cmd) );
 }
 
+/**< 'delr' command delete router information */
+static int delr(int argc, char **argv)
+{
+    MDF_LOGI("del router info, ssid: %s", g_wifi_connect.ssid);
+
+    esp_err_t ret = mdf_info_erase("wifi_connect");
+    MDF_ERROR_CHECK(ret != ESP_OK, 1, "mdf_info_erase wifi_connect, ret: %d", ret);
+
+    return 0;
+}
+
+static void register_delr()
+{
+    const esp_console_cmd_t cmd = {
+        .command = "delr",
+        .help = "Delete router info",
+        .hint = NULL,
+        .func = &delr,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+
 /**< 'list' command print all added devices mac */
 static int list(int argc, char** argv)
 {
@@ -442,7 +504,7 @@ static int list(int argc, char** argv)
                  i, MAC2STR(g_dev_mac[i]), g_dev_mac_index[i] ? "true" : "false");
     }
 
-    return ESP_OK;
+    return 0;
 }
 static void register_list()
 {
@@ -465,7 +527,7 @@ static int loglevel(int argc, char** argv)
     nerrors = arg_parse(argc, argv, (void**) &log_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, log_args.end, argv[0]);
-        return ESP_FAIL;
+        return 1;
     }
 
     espnow_pkt = mdf_calloc(1, sizeof(mdf_espnow_debug_pkt_t));
@@ -481,9 +543,9 @@ static int loglevel(int argc, char** argv)
 
     send_ret = espnow_send_to_all(espnow_pkt, sizeof(mdf_espnow_debug_pkt_t), true);
     mdf_free(espnow_pkt);
-    MDF_ERROR_CHECK(!send_ret, ESP_FAIL, "not all devices send ok");
+    MDF_ERROR_CHECK(!send_ret, 1, "not all devices send ok");
 
-    return ESP_OK;
+    return 0;
 }
 
 static int local_loglevel(int argc, char** argv)
@@ -495,7 +557,7 @@ static int local_loglevel(int argc, char** argv)
     nerrors = arg_parse(argc, argv, (void**) &local_log_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, local_log_args.end, argv[0]);
-        return ESP_FAIL;
+        return 1;
     }
 
     if (local_log_args.level->count > 0) {
@@ -506,7 +568,7 @@ static int local_loglevel(int argc, char** argv)
     }
     esp_log_level_set((const char *) log_tag, log_level);
 
-    return ESP_OK;
+    return 0;
 }
 
 static void register_log()
@@ -552,9 +614,9 @@ static int dumpreq(int argc, char** argv)
 
     send_ret = espnow_send_to_all(espnow_pkt, sizeof(mdf_espnow_debug_pkt_t), true);
     mdf_free(espnow_pkt);
-    MDF_ERROR_CHECK(!send_ret, ESP_FAIL, "not all devices send ok");
+    MDF_ERROR_CHECK(!send_ret, 1, "not all devices send ok");
 
-    return ESP_OK;
+    return 0;
 }
 static void register_dumpreq()
 {
@@ -577,9 +639,9 @@ static int dumperase(int argc, char** argv)
     espnow_pkt->oprt = MDF_ESPNOW_COREDUMP_ERASE;
     send_ret = espnow_send_to_all(espnow_pkt, sizeof(mdf_espnow_debug_pkt_t), true);
     mdf_free(espnow_pkt);
-    MDF_ERROR_CHECK(!send_ret, ESP_FAIL, "not all devices send ok");
+    MDF_ERROR_CHECK(!send_ret, 1, "not all devices send ok");
 
-    return ESP_OK;
+    return 0;
 }
 static void register_dumperase()
 {
@@ -613,6 +675,12 @@ static int join(int argc, char **argv)
         ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
         ESP_ERROR_CHECK( esp_wifi_disconnect() );
         ESP_ERROR_CHECK( esp_wifi_connect() );
+
+        memcpy(g_wifi_connect.ssid, wifi_config.sta.ssid, sizeof(wifi_config.sta.ssid));
+        memcpy(g_wifi_connect.password, wifi_config.sta.password, sizeof(wifi_config.sta.password));
+
+        esp_err_t ret = mdf_info_save("wifi_connect", &g_wifi_connect, sizeof(wifi_connect_t));
+        MDF_ERROR_CHECK(ret < 0, 1, "mdf_info_save wifi_connect ret: %d", ret);
     }
     return 0;
 }
