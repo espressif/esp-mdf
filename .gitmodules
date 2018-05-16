@@ -1,6 +1,6 @@
 [submodule "esp-idf"]
 	path = esp-idf
 	url = https://github.com/espressif/esp-idf.git
-[submodule "examples/mdf-debug/components/espnow_lcd/iot_lcd/Adafruit-GFX-Library"]
-	path = examples/mdf-debug/components/espnow_lcd/iot_lcd/Adafruit-GFX-Library
+[submodule "examples/espnow_debug/components/espnow_lcd/iot_lcd/Adafruit-GFX-Library"]
+	path = examples/espnow_debug/components/espnow_lcd/iot_lcd/Adafruit-GFX-Library
 	url = https://github.com/adafruit/Adafruit-GFX-Library.git
