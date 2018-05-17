@@ -360,6 +360,7 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     char ota_bin_version[64]     = {0};
     uint8_t *ota_progress_array  = NULL;
     ssize_t ota_package_num      = 0;
+    ssize_t ota_write_num        = 0;
     char *ota_progress_array_str = NULL;
     uint8_t loss_package_flag    = false;
 
@@ -375,25 +376,29 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     ret = mdf_upgrade_init(ota_bin_len, ota_package_len, ota_bin_version);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_upgrade_init, ret: %d", ret);
 
-    ret = mdf_upgrade_status(&ota_progress_array, &ota_package_num, &ota_package_len);
+    ret = mdf_upgrade_status(&ota_progress_array, &ota_write_num, &ota_package_num, &ota_package_len);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_ota_get_status, ret: %d", ret);
 
-    MDF_LOGD("ota_progress_array: %p, ota_package_num: %d, ota_bin_version: %s",
-             ota_progress_array, ota_package_num, ota_bin_version);
+    MDF_LOGD("ota_progress_array: %p, ota_package_num: %d, ota_bin_version: %s, ota_write_num: %d",
+             ota_progress_array, ota_package_num, ota_bin_version, ota_write_num);
 
     ota_progress_array_str = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE);
 
-    for (int i = 0; i < ota_package_num; ++i) {
-        if (ota_progress_array[i] == true) {
-            continue;
-        }
-
+    if (!ota_write_num) {
         loss_package_flag = true;
+        strcpy(ota_progress_array_str, "[0, -1]");
+    } else {
+        for (int i = 0; i < ota_package_num; ++i) {
+            if (ota_progress_array[i] == true) {
+                continue;
+            }
 
-        if (mdf_json_pack(ota_progress_array_str, "[]", i) > WIFI_MESH_PACKET_MAX_SIZE - 64) {
-            MDF_LOGV("ota_progress_array_str: %s", ota_progress_array_str);
-            strcpy(ota_progress_array_str, "[0, -1]");
-            break;
+            loss_package_flag = true;
+
+            if (mdf_json_pack(ota_progress_array_str, "[]", i) > WIFI_MESH_PACKET_MAX_SIZE - 64) {
+                MDF_LOGV("ota_progress_array_str: %s", ota_progress_array_str);
+                break;
+            }
         }
     }
 

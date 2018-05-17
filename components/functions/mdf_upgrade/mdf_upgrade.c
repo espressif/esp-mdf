@@ -131,7 +131,7 @@ esp_err_t mdf_upgrade_deinit(void)
     return ESP_OK;
 }
 
-esp_err_t mdf_upgrade_status(uint8_t **progress_array,
+esp_err_t mdf_upgrade_status(uint8_t **progress_array, ssize_t *writted_num,
                              ssize_t *packet_num, ssize_t *packet_size)
 {
     MDF_PARAM_CHECK(progress_array);
@@ -142,6 +142,7 @@ esp_err_t mdf_upgrade_status(uint8_t **progress_array,
     /**< the progress_array indicates whether packets have been received */
     *progress_array = g_ota_status->progress_array;
     *packet_num     = g_ota_status->packet_num;
+    *writted_num    = g_ota_status->packet_write_num;
     *packet_size    = g_ota_status->packet_size;
 
     return ESP_OK;

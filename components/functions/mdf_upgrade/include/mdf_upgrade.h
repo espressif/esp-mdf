@@ -65,7 +65,7 @@ esp_err_t mdf_upgrade_deinit(void);
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t mdf_upgrade_status(uint8_t **progress_array,
+esp_err_t mdf_upgrade_status(uint8_t **progress_array, ssize_t *writted_num,
                              ssize_t *packet_num, ssize_t *packet_size);
 
 /**
