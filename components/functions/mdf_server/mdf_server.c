@@ -34,7 +34,7 @@ static const char *TAG                          = "mdf_server";
 static bool g_server_conn_flag                  = false;
 static TaskHandle_t g_http_response_task_handle = NULL;
 
-bool mdf_server_conn_is_runnig()
+bool mdf_server_conn_is_running()
 {
     return esp_mesh_is_root() && mdf_wifi_mesh_is_connect() && g_server_conn_flag;
 }
@@ -43,9 +43,9 @@ void mdf_http_request_task(void *arg)
 {
     esp_err_t ret = ESP_OK;
 
-    while (mdf_server_conn_is_runnig()) {
+    while (mdf_server_conn_is_running()) {
         ret = mdf_http_server_request();
-        MDF_ERROR_CONTINUE(ret != ESP_OK, "mdf_http_server_request, ret: %d", ret);
+        MDF_ERROR_CONTINUE(ret != ESP_OK, "mdf_http_request, ret: %d", ret);
     }
 
     vTaskDelete(NULL);
@@ -57,7 +57,7 @@ void mdf_http_response_task(void *arg)
 
     while (esp_mesh_is_root()) {
         ret = mdf_http_server_response();
-        MDF_ERROR_CONTINUE(ret != ESP_OK, "mdf_http_server_response, ret: %d", ret);
+        MDF_ERROR_CONTINUE(ret != ESP_OK, "mdf_http_response, ret: %d", ret);
     }
 
     g_http_response_task_handle = NULL;
@@ -68,7 +68,7 @@ void mdf_notice_udp_server_task(void *arg)
 {
     esp_err_t ret = ESP_OK;
 
-    while (mdf_server_conn_is_runnig()) {
+    while (mdf_server_conn_is_running()) {
         ret = mdf_notice_udp_server();
         MDF_ERROR_CONTINUE(ret != ESP_OK, "mdf_notice_udp_handle, ret: %d", ret);
     }
@@ -80,7 +80,7 @@ void mdf_notice_udp_client_task(void *arg)
 {
     esp_err_t ret = ESP_OK;
 
-    while (mdf_server_conn_is_runnig()) {
+    while (mdf_server_conn_is_running()) {
         ret = mdf_notice_udp_client();
         MDF_ERROR_CONTINUE(ret != ESP_OK, "mdf_notice_udp_handle, ret: %d", ret);
     }
@@ -92,8 +92,6 @@ static void mdf_server_init_task(void *arg)
 {
     MDF_LOGD("mdf server connect create");
 
-    g_server_conn_flag = true;
-
     ESP_ERROR_CHECK(mdf_http_server_init());
 
 #ifdef CONFIG_MDF_USE_MDNS_SERVICE
@@ -102,11 +100,11 @@ static void mdf_server_init_task(void *arg)
 
     ESP_ERROR_CHECK(mdf_notice_udp_init());
 
-    xTaskCreate(mdf_http_request_task, "mdf_http_server_request", 4096, NULL,
+    xTaskCreate(mdf_http_request_task, "mdf_http_request", 4096, NULL,
                 MDF_TASK_DEFAULT_PRIOTY - 3, NULL);
 
     if (!g_http_response_task_handle) {
-        xTaskCreate(mdf_http_response_task, "mdf_http_server_response", 4096, NULL,
+        xTaskCreate(mdf_http_response_task, "mdf_http_response", 4096, NULL,
                     MDF_TASK_DEFAULT_PRIOTY, &g_http_response_task_handle);
     }
 
@@ -124,6 +122,7 @@ esp_err_t mdf_server_init()
     if (esp_mesh_is_root() && mdf_wifi_mesh_is_connect() && !g_server_conn_flag) {
         xTaskCreate(mdf_server_init_task, "mdf_server_init_task", 4096, NULL,
                     MDF_TASK_DEFAULT_PRIOTY, NULL);
+        g_server_conn_flag = true;
     }
 
     return ESP_OK;
@@ -133,6 +132,9 @@ esp_err_t mdf_server_deinit()
 {
     if (g_server_conn_flag) {
         MDF_LOGD("mdf server connect delete");
+        g_server_conn_flag = false;
+        vTaskDelay(1000 / portTICK_RATE_MS);
+
         ESP_ERROR_CHECK(mdf_http_server_deinit());
 
 #ifdef CONFIG_MDF_USE_MDNS_SERVICE
@@ -140,7 +142,6 @@ esp_err_t mdf_server_deinit()
 #endif
 
         ESP_ERROR_CHECK(mdf_notice_udp_deinit());
-        g_server_conn_flag = false;
     }
 
     return ESP_OK;

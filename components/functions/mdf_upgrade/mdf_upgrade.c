@@ -227,7 +227,7 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
             || g_ota_status->packet_write_num == g_ota_status->packet_num) {
         s_packet_write_num += 100;
         ret = mdf_info_save(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
-        MDF_ERROR_CHECK(ret < 0, ESP_FAIL , "mdf_info_save, ret: %d", ret);
+        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
         MDF_LOGD("save the data of ota status to flash");
     }
 

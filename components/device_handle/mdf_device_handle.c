@@ -463,8 +463,8 @@ static esp_err_t mdf_device_get_info(device_data_t *device_data)
                     "mdf_json_pack, device_data->response_size: %d", device_data->response_size);
 
     return ESP_OK;
-
 }
+
 static esp_err_t mdf_device_get_status(device_data_t *device_data)
 {
     MDF_ERROR_CHECK(!mdf_device_get_value, ESP_FAIL, "this device does not support get_status");

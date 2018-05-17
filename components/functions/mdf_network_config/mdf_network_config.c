@@ -48,7 +48,7 @@ static const char *TAG                      = "mdf_network_config";
 static QueueHandle_t g_network_config_queue = NULL;
 static bool g_mdf_network_enable_auto_flag  = false;
 static bool g_mdf_network_enable_blufi_flag = false;
- /**< 'M', 'E', 'S', 'H', this is a fixed value used to determine the presence of a mesh device  */
+/**< 'M', 'E', 'S', 'H', this is a fixed value used to determine the presence of a mesh device  */
 static const uint8_t MDF_AUTO_NETWORK_OUI[] = { 0x45, 0x53, 0x50, 0x4D };
 
 static const void *g_auto_network_whitelist_lock      = NULL;
@@ -318,8 +318,9 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
     for (;;) {
         if (xQueueReceive(g_network_config_queue, network_config, 0)) {
             MDF_LOGD("blufi network configured success");
+            /**< set ret to ESP_OK as return value */
             ret = ESP_OK;
-            break;
+            goto EXIT;
         }
 
         if (mdf_blufi_connecting_wifi()) {
@@ -399,7 +400,8 @@ EXIT:
     mdf_free(request_data);
     vQueueDelete(g_network_config_queue);
     g_network_config_queue = NULL;
-    return ret < 0 ? ESP_FAIL : ESP_OK;
+
+    return ret != ESP_OK ? ESP_FAIL : ESP_OK;
 }
 
 esp_err_t mdf_network_get_config(network_config_t *network_config)
@@ -417,7 +419,7 @@ esp_err_t mdf_network_get_config(network_config_t *network_config)
 
     strncpy(network_config->ssid, MDF_DEFAULT_ROUTER_SSID, MDF_SSID_LEN);
     strncpy(network_config->password, MDF_DEFAULT_ROUTER_PASSWD, MDF_PASSWD_LEN);
-    memcpy(network_config->mdf_id, MDF_DEFAULT_ID, NETWORK_NETWORK_ADDR_MAX_SIZE);
+    memcpy(network_config->mesh_id, MDF_DEFAULT_ID, NETWORK_NETWORK_ADDR_MAX_SIZE);
 
     if (mdf_channel_get(network_config->ssid, &network_config->channel) == ESP_OK) {
         mdf_blufi_mem_release();
@@ -634,13 +636,15 @@ EXIT:
 
 esp_err_t mdf_network_enable_blufi()
 {
-    if (!g_mdf_network_enable_blufi_flag && !mdf_blufi_mem_is_release()) {
+    if (mdf_blufi_mem_is_release()) {
+        MDF_LOGW("blufi memory released, cannot enter blufi config mode rightnow");
+        return ESP_FAIL;
+    }
+
+    if (!g_mdf_network_enable_blufi_flag) {
         g_mdf_network_enable_blufi_flag = true;
         xTaskCreate(mdf_blufi_network_task, "mdf_blufi_network_task", 3 * 1024,
                     NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
-    } else {
-        MDF_LOGW("blufi memory released, cannot enter blufi config mode rightnow");
-        return ESP_FAIL;
     }
 
     return ESP_OK;

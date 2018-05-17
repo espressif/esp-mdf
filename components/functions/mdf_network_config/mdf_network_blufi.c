@@ -109,11 +109,11 @@ static esp_ble_adv_data_t s_mdf_blufi_adv_data = {
     .flag                = 0x6,
 };
 
-static const char *TAG                         = "mdf_blufi_network_config";
+static const char *TAG                       = "mdf_blufi_network_config";
 static mdf_blufi_security_t *g_mdf_blufi_sec = NULL;
-static bool mdf_blufi_mem_release_flag        = false;
-static network_config_t g_network_config  = {0};
-static bool g_blufi_connecting_wifi            = false;
+static bool mdf_blufi_mem_release_flag       = false;
+static network_config_t g_network_config     = {0};
+static bool g_blufi_connecting_wifi          = false;
 
 static esp_err_t mdf_blufi_random(void *rng_state, uint8_t *output, size_t len)
 {
@@ -453,10 +453,10 @@ static void mdf_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_pa
             memcpy(sta_config.sta.password, g_network_config.password, strlen(g_network_config.password));
 
             ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_set_config, ret: %d", ret);
+            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_set_config, ret: 0x%x", ret);
 
             ret = esp_wifi_connect();
-            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_connect, ret: %d", ret);
+            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_connect, ret: 0x%x", ret);
 
             g_blufi_connecting_wifi = true;
 

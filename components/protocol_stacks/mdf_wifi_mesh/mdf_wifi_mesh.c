@@ -357,7 +357,7 @@ ssize_t mdf_wifi_mesh_root_send(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
                  mesh_data.size, mesh_head_data.seq, data_type->val, mesh_data.data);
 
         while (esp_get_free_heap_size() < 30 * 1024) {
-            vTaskDelay(20 / portMAX_DELAY);
+            vTaskDelay(20 / portTICK_RATE_MS);
             MDF_LOGW("not enough memory(%d Byte), delay: 20ms", esp_get_free_heap_size());
         }
 

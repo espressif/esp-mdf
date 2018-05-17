@@ -147,7 +147,7 @@ static esp_err_t mdf_device_request(server_http_connect_t *conn)
     }
 
     MDF_LOGD("mdf_wifi_mesh_root_send conn->chunk: %d, conn->chunk_num: %d",
-             conn->chunk, conn->chunk_num)
+             conn->chunk, conn->chunk_num);
 
 EXIT:
     mdf_free(conn->dest_addrs);
