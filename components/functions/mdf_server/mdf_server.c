@@ -100,18 +100,18 @@ static void mdf_server_init_task(void *arg)
 
     ESP_ERROR_CHECK(mdf_notice_udp_init());
 
-    xTaskCreate(mdf_http_request_task, "mdf_http_request", 4096, NULL,
+    xTaskCreate(mdf_http_request_task, "mdf_http_request", 1024 * 3, NULL,
                 MDF_TASK_DEFAULT_PRIOTY - 3, NULL);
 
     if (!g_http_response_task_handle) {
-        xTaskCreate(mdf_http_response_task, "mdf_http_response", 4096, NULL,
+        xTaskCreate(mdf_http_response_task, "mdf_http_response", 1024 * 3, NULL,
                     MDF_TASK_DEFAULT_PRIOTY, &g_http_response_task_handle);
     }
 
-    xTaskCreate(mdf_notice_udp_client_task, "mdf_udp_client", 3072, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
+    xTaskCreate(mdf_notice_udp_client_task, "mdf_udp_client", 2560, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 
 #ifdef MDF_USE_UDP_SERVER
-    xTaskCreate(mdf_notice_udp_server_task, "mdf_udp_server", 2048, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
+    xTaskCreate(mdf_notice_udp_server_task, "mdf_udp_server", 1024 * 2, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 #endif
 
     vTaskDelete(NULL);
