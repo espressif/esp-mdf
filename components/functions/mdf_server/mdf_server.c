@@ -95,7 +95,11 @@ static void mdf_server_init_task(void *arg)
     g_server_conn_flag = true;
 
     ESP_ERROR_CHECK(mdf_http_server_init());
+
+#ifdef CONFIG_MDF_USE_MDNS_SERVICE
     ESP_ERROR_CHECK(mdf_notice_mdns_init());
+#endif
+
     ESP_ERROR_CHECK(mdf_notice_udp_init());
 
     xTaskCreate(mdf_http_request_task, "mdf_http_server_request", 4096, NULL,
@@ -130,7 +134,11 @@ esp_err_t mdf_server_deinit()
     if (g_server_conn_flag) {
         MDF_LOGD("mdf server connect delete");
         ESP_ERROR_CHECK(mdf_http_server_deinit());
+
+#ifdef CONFIG_MDF_USE_MDNS_SERVICE
         ESP_ERROR_CHECK(mdf_notice_mdns_deinit());
+#endif
+
         ESP_ERROR_CHECK(mdf_notice_udp_deinit());
         g_server_conn_flag = false;
     }

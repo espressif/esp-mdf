@@ -31,6 +31,10 @@
 extern "C" {
 #endif /**< _cplusplus */
 
+#ifdef CONFIG_MDF_USE_MDNS_SERVICE
+#define MDF_USE_MDNS_SERVICE
+#endif /**< CONFIG_MDF_USE_MDNS_SERVICE */
+
 #ifndef CONFIG_MDF_UDP_BROADCAST_PORT
 #define CONFIG_MDF_UDP_BROADCAST_PORT 3232
 #endif /**< CONFIG_MDF_UDP_BROADCAST_PORT */
