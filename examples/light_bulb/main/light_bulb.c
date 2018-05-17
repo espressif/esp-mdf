@@ -171,8 +171,7 @@ static esp_err_t light_bulb_event_loop_cb(mdf_event_loop_t event, void *ctx)
             break;
 
         case MDF_EVENT_SYSTEM_RUNNING: {
-            uint8_t on = light_get_switch();
-            light_set_switch(on);
+            light_set_switch(1);
             break;
         }
 
