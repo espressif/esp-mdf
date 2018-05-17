@@ -139,26 +139,21 @@ esp_err_t mdf_device_init_config(uint16_t tid, const char name[32], const char v
 
     g_device_config = mdf_calloc(1, sizeof(device_config_t));
 
-    if (mdf_info_load("device_config", g_device_config, sizeof(device_config_t)) > 0) {
-        return ESP_OK;
+    if (mdf_info_load("device_name", g_device_config->name, sizeof(g_device_config->name)) < 0) {
+        ret = mdf_wifi_init();
+        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_init, ret: %x", ret);
+
+        uint8_t mac[6] = {0};
+        ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
+        snprintf(g_device_config->name, sizeof(g_device_config->name) - 1,
+                 "%s_%02x%02x%02x", name, mac[3], mac[4], mac[5]);
     }
 
-    ret = mdf_wifi_init();
-    MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_init, ret: %x", ret);
-
-    uint8_t mac[6] = {0};
-    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
-    snprintf(g_device_config->name, sizeof(g_device_config->name),
-             "%s_%02x%02x%02x", name, mac[3], mac[4], mac[5]);
-
     g_device_config->tid = tid;
-    strncpy(g_device_config->version, version, sizeof(g_device_config->version));
+    strncpy(g_device_config->version, version, sizeof(g_device_config->version) - 1);
 
     g_device_config->characteristics_num = 0;
     g_device_config->characteristics     = NULL;
-
-    ret = mdf_info_save("device_config", g_device_config, sizeof(device_config_t));
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
 
     return ESP_OK;
 }
@@ -169,22 +164,9 @@ esp_err_t mdf_device_set_name(const char name[32])
 
     esp_err_t ret = ESP_OK;
 
-    strncpy(g_device_config->name, name, sizeof(g_device_config->name));
+    strncpy(g_device_config->name, name, sizeof(g_device_config->name) - 1);
 
-    ret = mdf_info_save("device_config", g_device_config, sizeof(device_config_t));
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
-
-    return ESP_OK;
-}
-
-esp_err_t mdf_device_set_version(const char version[16])
-{
-    MDF_PARAM_CHECK(g_device_config);
-
-    esp_err_t ret = ESP_OK;
-
-    strncpy(g_device_config->version, version, sizeof(g_device_config->version));
-    ret = mdf_info_save("device_config", &g_device_config, sizeof(device_config_t));
+    ret = mdf_info_save("device_name", g_device_config->name, sizeof(g_device_config->name));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
 
     return ESP_OK;

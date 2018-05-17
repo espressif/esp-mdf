@@ -133,15 +133,6 @@ esp_err_t mdf_device_set_name(const char name[32]);
 /**
  * @brief  get device name
  *
- * @return
- *     - ESP_OK
- *     - ESP_FAIL
- */
-esp_err_t mdf_device_set_version(const char version[16]);
-
-/**
- * @brief  get device name
- *
  * @return name of the device
  */
 const char *mdf_device_get_name();
