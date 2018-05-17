@@ -181,7 +181,6 @@ esp_err_t mdf_network_delete_whitelist()
     return ESP_OK;
 }
 
-#ifdef MDF_USE_DEFAULT_NETWORK_CONFIG
 static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
 {
     MDF_PARAM_CHECK(ssid);
@@ -216,7 +215,6 @@ static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
     mdf_free(ap_info);
     return (*channel < 1 || *channel > 14) ? ESP_FAIL : ESP_OK;
 }
-#endif
 
 static esp_err_t mdf_ap_info_get(int8_t *rssi, uint8_t mac[6])
 {
@@ -591,8 +589,9 @@ esp_err_t mdf_network_enable_auto(uint32_t timeout)
 
 static void mdf_blufi_network_task(void *arg)
 {
-    esp_err_t ret                   = ESP_OK;
-    network_config_t network_config = {0};
+    esp_err_t ret                       = ESP_OK;
+    network_config_t network_config     = {0};
+    network_config_t old_network_config = {0};
 
     vTaskDelay(10000 / portTICK_RATE_MS);
 
@@ -606,16 +605,44 @@ static void mdf_blufi_network_task(void *arg)
 
     MDF_LOGD("start blue network configured");
 
+    mdf_info_load(MDF_NETWORK_CONFIG_KEY, &old_network_config, sizeof(network_config_t));
+
     ret = mdf_blufi_init();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_init, ret: %d", ret);
 
-    while (!mdf_wifi_mesh_is_connect() && !mdf_blufi_mem_is_release()) {
-        if (xQueueReceive(g_network_config_queue, &network_config, 1000 / portTICK_RATE_MS)) {
+    esp_mesh_set_self_organized(false);
+
+    while (!mdf_wifi_mesh_is_connect()) {
+        /**< reconfig network */
+        if (xQueueReceive(g_network_config_queue, &network_config, 3000 / portTICK_RATE_MS)) {
+            ret = mdf_channel_get(network_config.ssid, &network_config.channel);
+            MDF_ERROR_CONTINUE(ret < 0, "mdf_channel_get, ret: %d", ret);
+
             ret = mdf_reconfig_network(&network_config);
             MDF_ERROR_CONTINUE(ret < 0, "mdf_reconfig_network, ret: %d", ret);
+
             break;
         }
+
+        /**< channel migration */
+        if (!mdf_blufi_connecting_wifi()) {
+            uint8_t channel = 0;
+            ret = mdf_channel_get(old_network_config.ssid, &channel);
+            MDF_ERROR_CONTINUE(ret < 0, "mdf_channel_get, ret: %d", ret);
+
+            if (channel != old_network_config.channel) {
+                old_network_config.channel = channel;
+                ret = mdf_reconfig_network(&old_network_config);
+                MDF_ERROR_CONTINUE(ret < 0, "mdf_reconfig_network, ret: %d", ret);
+
+                break;
+            } else {
+                esp_restart();
+            }
+        }
     }
+
+    esp_mesh_set_self_organized(true);
 
     ret = mdf_blufi_deinit();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_deinit, ret: %d", ret);
