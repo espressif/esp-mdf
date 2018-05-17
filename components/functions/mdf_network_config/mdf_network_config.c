@@ -120,23 +120,6 @@ esp_err_t mdf_network_add_whitelist(const uint8_t *device_addr, uint32_t num)
     return ESP_OK;
 }
 
-esp_err_t mdf_network_add_whitelist_addrs(auto_network_addrs_t *network_addrs)
-{
-    MDF_PARAM_CHECK(network_addrs);
-
-    size_t network_whitelist_size = (sizeof(auto_network_addrs_t) + network_addrs->num * MDF_NETWORK_NETWORK_ADDR_SIZE);
-
-    auto_network_whitelist_lock();
-
-    mdf_free(g_auto_network_whitelist);
-    g_auto_network_whitelist = mdf_malloc(network_whitelist_size);
-    memcpy(g_auto_network_whitelist, network_addrs, network_whitelist_size);
-
-    auto_network_whitelist_unlock();
-
-    return ESP_OK;
-}
-
 bool mdf_auto_network_find_whitelist(const uint8_t *device_addr)
 {
     if (!g_auto_network_whitelist) {
@@ -356,7 +339,7 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
             continue;
         }
 
-#ifdef CONFIG_USE_DEFAULT_NETWORK_CONFIG
+#ifdef MDF_USE_NETWORK_WHITELIST
 
         size_t network_whitelist_size = sizeof(auto_network_addrs_t) + MDF_NETWORK_WHITELIST_MAX_NUM * MDF_NETWORK_NETWORK_ADDR_SIZE;
         auto_network_addrs_t *device_addr = mdf_calloc(1, network_whitelist_size);
@@ -371,14 +354,17 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
         if (ret <= 0 || ret != device_addr->num * MDF_NETWORK_NETWORK_ADDR_SIZE + sizeof(auto_network_addrs_t)) {
             MDF_LOGW("mdf_espnow_read auto network whitelist, ret: %d, device addr: " MACSTR,
                      ret, MAC2STR(device_addr->data));
-            mdf_free(device_addr);
         } else {
-            ret = mdf_network_add_whitelist_addrs(device_addr);
-            mdf_free(device_addr);
-            MDF_ERROR_CONTINUE(ret < 0, "mdf_network_add_whitelist, ret: %d", ret);
+            network_whitelist_size = sizeof(auto_network_addrs_t) + device_addr->num * MDF_NETWORK_NETWORK_ADDR_SIZE;
+
+            mdf_free(g_auto_network_whitelist);
+            g_auto_network_whitelist = mdf_malloc(network_whitelist_size);
+            memcpy(g_auto_network_whitelist, device_addr, network_whitelist_size);
         }
 
-#endif /**< CONFIG_USE_DEFAULT_NETWORK_CONFIG */
+        mdf_free(device_addr);
+
+#endif /**< MDF_USE_NETWORK_WHITELIST */
 
         ret = mdf_rsa_decrypt(response_data->data, (uint8_t *)privkey_pem,
                               network_config, sizeof(network_config_t));
@@ -493,7 +479,7 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+#ifdef MDF_USE_NETWORK_WHITELIST
 
         if (!mdf_auto_network_find_whitelist(source_addr)) {
             MDF_LOGW("this device("MACSTR") is not on the whitelist of the device configuration network device",
@@ -501,7 +487,7 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-#endif
+#endif /**< MDF_USE_NETWORK_WHITELIST */
 
         if (ret != sizeof(auto_network_data_t) + MDF_RSA_PUBKEY_PEM_DATA_SIZE) {
             MDF_LOGW("receive, size: %d, data:\n%s", ret, request_data->data);
@@ -530,7 +516,8 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+#ifdef MDF_USE_NETWORK_WHITELIST
+
         write_size                    = 0;
         size_t network_whitelist_size = sizeof(auto_network_addrs_t) + g_auto_network_whitelist->num * MDF_NETWORK_NETWORK_ADDR_SIZE;
 
@@ -550,7 +537,7 @@ static void mdf_auto_network_task(void *arg)
 
 #else
         ESP_ERROR_CHECK(mdf_espnow_del_peer(source_addr));
-#endif /**< CONFIG_MDF_USE_NETWORK_WHITELIST */
+#endif /**< MDF_USE_NETWORK_WHITELIST */
     }
 
     ESP_ERROR_CHECK(mdf_espnow_del_peer(WIFI_MESH_BROADCAST_ADDR));
@@ -570,13 +557,13 @@ EXIT:
 
 esp_err_t mdf_network_enable_auto(uint32_t timeout)
 {
-#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+#ifdef MDF_USE_NETWORK_WHITELIST
 
     if (!g_auto_network_whitelist) {
         return ESP_OK;
     }
 
-#endif /**< CONFIG_MDF_USE_NETWORK_WHITELIST */
+#endif /**< MDF_USE_NETWORK_WHITELIST */
 
     if (!g_mdf_network_enable_auto_flag) {
         g_mdf_network_enable_auto_flag = true;
