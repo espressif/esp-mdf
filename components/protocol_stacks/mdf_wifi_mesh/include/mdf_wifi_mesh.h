@@ -148,7 +148,7 @@ enum {
     MDF_EVENT_ROUTING_TABLE_REMOVE,      /**< routing table is changed by removing leave children */
     MDF_EVENT_PARENT_CONNECTED,          /**< parent is connected on station interface */
     MDF_EVENT_PARENT_DISCONNECTED,       /**< parent is disconnected on station interface */
-    MDF_EVENT_NO_PARNET_FOUND,           /**< no parent found */
+    MDF_EVENT_NO_PARENT_FOUND,           /**< no parent found */
     MDF_EVENT_LAYER_CHANGE,              /**< layer changes over the mesh network */
     MDF_EVENT_TODS_STATE,                /**< state represents if root is able to access external IP network */
     MDF_EVENT_VOTE_STARTED,              /**< the process of voting a new root is started either by children or by root */
@@ -205,6 +205,15 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config);
  *    - ESP_FAIL
  */
 esp_err_t mdf_wifi_mesh_deinit(void);
+
+/**
+ * @brief  wether wifi_mesh is running
+ *
+ * @return
+ *    - true
+ *    - flase
+ */
+bool mdf_wifi_mesh_is_running(void);
 
 /**
  * @brief  wether wifi_mesh is disconnected

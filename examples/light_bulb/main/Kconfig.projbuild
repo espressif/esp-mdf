@@ -8,7 +8,7 @@ menuconfig MDF_WIFI_MESH_ENABLE
 
 config WIFI_MESH_MAX_LAYER
     int "Max layer"
-    default 4
+    default 6
     depends on MDF_WIFI_MESH_ENABLE
     help
         Configure max layer of mesh network
@@ -22,19 +22,19 @@ config WIFI_MESH_AP_CONNECTIONS
 
 config WIFI_MESH_VOTE_PERCENTAGE
     int "Vote percentage threshold"
-    default 60
+    default 100
     depends on MDF_WIFI_MESH_ENABLE
     help
         Configure vote percentage threshold for approval of being a root
 
-config MDF_AP_ASSOC_EXPIRE
+config WIFI_MESH_AP_ASSOC_EXPIRE
     int "AP associate expired time(s)"
     default 10
     depends on MDF_WIFI_MESH_ENABLE
     help
         Configure mesh AP associate expired time
 
-config WIFI_MESH_AP_ASSOC_EXPIRE
+config WIFI_MESH_ATTEMPT_SCAN_TIME
     int "Attempt's scan time(s)"
     default 10
     depends on MDF_WIFI_MESH_ENABLE
@@ -93,6 +93,12 @@ config MDF_UDP_BROADCAST_PORT
     default 3232
     help
         Udp broadcast port to send udp broadcast pkt.
+
+config MDF_USE_MDNS_SERVICE
+    bool "Start mDNS service"
+    default n
+    help
+       Start mDNS service for device discovery
 
 config MDF_USE_UDP_SERVER
     bool "Device discovery through udp server"
@@ -205,7 +211,7 @@ config MDF_ESPNOW_DEBUG
 
 config MDF_ESPNOW_DEBUG_ALL_TIME
     bool "Enable ESPNOW debug (logging) even not connected with AP"
-    default y
+    default n
     depends on MDF_ESPNOW_DEBUG
     help
         Usually we only send log with ESPNOW when connected to AP.
@@ -214,6 +220,7 @@ config MDF_ESPNOW_DEBUG_ALL_TIME
 config MDF_ESPNOW_DEFAULT_DEBUG_PRIMARY_CHANNEL
     int "ESPNOW default primary channel when not connected to AP"
     default 11
+    depends on MDF_ESPNOW_DEBUG_ALL_TIME
     help
         The default primary channel to communicate with log receiver App via ESPNOW.
         The channel should be the same primary channel as AP which will connect to.
@@ -221,6 +228,7 @@ config MDF_ESPNOW_DEFAULT_DEBUG_PRIMARY_CHANNEL
 config MDF_ESPNOW_DEFAULT_DEBUG_SECONDARY_CHANNEL
     int "ESPNOW default secondary channel when not connected to AP"
     default 0
+    depends on MDF_ESPNOW_DEBUG_ALL_TIME
     help
         The default secondary channel to communicate with log receiver App via ESPNOW.
         The channel should be the same secondary channel as AP which will connect to.

@@ -95,18 +95,13 @@ esp_err_t mdf_reconfig_network(network_config_t *network_config)
 {
     MDF_PARAM_CHECK(network_config);
 
-    /**< only one device, not reboot */
-    if (esp_mesh_get_routing_table_size() <= 1) {
-        return ESP_OK;
-    }
-
     esp_err_t ret                    = ESP_OK;
     size_t addr_size                 = 0;
     wifi_mesh_addr_t *dest_addrs     = NULL;
     int dest_addrs_num               = 0;
     char *reconfig_network_data      = mdf_calloc(1, WIFI_MESH_PACKET_MAX_SIZE);
     const char *reconfig_network_fmt = "{\"request\":\"set_network\",\"require_resp\":0,"
-                                       "\"delay\":3000,\"ssid\":\"%s\",\"password\":\"%s\","
+                                       "\"delay\":5000,\"ssid\":\"%s\",\"password\":\"%s\","
                                        "\"channel\":%d,\"mesh_id\":\"%02x%02x%02x%02x%02x%02x\"}";
     wifi_mesh_data_type_t data_type  = {
         .no_response = true,
@@ -139,26 +134,21 @@ esp_err_t mdf_device_init_config(uint16_t tid, const char name[32], const char v
 
     g_device_config = mdf_calloc(1, sizeof(device_config_t));
 
-    if (mdf_info_load("device_config", g_device_config, sizeof(device_config_t)) > 0) {
-        return ESP_OK;
+    if (mdf_info_load("device_name", g_device_config->name, sizeof(g_device_config->name)) < 0) {
+        ret = mdf_wifi_init();
+        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_init, ret: %x", ret);
+
+        uint8_t mac[6] = {0};
+        ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
+        snprintf(g_device_config->name, sizeof(g_device_config->name) - 1,
+                 "%s_%02x%02x%02x", name, mac[3], mac[4], mac[5]);
     }
 
-    ret = mdf_wifi_init();
-    MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_init, ret: %x", ret);
-
-    uint8_t mac[6] = {0};
-    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
-    snprintf(g_device_config->name, sizeof(g_device_config->name),
-             "%s_%02x%02x%02x", name, mac[3], mac[4], mac[5]);
-
     g_device_config->tid = tid;
-    strncpy(g_device_config->version, version, sizeof(g_device_config->version));
+    strncpy(g_device_config->version, version, sizeof(g_device_config->version) - 1);
 
     g_device_config->characteristics_num = 0;
     g_device_config->characteristics     = NULL;
-
-    ret = mdf_info_save("device_config", g_device_config, sizeof(device_config_t));
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
 
     return ESP_OK;
 }
@@ -169,22 +159,9 @@ esp_err_t mdf_device_set_name(const char name[32])
 
     esp_err_t ret = ESP_OK;
 
-    strncpy(g_device_config->name, name, sizeof(g_device_config->name));
+    strncpy(g_device_config->name, name, sizeof(g_device_config->name) - 1);
 
-    ret = mdf_info_save("device_config", g_device_config, sizeof(device_config_t));
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
-
-    return ESP_OK;
-}
-
-esp_err_t mdf_device_set_version(const char version[16])
-{
-    MDF_PARAM_CHECK(g_device_config);
-
-    esp_err_t ret = ESP_OK;
-
-    strncpy(g_device_config->version, version, sizeof(g_device_config->version));
-    ret = mdf_info_save("device_config", &g_device_config, sizeof(device_config_t));
+    ret = mdf_info_save("device_name", g_device_config->name, sizeof(g_device_config->name));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
 
     return ESP_OK;
@@ -360,6 +337,7 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     char ota_bin_version[64]     = {0};
     uint8_t *ota_progress_array  = NULL;
     ssize_t ota_package_num      = 0;
+    ssize_t ota_write_num        = 0;
     char *ota_progress_array_str = NULL;
     uint8_t loss_package_flag    = false;
 
@@ -375,25 +353,29 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     ret = mdf_upgrade_init(ota_bin_len, ota_package_len, ota_bin_version);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_upgrade_init, ret: %d", ret);
 
-    ret = mdf_upgrade_status(&ota_progress_array, &ota_package_num, &ota_package_len);
+    ret = mdf_upgrade_status(&ota_progress_array, &ota_write_num, &ota_package_num, &ota_package_len);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_ota_get_status, ret: %d", ret);
 
-    MDF_LOGD("ota_progress_array: %p, ota_package_num: %d, ota_bin_version: %s",
-             ota_progress_array, ota_package_num, ota_bin_version);
+    MDF_LOGD("ota_progress_array: %p, ota_package_num: %d, ota_bin_version: %s, ota_write_num: %d",
+             ota_progress_array, ota_package_num, ota_bin_version, ota_write_num);
 
     ota_progress_array_str = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE);
 
-    for (int i = 0; i < ota_package_num; ++i) {
-        if (ota_progress_array[i] == true) {
-            continue;
-        }
-
+    if (!ota_write_num) {
         loss_package_flag = true;
+        strcpy(ota_progress_array_str, "[0, -1]");
+    } else {
+        for (int i = 0; i < ota_package_num; ++i) {
+            if (ota_progress_array[i] == true) {
+                continue;
+            }
 
-        if (mdf_json_pack(ota_progress_array_str, "[]", i) > WIFI_MESH_PACKET_MAX_SIZE - 64) {
-            MDF_LOGV("ota_progress_array_str: %s", ota_progress_array_str);
-            strcpy(ota_progress_array_str, "[0, -1]");
-            break;
+            loss_package_flag = true;
+
+            if (mdf_json_pack(ota_progress_array_str, "[]", i) > WIFI_MESH_PACKET_MAX_SIZE - 64) {
+                MDF_LOGV("ota_progress_array_str: %s", ota_progress_array_str);
+                break;
+            }
         }
     }
 
@@ -463,8 +445,8 @@ static esp_err_t mdf_device_get_info(device_data_t *device_data)
                     "mdf_json_pack, device_data->response_size: %d", device_data->response_size);
 
     return ESP_OK;
-
 }
+
 static esp_err_t mdf_device_get_status(device_data_t *device_data)
 {
     MDF_ERROR_CHECK(!mdf_device_get_value, ESP_FAIL, "this device does not support get_status");
@@ -853,14 +835,14 @@ esp_err_t mdf_device_init_handle(mdf_event_loop_cb_t event_cb,
 
         ret = mdf_wifi_mesh_init(&mesh_config);
         MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_mesh_init, ret: %d", ret);
+
+        xTaskCreate(mdf_device_request_task, "mdf_device_request", 1024 * 3,
+                    NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
     }
 
     timer = xTimerCreate("mdf_show_sysinfo_timercb", 5000 / portTICK_RATE_MS,
                          true, NULL, mdf_show_sysinfo_timercb);
     xTimerStart(timer, 0);
-
-    xTaskCreate(mdf_device_request_task, "mdf_device_request", 4096,
-                NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 
     return ESP_OK;
 }

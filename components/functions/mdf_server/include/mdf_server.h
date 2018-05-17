@@ -45,15 +45,6 @@ extern "C" {
 esp_err_t mdf_server_init();
 
 /**
- * @brief  create a local connection
- *
- * @return
- *    - ESP_OK
- *    - ESP_FAIL
- */
-bool mdf_server_conn_is_runnig();
-
-/**
  * @brief  determine whether the connection is disconnected locally
  *
  * @return
@@ -69,7 +60,7 @@ esp_err_t mdf_server_deinit();
  *    - true
  *    - false
  */
-bool mdf_server_conn_is_runnig();
+bool mdf_server_conn_is_running();
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,7 @@ static const char *TAG                      = "mdf_network_config";
 static QueueHandle_t g_network_config_queue = NULL;
 static bool g_mdf_network_enable_auto_flag  = false;
 static bool g_mdf_network_enable_blufi_flag = false;
- /**< 'M', 'E', 'S', 'H', this is a fixed value used to determine the presence of a mesh device  */
+/**< 'M', 'E', 'S', 'H', this is a fixed value used to determine the presence of a mesh device  */
 static const uint8_t MDF_AUTO_NETWORK_OUI[] = { 0x45, 0x53, 0x50, 0x4D };
 
 static const void *g_auto_network_whitelist_lock      = NULL;
@@ -120,23 +120,6 @@ esp_err_t mdf_network_add_whitelist(const uint8_t *device_addr, uint32_t num)
     return ESP_OK;
 }
 
-esp_err_t mdf_network_add_whitelist_addrs(auto_network_addrs_t *network_addrs)
-{
-    MDF_PARAM_CHECK(network_addrs);
-
-    size_t network_whitelist_size = (sizeof(auto_network_addrs_t) + network_addrs->num * MDF_NETWORK_NETWORK_ADDR_SIZE);
-
-    auto_network_whitelist_lock();
-
-    mdf_free(g_auto_network_whitelist);
-    g_auto_network_whitelist = mdf_malloc(network_whitelist_size);
-    memcpy(g_auto_network_whitelist, network_addrs, network_whitelist_size);
-
-    auto_network_whitelist_unlock();
-
-    return ESP_OK;
-}
-
 bool mdf_auto_network_find_whitelist(const uint8_t *device_addr)
 {
     if (!g_auto_network_whitelist) {
@@ -181,7 +164,6 @@ esp_err_t mdf_network_delete_whitelist()
     return ESP_OK;
 }
 
-#ifdef MDF_USE_DEFAULT_NETWORK_CONFIG
 static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
 {
     MDF_PARAM_CHECK(ssid);
@@ -216,7 +198,6 @@ static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
     mdf_free(ap_info);
     return (*channel < 1 || *channel > 14) ? ESP_FAIL : ESP_OK;
 }
-#endif
 
 static esp_err_t mdf_ap_info_get(int8_t *rssi, uint8_t mac[6])
 {
@@ -318,8 +299,9 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
     for (;;) {
         if (xQueueReceive(g_network_config_queue, network_config, 0)) {
             MDF_LOGD("blufi network configured success");
+            /**< set ret to ESP_OK as return value */
             ret = ESP_OK;
-            break;
+            goto EXIT;
         }
 
         if (mdf_blufi_connecting_wifi()) {
@@ -357,7 +339,7 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
             continue;
         }
 
-#ifdef CONFIG_USE_DEFAULT_NETWORK_CONFIG
+#ifdef MDF_USE_NETWORK_WHITELIST
 
         size_t network_whitelist_size = sizeof(auto_network_addrs_t) + MDF_NETWORK_WHITELIST_MAX_NUM * MDF_NETWORK_NETWORK_ADDR_SIZE;
         auto_network_addrs_t *device_addr = mdf_calloc(1, network_whitelist_size);
@@ -372,14 +354,17 @@ static esp_err_t mdf_network_handle(network_config_t *network_config)
         if (ret <= 0 || ret != device_addr->num * MDF_NETWORK_NETWORK_ADDR_SIZE + sizeof(auto_network_addrs_t)) {
             MDF_LOGW("mdf_espnow_read auto network whitelist, ret: %d, device addr: " MACSTR,
                      ret, MAC2STR(device_addr->data));
-            mdf_free(device_addr);
         } else {
-            ret = mdf_network_add_whitelist_addrs(device_addr);
-            mdf_free(device_addr);
-            MDF_ERROR_CONTINUE(ret < 0, "mdf_network_add_whitelist, ret: %d", ret);
+            network_whitelist_size = sizeof(auto_network_addrs_t) + device_addr->num * MDF_NETWORK_NETWORK_ADDR_SIZE;
+
+            mdf_free(g_auto_network_whitelist);
+            g_auto_network_whitelist = mdf_malloc(network_whitelist_size);
+            memcpy(g_auto_network_whitelist, device_addr, network_whitelist_size);
         }
 
-#endif /**< CONFIG_USE_DEFAULT_NETWORK_CONFIG */
+        mdf_free(device_addr);
+
+#endif /**< MDF_USE_NETWORK_WHITELIST */
 
         ret = mdf_rsa_decrypt(response_data->data, (uint8_t *)privkey_pem,
                               network_config, sizeof(network_config_t));
@@ -399,7 +384,8 @@ EXIT:
     mdf_free(request_data);
     vQueueDelete(g_network_config_queue);
     g_network_config_queue = NULL;
-    return ret < 0 ? ESP_FAIL : ESP_OK;
+
+    return ret != ESP_OK ? ESP_FAIL : ESP_OK;
 }
 
 esp_err_t mdf_network_get_config(network_config_t *network_config)
@@ -417,7 +403,7 @@ esp_err_t mdf_network_get_config(network_config_t *network_config)
 
     strncpy(network_config->ssid, MDF_DEFAULT_ROUTER_SSID, MDF_SSID_LEN);
     strncpy(network_config->password, MDF_DEFAULT_ROUTER_PASSWD, MDF_PASSWD_LEN);
-    memcpy(network_config->mdf_id, MDF_DEFAULT_ID, NETWORK_NETWORK_ADDR_MAX_SIZE);
+    memcpy(network_config->mesh_id, MDF_DEFAULT_ID, NETWORK_NETWORK_ADDR_MAX_SIZE);
 
     if (mdf_channel_get(network_config->ssid, &network_config->channel) == ESP_OK) {
         mdf_blufi_mem_release();
@@ -493,7 +479,7 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+#ifdef MDF_USE_NETWORK_WHITELIST
 
         if (!mdf_auto_network_find_whitelist(source_addr)) {
             MDF_LOGW("this device("MACSTR") is not on the whitelist of the device configuration network device",
@@ -501,7 +487,7 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-#endif
+#endif /**< MDF_USE_NETWORK_WHITELIST */
 
         if (ret != sizeof(auto_network_data_t) + MDF_RSA_PUBKEY_PEM_DATA_SIZE) {
             MDF_LOGW("receive, size: %d, data:\n%s", ret, request_data->data);
@@ -530,7 +516,8 @@ static void mdf_auto_network_task(void *arg)
             continue;
         }
 
-#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+#ifdef MDF_USE_NETWORK_WHITELIST
+
         write_size                    = 0;
         size_t network_whitelist_size = sizeof(auto_network_addrs_t) + g_auto_network_whitelist->num * MDF_NETWORK_NETWORK_ADDR_SIZE;
 
@@ -550,7 +537,7 @@ static void mdf_auto_network_task(void *arg)
 
 #else
         ESP_ERROR_CHECK(mdf_espnow_del_peer(source_addr));
-#endif /**< CONFIG_MDF_USE_NETWORK_WHITELIST */
+#endif /**< MDF_USE_NETWORK_WHITELIST */
     }
 
     ESP_ERROR_CHECK(mdf_espnow_del_peer(WIFI_MESH_BROADCAST_ADDR));
@@ -570,13 +557,13 @@ EXIT:
 
 esp_err_t mdf_network_enable_auto(uint32_t timeout)
 {
-#ifdef CONFIG_MDF_USE_NETWORK_WHITELIST
+#ifdef MDF_USE_NETWORK_WHITELIST
 
     if (!g_auto_network_whitelist) {
         return ESP_OK;
     }
 
-#endif /**< CONFIG_MDF_USE_NETWORK_WHITELIST */
+#endif /**< MDF_USE_NETWORK_WHITELIST */
 
     if (!g_mdf_network_enable_auto_flag) {
         g_mdf_network_enable_auto_flag = true;
@@ -589,8 +576,9 @@ esp_err_t mdf_network_enable_auto(uint32_t timeout)
 
 static void mdf_blufi_network_task(void *arg)
 {
-    esp_err_t ret                   = ESP_OK;
-    network_config_t network_config = {0};
+    esp_err_t ret                       = ESP_OK;
+    network_config_t network_config     = {0};
+    network_config_t old_network_config = {0};
 
     vTaskDelay(10000 / portTICK_RATE_MS);
 
@@ -604,16 +592,44 @@ static void mdf_blufi_network_task(void *arg)
 
     MDF_LOGD("start blue network configured");
 
+    mdf_info_load(MDF_NETWORK_CONFIG_KEY, &old_network_config, sizeof(network_config_t));
+
     ret = mdf_blufi_init();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_init, ret: %d", ret);
 
-    while (!mdf_wifi_mesh_is_connect() && !mdf_blufi_mem_is_release()) {
-        if (xQueueReceive(g_network_config_queue, &network_config, 1000 / portTICK_RATE_MS)) {
+    esp_mesh_set_self_organized(false);
+
+    while (!mdf_wifi_mesh_is_connect()) {
+        /**< reconfig network */
+        if (xQueueReceive(g_network_config_queue, &network_config, 3000 / portTICK_RATE_MS)) {
+            ret = mdf_channel_get(network_config.ssid, &network_config.channel);
+            MDF_ERROR_CONTINUE(ret < 0, "mdf_channel_get, ret: %d", ret);
+
             ret = mdf_reconfig_network(&network_config);
             MDF_ERROR_CONTINUE(ret < 0, "mdf_reconfig_network, ret: %d", ret);
+
             break;
         }
+
+        /**< channel migration */
+        if (!mdf_blufi_connecting_wifi()) {
+            uint8_t channel = 0;
+            ret = mdf_channel_get(old_network_config.ssid, &channel);
+            MDF_ERROR_CONTINUE(ret < 0, "mdf_channel_get, ret: %d", ret);
+
+            if (channel != old_network_config.channel) {
+                old_network_config.channel = channel;
+                ret = mdf_reconfig_network(&old_network_config);
+                MDF_ERROR_CONTINUE(ret < 0, "mdf_reconfig_network, ret: %d", ret);
+
+                break;
+            } else {
+                esp_restart();
+            }
+        }
     }
+
+    esp_mesh_set_self_organized(true);
 
     ret = mdf_blufi_deinit();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_deinit, ret: %d", ret);
@@ -634,13 +650,15 @@ EXIT:
 
 esp_err_t mdf_network_enable_blufi()
 {
-    if (!g_mdf_network_enable_blufi_flag && !mdf_blufi_mem_is_release()) {
+    if (mdf_blufi_mem_is_release()) {
+        MDF_LOGW("blufi memory released, cannot enter blufi config mode rightnow");
+        return ESP_FAIL;
+    }
+
+    if (!g_mdf_network_enable_blufi_flag) {
         g_mdf_network_enable_blufi_flag = true;
         xTaskCreate(mdf_blufi_network_task, "mdf_blufi_network_task", 3 * 1024,
                     NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
-    } else {
-        MDF_LOGW("blufi memory released, cannot enter blufi config mode rightnow");
-        return ESP_FAIL;
     }
 
     return ESP_OK;

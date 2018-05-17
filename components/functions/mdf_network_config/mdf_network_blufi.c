@@ -109,11 +109,11 @@ static esp_ble_adv_data_t s_mdf_blufi_adv_data = {
     .flag                = 0x6,
 };
 
-static const char *TAG                         = "mdf_blufi_network_config";
+static const char *TAG                       = "mdf_blufi_network_config";
 static mdf_blufi_security_t *g_mdf_blufi_sec = NULL;
-static bool mdf_blufi_mem_release_flag        = false;
-static network_config_t g_network_config  = {0};
-static bool g_blufi_connecting_wifi            = false;
+static bool mdf_blufi_mem_release_flag       = false;
+static network_config_t g_network_config     = {0};
+static bool g_blufi_connecting_wifi          = false;
 
 static esp_err_t mdf_blufi_random(void *rng_state, uint8_t *output, size_t len)
 {
@@ -315,10 +315,11 @@ static esp_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
         case SYSTEM_EVENT_STA_CONNECTED:
             MDF_LOGI("wifi is connect");
 
+            esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
+
             g_network_config.channel = event->event_info.connected.channel;
             mdf_network_send_config(&g_network_config);
 
-            esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
             memset(&g_network_config, 0, sizeof(network_config_t));
             break;
 
@@ -447,21 +448,31 @@ static void mdf_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_pa
                 }
             }
 
-            wifi_config_t sta_config = {0};
+            /**< wifi mesh events conflicts with wifi event, unable to perform password verification */
+            if (mdf_wifi_mesh_is_running()) {
+                esp_blufi_extra_info_t info = {0};
+                esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
 
-            memcpy(sta_config.sta.ssid, g_network_config.ssid, strlen(g_network_config.ssid));
-            memcpy(sta_config.sta.password, g_network_config.password, strlen(g_network_config.password));
+                mdf_network_send_config(&g_network_config);
+            } else {
+                g_blufi_connecting_wifi = true;
 
-            ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_set_config, ret: %d", ret);
+                wifi_config_t sta_config = {0};
 
-            ret = esp_wifi_connect();
-            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_connect, ret: %d", ret);
+                memcpy(sta_config.sta.ssid, g_network_config.ssid, strlen(g_network_config.ssid));
+                memcpy(sta_config.sta.password, g_network_config.password, strlen(g_network_config.password));
 
-            g_blufi_connecting_wifi = true;
+                ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+                MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_set_config, ret: 0x%x", ret);
 
-            ret = mdf_event_loop_send(MDF_EVENT_CONNECT_ROUTER, NULL);
-            MDF_ERROR_BREAK(ret < 0, "mdf_event_loop_send, ret: %d", ret);
+                esp_event_loop_set_cb(blufi_wifi_event_handler, NULL);
+
+                ret = esp_wifi_connect();
+                MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_connect, ret: 0x%x", ret);
+
+                ret = mdf_event_loop_send(MDF_EVENT_CONNECT_ROUTER, NULL);
+                MDF_ERROR_BREAK(ret < 0, "mdf_event_loop_send, ret: %d", ret);
+            }
 
             break;
         }
@@ -490,7 +501,7 @@ static void mdf_blufi_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_ga
 
 esp_err_t mdf_blufi_init()
 {
-    esp_err_t ret                    = ESP_OK;
+    esp_err_t ret                     = ESP_OK;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     static esp_blufi_callbacks_t mdf_blufi_callbacks = {
         .event_cb               = mdf_blufi_event_callback,
@@ -499,8 +510,6 @@ esp_err_t mdf_blufi_init()
         .decrypt_func           = mdf_blufi_aes_decrypt,
         .checksum_func          = mdf_blufi_crc_checksum,
     };
-
-    esp_event_loop_set_cb(blufi_wifi_event_handler, NULL);
 
     ret = esp_bt_controller_init(&bt_cfg);
     MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "initialize bt controller, ret: %d", ret);

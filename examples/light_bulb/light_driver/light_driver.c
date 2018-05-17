@@ -391,7 +391,7 @@ esp_err_t light_set_switch(uint8_t on)
 
             case MODE_CTB:
                 g_light_status.brightness = (g_light_status.brightness) ? g_light_status.brightness : 100;
-                ret = light_set_ctb(g_light_status.brightness, g_light_status.color_temperature);
+                ret = light_set_ctb(g_light_status.color_temperature, g_light_status.brightness);
                 MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "light_set_ctb, ret: %d", ret);
                 break;
 
@@ -432,7 +432,7 @@ esp_err_t light_set(const light_status_t *light_status)
             break;
 
         case MODE_CTB:
-            ret = light_set_ctb(light_status->brightness, light_status->color_temperature);
+            ret = light_set_ctb(light_status->color_temperature, light_status->brightness);
             MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "light_set_ctb, ret: %d", ret);
             break;
 

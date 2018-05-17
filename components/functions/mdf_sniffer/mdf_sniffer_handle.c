@@ -184,7 +184,7 @@ esp_err_t mdf_sniffer_get_str(char *device_info)
     device_info[0] = '\0';
 
     if (!g_sniffer_list || !g_sniffer_list->next) {
-        MDF_LOGV("sniffer data")
+        MDF_LOGV("sniffer data");
         return ESP_OK;
     }
 

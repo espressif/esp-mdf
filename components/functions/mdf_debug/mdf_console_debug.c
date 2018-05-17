@@ -31,6 +31,7 @@
 #include "argtable3/argtable3.h"
 #include "esp_vfs_fat.h"
 
+#include "mdf_common.h"
 #include "mdf_console_debug.h"
 
 #ifdef CONFIG_MDF_CONSOLE_DEBUG
