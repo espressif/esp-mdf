@@ -224,10 +224,10 @@ mdf_running_mode_t mdf_get_running_mode()
     mdf_running_mode_t mode = 0;
 
     if (mdf_info_load(MDF_RUNNING_MODE_KEY, &mode, sizeof(mdf_running_mode_t)) < 0) {
-        return POWER_ACTIVE | TRANS_WIFI_MESH;
+        mode = POWER_ACTIVE | TRANS_WIFI_MESH;
     }
 
-    return ESP_OK;
+    return mode;
 }
 
 esp_err_t mdf_set_running_mode(mdf_running_mode_t mode)
@@ -251,10 +251,10 @@ esp_err_t mdf_set_running_mode(mdf_running_mode_t mode)
 
 static void mdf_low_power_task(void *arg)
 {
-    esp_err_t ret                      = ESP_OK;
+    esp_err_t ret                 = ESP_OK;
     low_power_data_t *espnow_data = mdf_malloc(ESP_NOW_MAX_DATA_LEN);
-    uint8_t source_addr[6]  = {0};
-    wifi_mesh_data_type_t type         = {
+    uint8_t source_addr[6]        = {0};
+    wifi_mesh_data_type_t type    = {
         .no_response = true,
         .proto       = MDF_PROTO_JSON,
     };
@@ -280,24 +280,17 @@ static void mdf_low_power_task(void *arg)
 
 static esp_err_t mdf_low_power_recv()
 {
-    esp_err_t ret                = ESP_OK;
     low_power_addr_t device_addr = {0};
 
-    ret = mdf_info_load("child_addr", &device_addr, sizeof(low_power_addr_t));
-
-    if (ret <= 0 || device_addr.num > ESP_NOW_MAX_ENCRYPT_PEER_NUM || device_addr.num == 0) {
-        MDF_LOGD("no need to add espnow device");
-        return ESP_OK;
-    }
+    mdf_info_load("child_addr", &device_addr, sizeof(low_power_addr_t));
 
     for (int i = 0; i < device_addr.num; ++i) {
         MDF_LOGI("addr espnow device: "MACSTR, MAC2STR((uint8_t *)(device_addr.addr + i)));
         mdf_espnow_add_peer_default_encrypt((uint8_t *)(device_addr.addr + i));
     }
 
-    xTaskCreate(mdf_low_power_task, "mdf_low_power_task", 1024 * 2,
+    xTaskCreate(mdf_low_power_task, "mdf_low_power_task", 1024 * 3,
                 NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
-
 
     return ESP_OK;
 }

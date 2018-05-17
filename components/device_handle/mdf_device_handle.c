@@ -835,14 +835,14 @@ esp_err_t mdf_device_init_handle(mdf_event_loop_cb_t event_cb,
 
         ret = mdf_wifi_mesh_init(&mesh_config);
         MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_mesh_init, ret: %d", ret);
+
+        xTaskCreate(mdf_device_request_task, "mdf_device_request", 1024 * 3,
+                    NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
     }
 
     timer = xTimerCreate("mdf_show_sysinfo_timercb", 5000 / portTICK_RATE_MS,
                          true, NULL, mdf_show_sysinfo_timercb);
     xTimerStart(timer, 0);
-
-    xTaskCreate(mdf_device_request_task, "mdf_device_request", 4096,
-                NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 
     return ESP_OK;
 }

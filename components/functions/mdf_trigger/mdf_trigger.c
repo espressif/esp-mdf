@@ -294,7 +294,6 @@ static esp_err_t mdf_trigger_handle(trigger_device_t *event)
     char **execute_mac_json       = NULL;
     wifi_mesh_addr_t execute_addr = {0};
     int execute_addr_num          = 0;
-    mdf_running_mode_t mode       = 0;
     wifi_mesh_data_type_t type    = {
         .proto = MDF_PROTO_JSON,
     };
@@ -360,13 +359,10 @@ static esp_err_t mdf_trigger_handle(trigger_device_t *event)
     execute_addr_num = mdf_json_parse(event->raw_data, "execute_mac", execute_mac_json);
     MDF_ERROR_GOTO(execute_addr_num <= 0, EXIT, "mdf_json_parse, ret: %d", ret);
 
-    ret = mdf_get_running_mode(&mode);
-    MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_get_running_mode, ret: %d", ret);
-
     for (int i = 0; i < execute_addr_num; ++i) {
         str2mac(execute_mac_json[i], execute_addr.mac);
 
-        if (mode & TRANS_ESPNOW) {
+        if (mdf_get_running_mode() & TRANS_ESPNOW) {
             ret = mdf_low_power_send(&execute_addr, event->execute_content, strlen(event->execute_content));
             MDF_ERROR_GOTO(ret < 0, EXIT, "espnow_control_send, ret: %d", ret);
         } else {
