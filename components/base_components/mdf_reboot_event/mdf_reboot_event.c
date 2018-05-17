@@ -239,8 +239,6 @@ static esp_err_t mdf_reboot_handle()
             ret = mdf_event_loop_send(MDF_EVENT_NETWORK_START_CONFIG, NULL);
             MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, MDF_EVENT_NETWORK_START_CONFIG");
 
-            vTaskDelay(REBOOT_TRIGGER_WAIT_MS / portTICK_RATE_MS);
-            mdf_info_erase(REBOOT_NUM_KEY);
             mdf_network_clear_config();
 
             return ESP_OK;
