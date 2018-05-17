@@ -95,18 +95,13 @@ esp_err_t mdf_reconfig_network(network_config_t *network_config)
 {
     MDF_PARAM_CHECK(network_config);
 
-    /**< only one device, not reboot */
-    if (esp_mesh_get_routing_table_size() <= 1) {
-        return ESP_OK;
-    }
-
     esp_err_t ret                    = ESP_OK;
     size_t addr_size                 = 0;
     wifi_mesh_addr_t *dest_addrs     = NULL;
     int dest_addrs_num               = 0;
     char *reconfig_network_data      = mdf_calloc(1, WIFI_MESH_PACKET_MAX_SIZE);
     const char *reconfig_network_fmt = "{\"request\":\"set_network\",\"require_resp\":0,"
-                                       "\"delay\":3000,\"ssid\":\"%s\",\"password\":\"%s\","
+                                       "\"delay\":5000,\"ssid\":\"%s\",\"password\":\"%s\","
                                        "\"channel\":%d,\"mesh_id\":\"%02x%02x%02x%02x%02x%02x\"}";
     wifi_mesh_data_type_t data_type  = {
         .no_response = true,

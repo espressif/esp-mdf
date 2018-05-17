@@ -35,6 +35,7 @@
 static const char *TAG                      = "mdf_wifi_mesh";
 static bool wifi_mesh_connect_flag          = false;
 static void *g_wifi_mesh_send_lock          = NULL;
+static bool g_wifi_mesh_running_flag        = false;
 
 const uint8_t WIFI_MESH_MULTICAST_ADDR[]    = {0x01, 0x00, 0x5E, 0x00, 0x00, 0x00};
 const uint8_t WIFI_MESH_BROADCAST_ADDR[]    = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -151,6 +152,11 @@ static void esp_mesh_event_cb(mesh_event_t event)
     MDF_ERROR_CHECK(ret < 0, ; , "mdf_event_loop_send, ret: %d", ret);
 }
 
+bool mdf_wifi_mesh_is_running()
+{
+    return g_wifi_mesh_running_flag;
+}
+
 bool mdf_wifi_mesh_is_connect()
 {
     return wifi_mesh_connect_flag;
@@ -168,7 +174,7 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
     };
 
     /* mesh event callback */
-    mesh_config.event_cb = &esp_mesh_event_cb;
+    mesh_config.event_cb               = &esp_mesh_event_cb;
     mesh_config.channel                = config->channel;
     mesh_config.router.ssid_len        = strlen(config->ssid);
     mesh_config.mesh_ap.max_connection = WIFI_MESH_AP_CONNECTIONS;
@@ -190,6 +196,8 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
     ESP_ERROR_CHECK(esp_mesh_allow_root_conflicts(false));
     ESP_ERROR_CHECK(esp_mesh_start());
 
+    g_wifi_mesh_running_flag = true;
+
     return ESP_OK;
 }
 
@@ -201,6 +209,8 @@ esp_err_t mdf_wifi_mesh_deinit()
 
     vSemaphoreDelete(g_wifi_mesh_send_lock);
     g_wifi_mesh_send_lock = NULL;
+
+    g_wifi_mesh_running_flag = false;
 
     return ESP_OK;
 }

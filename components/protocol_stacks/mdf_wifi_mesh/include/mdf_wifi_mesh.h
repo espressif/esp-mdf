@@ -207,6 +207,15 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config);
 esp_err_t mdf_wifi_mesh_deinit(void);
 
 /**
+ * @brief  wether wifi_mesh is running
+ *
+ * @return
+ *    - true
+ *    - flase
+ */
+bool mdf_wifi_mesh_is_running(void);
+
+/**
  * @brief  wether wifi_mesh is disconnected
  *
  * @return
