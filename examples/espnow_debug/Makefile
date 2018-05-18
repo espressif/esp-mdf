@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := mdf_debug
+PROJECT_NAME := espnow_debug
 EXTRA_COMPONENT_DIRS := $(shell pwd)/components
 
 include $(MDF_PATH)/project.mk

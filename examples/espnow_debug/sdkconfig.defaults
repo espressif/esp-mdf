@@ -1,4 +1,4 @@
-# Override some defaults in mesh application project.
+# Override some defaults in mdf project.
 
 #
 # Bootloader config
@@ -6,6 +6,12 @@
 CONFIG_LOG_BOOTLOADER_LEVEL_WARN=y
 CONFIG_LOG_BOOTLOADER_LEVEL_INFO=
 CONFIG_LOG_BOOTLOADER_LEVEL=2
+
+#
+# Serial flasher config
+#
+CONFIG_ESPTOOLPY_FLASHSIZE_2MB=
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 #
 # Partition Table
