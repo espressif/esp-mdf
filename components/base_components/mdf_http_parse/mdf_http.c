@@ -325,15 +325,13 @@ char *__http_get_url_query(const char *url, char *url_query)
     return (char *)url_query_ptr;
 }
 
-esp_err_t mdf_http_set_request_line(char *http_buf, enum mdf_http_method method,
+int mdf_http_set_request_line(char *http_buf, enum mdf_http_method method,
                                     const char *url)
 {
     MDF_PARAM_CHECK(http_buf);
     MDF_PARAM_CHECK(url);
 
-    sprintf(http_buf, REQUEST_LINE_FORMAT, http_method_str(method), url);
-
-    return ESP_OK;
+    return sprintf(http_buf, REQUEST_LINE_FORMAT, http_method_str(method), url);
 }
 
 esp_err_t mdf_http_set_response_status(char *http_buf, uint16_t status)
@@ -354,7 +352,6 @@ esp_err_t __http_set_header(char *http_buf, const char *field, const void *value
 {
     MDF_PARAM_CHECK(http_buf);
     MDF_PARAM_CHECK(field);
-    MDF_PARAM_CHECK(value);
 
     http_buf += strlen(http_buf);
 

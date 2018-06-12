@@ -150,10 +150,9 @@ char *__http_get_url_query(const char *http_url, char *url_query);
  * @param  url      Uniform Resource Identifier
  *
  * @return
- *     - ESP_OK
- *     - ESP_FAIL
+ *     - size of http request line
  */
-esp_err_t mdf_http_set_request_line(char *http_buf, enum mdf_http_method method, const char *url);
+int mdf_http_set_request_line(char *http_buf, enum mdf_http_method method, const char *url);
 
 /**
  * @brief  add response state line data to the HTTP format data
