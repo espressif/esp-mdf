@@ -318,6 +318,7 @@ static esp_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
             esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
 
             g_network_config.channel = event->event_info.connected.channel;
+            memcpy(g_network_config.bssid, event->event_info.connected.bssid, MDF_ETH_ALEN);
             mdf_network_send_config(&g_network_config);
 
             memset(&g_network_config, 0, sizeof(network_config_t));
