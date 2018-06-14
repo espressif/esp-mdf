@@ -59,20 +59,6 @@ static bool mdf_wifi_mesh_send_unlock()
     return xSemaphoreGive(g_wifi_mesh_send_lock);
 }
 
-static void mdf_tcpip_adapter_dhcpc()
-{
-    static bool s_is_dhcp_stopped = false;
-
-    if (esp_mesh_is_root() && s_is_dhcp_stopped) {
-        tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
-        s_is_dhcp_stopped = false;
-    } else if (!esp_mesh_is_root() && !s_is_dhcp_stopped) {
-        tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
-        tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
-        s_is_dhcp_stopped = true;
-    }
-}
-
 static void esp_mesh_event_cb(mesh_event_t event)
 {
     esp_err_t ret = 0;
@@ -82,7 +68,12 @@ static void esp_mesh_event_cb(mesh_event_t event)
         case MESH_EVENT_PARENT_CONNECTED:
             MDF_LOGI("wifi connected");
             wifi_mesh_connect_flag = true;
-            mdf_tcpip_adapter_dhcpc();
+
+            if (esp_mesh_is_root()) {
+                tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+            } else {
+                tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+            }
             break;
 
         case MESH_EVENT_PARENT_DISCONNECTED: {

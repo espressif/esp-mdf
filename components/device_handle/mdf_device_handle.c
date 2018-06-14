@@ -79,10 +79,15 @@ static esp_err_t mdf_wifi_init()
         wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
         tcpip_adapter_init();
+        tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+        tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
+
         ESP_ERROR_CHECK(esp_event_loop_init(NULL, NULL));
         ESP_ERROR_CHECK(esp_wifi_init(&cfg));
         ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+
+        ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
         ESP_ERROR_CHECK(esp_wifi_start());
 
         mdf_wifi_init_flag = true;
