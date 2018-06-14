@@ -164,7 +164,7 @@ esp_err_t mdf_network_delete_whitelist()
     return ESP_OK;
 }
 
-static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
+static esp_err_t mdf_channel_get(const char *ssid, uint8_t *channel)
 {
     MDF_PARAM_CHECK(ssid);
     MDF_PARAM_CHECK(channel);
@@ -172,6 +172,7 @@ static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
     esp_err_t ret                  = ESP_OK;
     uint16_t wifi_ap_num           = 0;
     wifi_ap_record_t *ap_info      = NULL;
+    int8_t max_rssi                = -127;
     wifi_scan_config_t scan_config = {
         .ssid = (uint8_t *)ssid,
     };
@@ -190,10 +191,15 @@ static esp_err_t mdf_channel_get(char *ssid, uint8_t *channel)
     ap_info = (wifi_ap_record_t *)mdf_malloc(sizeof(wifi_ap_record_t) * wifi_ap_num);
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&wifi_ap_num, ap_info));
 
-    MDF_LOGD("esp_wifi_scan_get_ap_records, num: %d, channel: %d",
-             wifi_ap_num, ap_info[0].primary);
+    for (int i = 0; i < wifi_ap_num; ++i) {
+        if (ap_info[i].rssi >= max_rssi) {
+            max_rssi = ap_info[i].rssi;
+            *channel = ap_info[i].primary;
+        }
+    }
 
-    *channel = ap_info[0].primary;
+    MDF_LOGD("esp_wifi_scan_get_ap_records, num: %d, channel: %d",
+             wifi_ap_num, *channel);
 
     mdf_free(ap_info);
     return (*channel < 1 || *channel > 14) ? ESP_FAIL : ESP_OK;
