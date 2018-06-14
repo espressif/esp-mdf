@@ -108,10 +108,10 @@ static void mdf_server_init_task(void *arg)
                     MDF_TASK_DEFAULT_PRIOTY, &g_http_response_task_handle);
     }
 
-    xTaskCreate(mdf_notice_udp_client_task, "mdf_udp_client", 2560, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
+    xTaskCreate(mdf_notice_udp_client_task, "mdf_udp_client", 1024 * 3, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 
 #ifdef MDF_USE_UDP_SERVER
-    xTaskCreate(mdf_notice_udp_server_task, "mdf_udp_server", 1024 * 2, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
+    xTaskCreate(mdf_notice_udp_server_task, "mdf_udp_server", 1024 * 3, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
 #endif
 
     vTaskDelete(NULL);

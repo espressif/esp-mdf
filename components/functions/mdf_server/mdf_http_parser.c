@@ -121,9 +121,10 @@ static esp_err_t mdf_device_request(server_http_connect_t *conn)
                    "mdf_http_header_parse, conn->http_head: %s", conn->http_head);
 
     if (conn->type.no_response) {
-        char *response_buf = conn->http_head;
+        char *response_buf      = conn->http_head;
+        const char *status_code = "{\"status_code\":0}";
         ret = mdf_http_set_response_status(response_buf, 200);
-        ssize_t response_size = mdf_http_set_body(response_buf, NULL, 0);
+        ssize_t response_size = mdf_http_set_body(response_buf, status_code, strlen(status_code));
 
         MDF_LOGD("http response, sockfd: %d, size: %d, data: \n%s",
                  conn->sockfd, response_size, response_buf);
@@ -162,6 +163,7 @@ static esp_err_t mdf_get_device_mac(server_http_connect_t *conn)
     char *mdf_note_mac     = conn->http_head;
     int mdf_node_num       = 0;
     char *mdf_note_mac_str = NULL;
+    const char *status_code = "{\"status_code\":0}";
 
     ret = esp_mesh_get_routing_table((mesh_addr_t *)mdf_note_mac, MDF_CONNECT_BUF_SIZE, &mdf_node_num);
     MDF_ERROR_GOTO(ret < 0, EXIT, "esp_mesh_get_routing_table, ret: %d", ret);
@@ -183,7 +185,7 @@ static esp_err_t mdf_get_device_mac(server_http_connect_t *conn)
     ret = mdf_http_set_header(response, "Mesh-Node-Mac", mdf_note_mac_str);
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_http_set_header, ret: %d", ret);
 
-    response_size = mdf_http_set_body(response, NULL, 0);
+    response_size = mdf_http_set_body(response, status_code, strlen(status_code));
     MDF_ERROR_GOTO(response_size <= 0, EXIT, "mdf_http_set_body, ret: %d", ret);
 
     MDF_LOGD("http response, size: %d, data: \n%s", response_size, response);
@@ -231,17 +233,18 @@ static esp_err_t mdf_root_ota_init(server_http_connect_t *conn)
     conn->dest_addrs         = NULL;
     ota_conn->ota_packet_size = packet_size;
 
-    response_status =  200;
+    response_status = 200;
 
 ERR_EXIT:
 
     do {
-        char *response_buf = conn->http_head;
+        char *response_buf      = conn->http_head;
+        const char *status_code = "{\"status_code\":0}";
 
         ret = mdf_http_set_response_status(response_buf, response_status);
         MDF_ERROR_BREAK(ret < 0, "mdf_http_set_response_status, ret: %d", ret);
 
-        response_size = mdf_http_set_body(response_buf, NULL, 0);
+        response_size = mdf_http_set_body(response_buf, status_code, strlen(status_code));
         MDF_ERROR_BREAK(ret < 0, "mdf_http_set_body, ret: %d", ret);
 
         MDF_LOGD("http response, sockfd: %d, size: %d, data: \n%s",
@@ -296,7 +299,7 @@ esp_err_t mdf_server_request_parser(server_http_connect_t *conn)
 
 #endif
         char *http_url = mdf_http_get_request_line(conn->http_head);
-        MDF_ERROR_CHECK(!http_url, ESP_FAIL , "http_url: %p", http_url);
+        MDF_ERROR_CHECK(!http_url, ESP_FAIL, "http_url: %p", http_url);
 
         for (int i = 0; g_reqest_handle_list[i].func; i++) {
             if (strncmp(http_url, g_reqest_handle_list[i].url,
@@ -357,7 +360,6 @@ esp_err_t mdf_http_upgrade_parser(server_http_connect_t *conn)
     do {
         if (memcmp(conn->http_head, s_ota_data_tag, sizeof(s_ota_data_tag))) {
             MDF_LOGW("ota tcp recv finish, sockfd: %d", conn->sockfd);
-            mdf_socket_fflush(conn->sockfd);
 
             ret = mdf_server_conn_send(conn, (void *)s_ota_finish_tag, sizeof(s_ota_finish_tag));
             MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_server_conn_send, ret: %d", ret);
@@ -369,7 +371,7 @@ esp_err_t mdf_http_upgrade_parser(server_http_connect_t *conn)
 
             ret = mdf_wifi_mesh_root_send(&conn->src_addr, conn->dest_addrs + i, &conn->type,
                                           conn->http_head, conn->ota_packet_size);
-            MDF_ERROR_CONTINUE(ret <= 0, "mdf_wifi_mesh_root_send, ret: %d", ret);
+            MDF_ERROR_CONTINUE(ret <= 0, "mdf_wifi_mesh_root_send, ret: %x", ret);
         }
 
         conn->http_size -= conn->ota_packet_size;
