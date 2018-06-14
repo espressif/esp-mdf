@@ -824,13 +824,15 @@ esp_err_t mdf_device_init_handle(mdf_event_loop_cb_t event_cb,
     if (mdf_get_running_mode() & TRANS_WIFI_MESH) {
         ret = mdf_network_get_config(&network_config);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_get_network_config, ret: %d", ret);
-        MDF_LOGD("ssid: %s, password: %s", network_config.ssid, network_config.password);
+        MDF_LOGD("ssid: %s, password: %s, bssid: "MACSTR,
+                 network_config.ssid, network_config.password, MAC2STR(network_config.bssid));
         MDF_LOGD("mesh channel: %d, mesh_id: "MACSTR,
                  network_config.channel, MAC2STR(network_config.mesh_id));
 
         mesh_config.channel = network_config.channel;
         strncpy(mesh_config.ssid, network_config.ssid, sizeof(mesh_config.ssid));
         strncpy(mesh_config.password, network_config.password, sizeof(mesh_config.password));
+        memcpy(mesh_config.bssid, network_config.bssid, sizeof(mesh_config.bssid));
         memcpy(&mesh_config.mesh_id, network_config.mesh_id, sizeof(mesh_config.mesh_id));
 
         ret = mdf_wifi_mesh_init(&mesh_config);

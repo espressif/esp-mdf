@@ -179,6 +179,7 @@ extern const uint8_t WIFI_MESH_ROOT_DEFAULT_ADDR[];
 typedef struct {
     char ssid[32];              /**< ssid */
     char password[64];          /**< password */
+    uint8_t bssid[6];           /**< bssid */
     uint8_t channel;            /**< channel, the mesh network on */
     wifi_mesh_addr_t mesh_id;   /**< mesh network identification */
 } wifi_mesh_config_t;

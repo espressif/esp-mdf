@@ -180,6 +180,7 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
     mesh_config.mesh_ap.max_connection = WIFI_MESH_AP_CONNECTIONS;
 
     memcpy(mesh_config.router.ssid, config->ssid, mesh_config.router.ssid_len);
+    memcpy(mesh_config.router.bssid, config->bssid, sizeof(mesh_config.router.bssid));
     memcpy(mesh_config.router.password, config->password, strlen(config->password));
     memcpy(mesh_config.mesh_id.addr, config->mesh_id.mac, 6);
     memcpy(mesh_config.mesh_ap.password, mesh_config.router.password,
