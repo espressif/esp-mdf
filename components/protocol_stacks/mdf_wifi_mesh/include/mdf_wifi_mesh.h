@@ -80,6 +80,7 @@ typedef union {
         uint32_t ota         : 1; /**< data content is upgrade data */
         uint32_t notice      : 1; /**< notification */
         uint32_t proto       : 2; /**< protocol of transmitted application data */
+        uint32_t layer       : 8; /**< layer value in mesh network */
     };
     uint32_t val;                 /**< collective of all device types */
 } wifi_mesh_data_type_t;

@@ -338,6 +338,10 @@ ssize_t mdf_http_response_create(char *http_response, const wifi_mesh_data_type_
     ret = mdf_http_set_header(http_response, "Mesh-Node-Mac", mac_str);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_http_set_header, ret: %d", ret);
 
+    uint32_t layer = type->layer;
+    ret = mdf_http_set_header(http_response, "Mesh-Layer", layer);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_http_set_header, ret: %d", ret);
+
     http_response_size = mdf_http_set_body(http_response, (char *)data, size);
     MDF_ERROR_CHECK(http_response_size < 0, ESP_FAIL, "mdf_http_set_header, ret: %d", ret);
 
