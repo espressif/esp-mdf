@@ -42,6 +42,8 @@ const uint8_t WIFI_MESH_BROADCAST_ADDR[]    = {0xff, 0xff, 0xff, 0xff, 0xff, 0xf
 const uint8_t WIFI_MESH_ROOT_DEFAULT_ADDR[] = {0x00, 0x00, 0xc0, 0xa8, 0x00, 0x00};
 
 #define WIFI_MESH_ASSOC_EXPIRE_NUM   (30)
+#define WIFI_MESH_SEND_RETRY_NUM     (5)
+
 static bool mdf_wifi_mesh_send_lock()
 {
     if (!g_wifi_mesh_send_lock) {
@@ -250,7 +252,12 @@ ssize_t mdf_wifi_mesh_send(const wifi_mesh_addr_t *dest_addr, const wifi_mesh_da
                  mesh_data.size, mesh_head_data.seq, data_type->val, mesh_data.data);
 
         mdf_wifi_mesh_send_lock();
-        ret = esp_mesh_send((mesh_addr_t *)dest_addr, &mesh_data, mesh_flag, &mesh_opt, 1);
+        int retry_count = WIFI_MESH_SEND_RETRY_NUM;
+
+        do {
+            ret = esp_mesh_send((mesh_addr_t *)dest_addr, &mesh_data, mesh_flag, &mesh_opt, 1);
+        } while (ret != ESP_OK && --retry_count > 0);
+
         mdf_wifi_mesh_send_unlock();
         MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL,
                         "esp_mesh_send, ret: %x dest_mac:"MACSTR", size:%d, data: %s",
@@ -370,7 +377,12 @@ ssize_t mdf_wifi_mesh_root_send(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
         }
 
         mdf_wifi_mesh_send_lock();
-        ret = esp_mesh_send((mesh_addr_t *)dest_addr, &mesh_data, mesh_flag, &mesh_opt, 1);
+        int retry_count = WIFI_MESH_SEND_RETRY_NUM;
+
+        do {
+            ret = esp_mesh_send((mesh_addr_t *)dest_addr, &mesh_data, mesh_flag, &mesh_opt, 1);
+        } while (ret != ESP_OK && --retry_count > 0);
+
         mdf_wifi_mesh_send_unlock();
         MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "esp_mesh_send, ret: %x dest_mac:"MACSTR", size:%d, data: %s",
                         ret, MAC2STR(dest_addr->mac), mesh_data.size, mesh_data.data);
