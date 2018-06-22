@@ -70,7 +70,7 @@ static const uint8_t MDF_DEFAULT_ID[6] = {0x19, 0xfe, 0x34, 0x32, 0x12, 0x1d};
 
 #define MDF_SSID_LEN                   32
 #define MDF_PASSWD_LEN                 32
-#define MDF_TOKEN_LEN                  (40 + 1)
+#define MDF_TOKEN_LEN                  35
 #define MDF_NETWORK_CONFIG_KEY         "mdf_network"
 
 /**
@@ -79,10 +79,10 @@ static const uint8_t MDF_DEFAULT_ID[6] = {0x19, 0xfe, 0x34, 0x32, 0x12, 0x1d};
 typedef struct {
     char ssid[MDF_SSID_LEN];        /**< ssid */
     char password[MDF_PASSWD_LEN];  /**< password */
-    uint8_t bssid[6];               /**< bssid */
     uint8_t channel;                /**< channel, the mesh network on */
     uint8_t mesh_id[6];             /**< mesh network identification */
     uint8_t token[MDF_TOKEN_LEN];   /**< For certification */
+    uint8_t bssid[6];               /**< bssid */
 } network_config_t;
 
 /**
