@@ -295,7 +295,7 @@ ssize_t mdf_wifi_mesh_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_data_type_t *da
         left_time_ms   = (timeout_ms != portMAX_DELAY) ?
                          timeout_ms - (xTaskGetTickCount() - start_tick) * portTICK_RATE_MS :
                          portMAX_DELAY;
-        MDF_ERROR_BREAK(left_time_ms < 0, "recv timeout");
+        MDF_ERROR_BREAK(left_time_ms != portMAX_DELAY && left_time_ms < 0, "recv timeout");
 
         ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, left_time_ms,
                             &mesh_flag, &mesh_opt, 1);
@@ -431,7 +431,7 @@ ssize_t mdf_wifi_mesh_root_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
         left_time_ms   = (timeout_ms != portMAX_DELAY) ?
                          timeout_ms - (xTaskGetTickCount() - start_tick) * portTICK_RATE_MS :
                          portMAX_DELAY;
-        MDF_ERROR_BREAK(left_time_ms < 0, "recv timeout");
+        MDF_ERROR_BREAK(left_time_ms != portMAX_DELAY && left_time_ms < 0, "recv timeout");
 
         ret = esp_mesh_recv_toDS((mesh_addr_t *)src_addr, (mesh_addr_t *)dest_addr,
                                  &mesh_data, left_time_ms, &mesh_flag, &mesh_opt, 1);
