@@ -125,7 +125,7 @@ esp_err_t mdf_notice_udp_send(notice_type_t notice, const uint8_t *addr)
     memcpy(q_data->mac, addr, 6);
 
     if (!xQueueSend(g_notice_queue, &q_data, 0)) {
-        MDF_LOGW("mdf_notice_udp_send, notice: 0x%x, mac: "MACSTR, notice, MAC2STR(addr));
+        MDF_LOGW("xQueueSend, notice: 0x%x, mac: "MACSTR, notice, MAC2STR(addr));
         mdf_free(q_data);
         return ESP_FAIL;
     }

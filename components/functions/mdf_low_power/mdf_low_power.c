@@ -100,7 +100,7 @@ esp_err_t mdf_low_power_get_parent(wifi_mesh_addr_t *parent_addr)
         memcpy(parent_addr, sta_list.sta[0].mac, 6);
     } else {
         ESP_ERROR_CHECK(esp_mesh_get_parent_bssid((mesh_addr_t *)parent_addr));
-        *((int *)(parent_addr + 2)) = htonl(htonl(*((int *)(parent_addr + 2))) - 1);
+        ADDR_AP2STA(parent_addr->mac);
     }
 
     ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));

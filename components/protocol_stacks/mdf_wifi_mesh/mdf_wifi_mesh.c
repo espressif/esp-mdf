@@ -41,6 +41,7 @@ const uint8_t WIFI_MESH_MULTICAST_ADDR[]    = {0x01, 0x00, 0x5E, 0x00, 0x00, 0x0
 const uint8_t WIFI_MESH_BROADCAST_ADDR[]    = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 const uint8_t WIFI_MESH_ROOT_DEFAULT_ADDR[] = {0x00, 0x00, 0xc0, 0xa8, 0x00, 0x00};
 
+#define WIFI_MESH_ASSOC_EXPIRE_NUM   (30)
 static bool mdf_wifi_mesh_send_lock()
 {
     if (!g_wifi_mesh_send_lock) {
@@ -62,6 +63,7 @@ static bool mdf_wifi_mesh_send_unlock()
 static void esp_mesh_event_cb(mesh_event_t event)
 {
     esp_err_t ret = 0;
+    static int reason2_count = 0;
     MDF_LOGI("esp_mesh_event_cb event.id: %d", event.id);
 
     switch (event.id) {
@@ -74,14 +76,13 @@ static void esp_mesh_event_cb(mesh_event_t event)
             } else {
                 tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
             }
+
             break;
 
         case MESH_EVENT_PARENT_DISCONNECTED: {
-
-            MDF_LOGI("wifi disconnected");
             wifi_mesh_connect_flag = false;
-
             mesh_event_disconnected_t *disconnected = &event.info.disconnected;
+            MDF_LOGI("wifi disconnected, reason: %d", disconnected->reason);
 
             switch (disconnected->reason) {
                 /**< pwd err */
@@ -89,6 +90,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
                 case WIFI_REASON_MIC_FAILURE:
                 case WIFI_REASON_BEACON_TIMEOUT:
                 case WIFI_REASON_AUTH_LEAVE:
+                    reason2_count = 0;
 
                     /**< root has children, when router destoried or pwd err,
                     in mdf_network_enable_blufi, wait some time */
@@ -99,9 +101,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
                     break;
 
                 case WIFI_REASON_AUTH_EXPIRE: {
-                    static int reason2_count = 0;
-
-                    if (reason2_count++ > 10) {
+                    if (reason2_count++ >= WIFI_MESH_ASSOC_EXPIRE_NUM) {
                         MDF_LOGE("sta disconnected, reason: WIFI_REASON_AUTH_EXPIRE(2)");
                         MDF_LOGE("system restart");
                         esp_restart();
@@ -129,6 +129,9 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
         case MESH_EVENT_ROUTING_TABLE_ADD:
         case MESH_EVENT_ROUTING_TABLE_REMOVE:
+            MDF_LOGI("router num new: %d, change: %d",
+                     event.info.routing_table.rt_size_new, event.info.routing_table.rt_size_change);
+
             if (esp_mesh_is_root()) {
                 uint8_t root_mac[6] = {0};
                 ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, root_mac));
@@ -249,7 +252,7 @@ ssize_t mdf_wifi_mesh_send(const wifi_mesh_addr_t *dest_addr, const wifi_mesh_da
         mdf_wifi_mesh_send_lock();
         ret = esp_mesh_send((mesh_addr_t *)dest_addr, &mesh_data, mesh_flag, &mesh_opt, 1);
         mdf_wifi_mesh_send_unlock();
-        MDF_ERROR_CHECK(ret != ESP_OK, -ret,
+        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL,
                         "esp_mesh_send, ret: %x dest_mac:"MACSTR", size:%d, data: %s",
                         ret, MAC2STR(dest_addr->mac), mesh_data.size, mesh_data.data);
     }
@@ -270,7 +273,8 @@ ssize_t mdf_wifi_mesh_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_data_type_t *da
     ssize_t recv_size                    = 0;
     int mesh_flag                        = 0;
     mesh_data_t mesh_data                = {0};
-    uint32_t end_tick                    = xTaskGetTickCount() + timeout_ms * portTICK_RATE_MS;
+    uint32_t start_tick                  = xTaskGetTickCount();
+    int left_time_ms                     = timeout_ms;
     wifi_mesh_head_data_t mesh_head_data = {0};
     mesh_opt_t mesh_opt                  = {
         .len  = sizeof(wifi_mesh_head_data_t),
@@ -281,10 +285,12 @@ ssize_t mdf_wifi_mesh_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_data_type_t *da
     do {
         mesh_data.size = size - recv_size;
         mesh_data.data = data + recv_size;
-        timeout_ms     = (timeout_ms != portMAX_DELAY) ?
-                         (end_tick - xTaskGetTickCount()) / portTICK_RATE_MS : portMAX_DELAY;
+        left_time_ms   = (timeout_ms != portMAX_DELAY) ?
+                         timeout_ms - (xTaskGetTickCount() - start_tick) * portTICK_RATE_MS :
+                         portMAX_DELAY;
+        MDF_ERROR_BREAK(left_time_ms < 0, "recv timeout");
 
-        ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, timeout_ms,
+        ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, left_time_ms,
                             &mesh_flag, &mesh_opt, 1);
         MDF_ERROR_CHECK(ret != ESP_OK || mesh_data.size <= 0, -ret,
                         "esp_mesh_recv , ret: %x, size: %d, data: %p",
@@ -306,8 +312,7 @@ ssize_t mdf_wifi_mesh_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_data_type_t *da
 
         recv_size      += mesh_data.size;
         last_packet_id  = mesh_head_data.id;
-    } while ((recv_size < mesh_head_data.size)
-             && (timeout_ms == portMAX_DELAY || xTaskGetTickCount() < end_tick));
+    } while (recv_size < mesh_head_data.size);
 
     memcpy(data_type, &mesh_head_data.type, sizeof(wifi_mesh_data_type_t));
 
@@ -367,7 +372,7 @@ ssize_t mdf_wifi_mesh_root_send(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
         mdf_wifi_mesh_send_lock();
         ret = esp_mesh_send((mesh_addr_t *)dest_addr, &mesh_data, mesh_flag, &mesh_opt, 1);
         mdf_wifi_mesh_send_unlock();
-        MDF_ERROR_CHECK(ret != ESP_OK, -ret, "esp_mesh_send, ret: %x dest_mac:"MACSTR", size:%d, data: %s",
+        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "esp_mesh_send, ret: %x dest_mac:"MACSTR", size:%d, data: %s",
                         ret, MAC2STR(dest_addr->mac), mesh_data.size, mesh_data.data);
     }
 
@@ -387,7 +392,8 @@ ssize_t mdf_wifi_mesh_root_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
     ssize_t recv_size                    = 0;
     int mesh_flag                        = 0;
     mesh_data_t mesh_data                = {0};
-    uint32_t end_tick                    = xTaskGetTickCount() + timeout_ms * portTICK_RATE_MS;
+    uint32_t start_tick                  = xTaskGetTickCount();
+    int left_time_ms                     = timeout_ms;
     wifi_mesh_head_data_t mesh_head_data = {0};
     mesh_opt_t mesh_opt                  = {
         .len = sizeof(wifi_mesh_head_data_t),
@@ -398,10 +404,13 @@ ssize_t mdf_wifi_mesh_root_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
     do {
         mesh_data.size = size - recv_size;
         mesh_data.data = data + recv_size;
-        timeout_ms     = (end_tick - xTaskGetTickCount()) / portTICK_RATE_MS;
+        left_time_ms   = (timeout_ms != portMAX_DELAY) ?
+                         timeout_ms - (xTaskGetTickCount() - start_tick) * portTICK_RATE_MS :
+                         portMAX_DELAY;
+        MDF_ERROR_BREAK(left_time_ms < 0, "recv timeout");
 
         ret = esp_mesh_recv_toDS((mesh_addr_t *)src_addr, (mesh_addr_t *)dest_addr,
-                                 &mesh_data, timeout_ms, &mesh_flag, &mesh_opt, 1);
+                                 &mesh_data, left_time_ms, &mesh_flag, &mesh_opt, 1);
 
         if (ret == ESP_ERR_MESH_TIMEOUT) {
             MDF_LOGV("esp_mesh_recv_toDS, timeout");
@@ -415,8 +424,8 @@ ssize_t mdf_wifi_mesh_root_recv(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
         MDF_LOGV("esp_mesh_recv , ret: %x, size: %d, data: %p, type: %x",
                  ret, mesh_data.size, mesh_data.data, mesh_head_data.type.val);
 
-        recv_size      += mesh_data.size;
-    } while ((recv_size < mesh_head_data.size) && xTaskGetTickCount() < end_tick);
+        recv_size += mesh_data.size;
+    } while (recv_size < mesh_head_data.size);
 
     memcpy(data_type, &mesh_head_data.type, sizeof(wifi_mesh_data_type_t));
 
