@@ -56,7 +56,7 @@ static bool mdf_server_conn_list_unlock()
     return xSemaphoreGive(g_conn_list_lock);
 }
 
-static void mdf_server_conn_delete(server_http_connect_t *conn)
+void mdf_server_conn_delete(server_http_connect_t *conn)
 {
     MDF_ASSERT(conn);
 
@@ -78,9 +78,24 @@ static void mdf_server_conn_delete(server_http_connect_t *conn)
     mdf_server_conn_list_unlock();
 }
 
+server_http_connect_t *mdf_server_conn_find_ota()
+{
+    MDF_ASSERT(g_conn_list);
+
+    for (server_http_connect_t *conn = g_conn_list->next; conn; conn = conn->next) {
+        if (conn->type.ota) {
+            return conn;
+        }
+    }
+
+    MDF_LOGD("no find ota_conn");
+    return NULL;
+}
+
 server_http_connect_t *mdf_server_conn_find(const wifi_mesh_addr_t *sockaddr)
 {
     MDF_ASSERT(sockaddr);
+    MDF_ASSERT(g_conn_list);
 
     for (server_http_connect_t *conn = g_conn_list->next; conn; conn = conn->next) {
         if (!memcmp(&conn->src_addr, sockaddr, sizeof(wifi_mesh_addr_t))) {
@@ -94,6 +109,7 @@ server_http_connect_t *mdf_server_conn_find(const wifi_mesh_addr_t *sockaddr)
 
 static esp_err_t mdf_server_conn_insert(int sockfd, const wifi_mesh_addr_t *sockaddr)
 {
+    MDF_ASSERT(g_conn_list);
     MDF_PARAM_CHECK(sockfd != MDF_SOCKET_INVALID_FD);
     MDF_PARAM_CHECK(sockaddr);
 
@@ -131,18 +147,6 @@ static esp_err_t mdf_server_conn_insert(int sockfd, const wifi_mesh_addr_t *sock
     g_conn_list->next = new_conn;
 
     return ESP_OK;
-}
-
-static server_http_connect_t *mdf_server_conn_find_ota()
-{
-    for (server_http_connect_t *conn = g_conn_list->next; conn; conn = conn->next) {
-        if (conn->type.ota) {
-            return conn;
-        }
-    }
-
-    MDF_LOGD("no find ota_conn");
-    return NULL;
 }
 
 esp_err_t mdf_server_conn_send(const server_http_connect_t *conn, const void *buf,

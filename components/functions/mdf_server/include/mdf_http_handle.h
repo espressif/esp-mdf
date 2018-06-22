@@ -130,6 +130,22 @@ esp_err_t mdf_http_server_request();
 esp_err_t mdf_http_server_response();
 
 /**
+ * @brief delete http connection
+ *
+ * @param conn pointer to the connection information
+ */
+void mdf_server_conn_delete(server_http_connect_t *conn);
+
+/**
+ * @brief  find ota connection
+ *
+ * @return
+ *     - pointer to connection information
+ *     - NULL no ota connection found
+ */
+server_http_connect_t *mdf_server_conn_find_ota();
+
+/**
  * @brief  set the configuration of the root node ota
  *
  * @param  dest_addr the address contains remote IP address and port(IPv4:PORT)
