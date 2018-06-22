@@ -49,6 +49,7 @@ typedef struct {
 #define MDF_OTA_PACKET_MAX_NUM     1024
 #define MDF_OTA_PACKET_HEAD_SIZE   sizeof(mdf_ota_packet_head_t)
 #define MDF_OTA_STATUS_SIZE        (sizeof(mdf_ota_status_t) + MDF_OTA_PACKET_MAX_NUM)
+#define MDF_UPGRADE_STATE_SAVE_CNT 50
 
 static const char *TAG                = "mdf_ota_upgrade";
 static mdf_ota_status_t *g_ota_status = NULL;
@@ -222,11 +223,11 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
 
     /**< save OTA status periodically, it can be used to
          resumable data transfers from breakpoint after system reset */
-    static uint16_t s_packet_write_num = 100;
+    static uint16_t s_packet_write_num = MDF_UPGRADE_STATE_SAVE_CNT;
 
     if (g_ota_status->packet_write_num == s_packet_write_num
             || g_ota_status->packet_write_num == g_ota_status->packet_num) {
-        s_packet_write_num += 100;
+        s_packet_write_num += MDF_UPGRADE_STATE_SAVE_CNT;
         ret = mdf_info_save(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
         MDF_LOGD("save the data of ota status to flash");

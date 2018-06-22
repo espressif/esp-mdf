@@ -102,7 +102,7 @@ static esp_err_t mdf_server_conn_insert(int sockfd, const wifi_mesh_addr_t *sock
 
     for (server_http_connect_t *conn = g_conn_list->next; conn; conn = conn->next) {
         MDF_LOGD("conn_num: %d, sockfd: %d, ip: %s, port: %d",
-                 conn_num, conn->sockfd, inet_ntoa(sockaddr->ip), ntohs(sockaddr->port));
+                 conn_num, conn->sockfd, inet_ntoa(conn->src_addr.ip), ntohs(conn->src_addr.port));
         conn_num++;
     }
 
@@ -406,7 +406,7 @@ esp_err_t mdf_http_server_response()
         notice_type_t notice_type = recv_data[0];
 
         /**< dealing with multiple devices while upgrading duplicate packages */
-        if (notice_type ==  NOTICE_OTAFINISH) {
+        if (notice_type == NOTICE_OTAFINISH) {
             mdf_server_conn_list_lock();
 
             server_http_connect_t *ota_conn = mdf_server_conn_find_ota();

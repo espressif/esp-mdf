@@ -148,6 +148,27 @@ extern "C" {
             MDF_LOGV("free ptr: %p, heap free: %d", ptr, esp_get_free_heap_size()); ptr = NULL;}}while(0)
 
 /**
+ * @brief convert mac address from ap to sta
+ */
+#define ADDR_AP2STA(mac) do { \
+        *((int *)(mac + 2)) = htonl(htonl(*((int *)(mac + 2))) - 1); \
+    } while(0)
+
+/**
+ * @brief convert mac address from sta to ap
+ */
+#define ADDR_STA2AP(mac) do { \
+        *((int *)(mac + 2)) = htonl(htonl(*((int *)(mac + 2))) + 1); \
+    } while(0)
+
+/**
+ * @brief convert mac address from bt to sta
+ */
+#define ADDR_BT2STA(mac) do { \
+        *((int *)(mac + 2)) = htonl(htonl(*((int *)(mac + 2))) - 2); \
+    } while(0)
+
+/**
  * @brief  convert mac from string format to binary
  */
 static inline uint8_t *str2mac(const char *mac_str, uint8_t *mac)

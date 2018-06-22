@@ -64,10 +64,22 @@ static const char *TAG                  = "mdf_device_handle";
 static void mdf_show_sysinfo_timercb(void *timer)
 {
     uint8_t sta_mac[6] = {0};
-    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
+    esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
 
-    MDF_LOGI("mac:"MACSTR", layer: %d, free heap: %u, compile time: %s %s",
-             MAC2STR(sta_mac), esp_mesh_get_layer(), esp_get_free_heap_size(), __DATE__, __TIME__);
+    mesh_addr_t par_mac = {0};
+    esp_mesh_get_parent_bssid(&par_mac);
+
+    MDF_LOGI("parent: "MACSTR", mac:"MACSTR", layer: %d, free heap: %u, compile time: %s %s",
+             MAC2STR(par_mac.addr), MAC2STR(sta_mac), esp_mesh_get_layer(),  esp_get_free_heap_size(), __DATE__, __TIME__);
+
+    wifi_sta_list_t wifi_sta_list = {0};
+    esp_wifi_ap_get_sta_list(&wifi_sta_list);
+
+    if (wifi_sta_list.num > 0) {
+        for (int i = 0; i < wifi_sta_list.num; i++) {
+            MDF_LOGI("child id: %d, mac: " MACSTR, i, MAC2STR(wifi_sta_list.sta[i].mac));
+        }
+    }
 }
 
 static esp_err_t mdf_wifi_init()
@@ -389,6 +401,8 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
         device_data->response_size = mdf_json_pack(device_data->response, "package_sequence", ota_progress_array_str);
     }
 
+    MDF_LOGD("ota_progress_array_str: %s", ota_progress_array_str);
+
     mdf_free(ota_progress_array_str);
 
     return loss_package_flag;
@@ -697,7 +711,7 @@ void mdf_device_request_task(void *arg)
         device_data.request_size = mdf_wifi_mesh_recv(&src_addr, &data_type, device_data.request,
                                    WIFI_MESH_PACKET_MAX_SIZE, portMAX_DELAY);
         MDF_ERROR_CONTINUE(device_data.request_size < 0 || data_type.proto != MDF_PROTO_JSON,
-                           "mdf_json_recv, ret: %d, proto: %d", device_data.request_size, data_type.proto);
+                           "mdf_wifi_mesh_recv, ret: %d, proto: %d", device_data.request_size, data_type.proto);
         ret = mdf_json_parse(device_data.request, "request", func_name);
         MDF_ERROR_CONTINUE(ret < 0, "mdf_json_parse, ret: %d, key: %s, value: %s",
                            ret, func_name, device_data.request);

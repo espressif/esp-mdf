@@ -133,7 +133,7 @@ bool mdf_auto_network_find_whitelist(const uint8_t *device_addr)
 
         memcpy(addr_tmp + (NETWORK_NETWORK_ADDR_MAX_SIZE - MDF_NETWORK_NETWORK_ADDR_SIZE),
                g_auto_network_whitelist->data + i * MDF_NETWORK_NETWORK_ADDR_SIZE, MDF_NETWORK_NETWORK_ADDR_SIZE);
-        *((int *)(addr_tmp + 2)) = htonl(htonl(*((int *)(addr_tmp + 2))) - 2);
+        ADDR_BT2STA(addr_tmp);
         MDF_LOGV("num: %d, addr_tmp: "MACSTR", device_addr: "MACSTR,
                  g_auto_network_whitelist->num, MAC2STR(addr_tmp), MAC2STR(device_addr));
 
