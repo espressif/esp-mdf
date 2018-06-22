@@ -603,7 +603,7 @@ static void mdf_blufi_network_task(void *arg)
     ret = mdf_blufi_init();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_init, ret: %d", ret);
 
-    esp_mesh_set_self_organized(false);
+    esp_mesh_set_self_organized(false, false);
 
     while (!mdf_wifi_mesh_is_connect()) {
         /**< reconfig network */
@@ -635,7 +635,7 @@ static void mdf_blufi_network_task(void *arg)
         }
     }
 
-    esp_mesh_set_self_organized(true);
+    esp_mesh_set_self_organized(true, false);
 
     ret = mdf_blufi_deinit();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_deinit, ret: %d", ret);
