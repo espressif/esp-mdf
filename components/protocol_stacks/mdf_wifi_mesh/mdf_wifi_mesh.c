@@ -134,7 +134,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_LOGI("router num new: %d, change: %d",
                      event.info.routing_table.rt_size_new, event.info.routing_table.rt_size_change);
 
-            if (esp_mesh_is_root()) {
+            if (mdf_server_conn_is_running()) {
                 uint8_t root_mac[6] = {0};
                 ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, root_mac));
                 mdf_notice_udp_send(NOTICE_ROUTING_TABLE_CHANGE, root_mac);
@@ -342,6 +342,7 @@ ssize_t mdf_wifi_mesh_root_send(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
     static int packet_id  = 0;
     esp_err_t ret         = ESP_OK;
     int mesh_flag         = (data_type->to_server) ? MESH_DATA_FROMDS : MESH_DATA_P2P;
+    mesh_tx_pending_t mesh_tx_pending = {0};
 
     mesh_data_t mesh_data = {
         .proto = data_type->proto,
@@ -372,8 +373,19 @@ ssize_t mdf_wifi_mesh_root_send(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
                  mesh_data.size, mesh_head_data.seq, data_type->val, mesh_data.data);
 
         while (esp_get_free_heap_size() < 30 * 1024) {
-            vTaskDelay(20 / portTICK_RATE_MS);
-            MDF_LOGW("not enough memory(%d Byte), delay: 20ms", esp_get_free_heap_size());
+            MDF_LOGW("not enough memory(%d Byte), delay: 500 ms", esp_get_free_heap_size());
+            vTaskDelay(500 / portTICK_RATE_MS);
+
+            esp_mesh_print_txQ_waiting();
+            esp_mesh_print_rxQ_waiting();
+
+            ESP_ERROR_CHECK(esp_mesh_get_tx_pending(&mesh_tx_pending));
+
+            if (!mesh_tx_pending.to_parent && !mesh_tx_pending.to_parent_p2p
+                    && !mesh_tx_pending.to_child && !mesh_tx_pending.to_child_p2p
+                    && !mesh_tx_pending.mgmt && !mesh_tx_pending.broadcast) {
+                break;
+            }
         }
 
         mdf_wifi_mesh_send_lock();
