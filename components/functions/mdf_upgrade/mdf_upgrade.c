@@ -46,14 +46,13 @@ typedef struct {
 } mdf_ota_status_t;
 
 #define MDF_OTA_STORE_KEY          "ota_status"
-#define MDF_OTA_PACKET_MAX_NUM     1024
+#define MDF_OTA_PACKET_MAX_NUM     1560
 #define MDF_OTA_PACKET_HEAD_SIZE   sizeof(mdf_ota_packet_head_t)
 #define MDF_OTA_STATUS_SIZE        (sizeof(mdf_ota_status_t) + MDF_OTA_PACKET_MAX_NUM)
 #define MDF_UPGRADE_STATE_SAVE_CNT 50
 
 static const char *TAG                = "mdf_ota_upgrade";
 static mdf_ota_status_t *g_ota_status = NULL;
-static bool ota_upgrade_data_finish   = false;
 
 esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
                            const char *ota_bin_verson)
@@ -87,7 +86,6 @@ esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
     g_ota_status->packet_num       = (ota_bin_len + packet_body_size - 1) / packet_body_size;
     g_ota_status->packet_write_num = 0;
     memset(g_ota_status->progress_array, false, MDF_OTA_PACKET_MAX_NUM);
-    ota_upgrade_data_finish        = false;
 
     /**< in some case, the time-cost of flash erase in esp_ota_begin (called by
          mdf_ota_start) can be too long to expire the mdf connection */
@@ -127,7 +125,9 @@ esp_err_t mdf_upgrade_deinit(void)
     mdf_free(g_ota_status);
 
     ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_SUCCESS, NULL);
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, ret: %d", ret);
+    if (ret != ESP_OK) {
+        MDF_LOGW("mdf_event_loop_send MDF_EVENT_UPGRADE_SUCCESS, ret: %d", ret);
+    }
 
     return ESP_OK;
 }
@@ -169,20 +169,6 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, ret: %d", ret);
     }
 
-    if (ota_upgrade_data_finish) {
-        static uint8_t s_count = 0;
-
-        if (!(s_count++ % 10)) {
-            esp_err_t ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_DATA_FINISH, NULL);
-            MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, ret: %d", ret);
-            s_count = 0;
-        }
-
-        MDF_LOGD("upgrade data has been received");
-
-        return ESP_OK;
-    }
-
     esp_err_t ret                  = ESP_OK;
     mdf_ota_packet_head_t *ota_bin = (mdf_ota_packet_head_t *)ota_data;
     uint16_t packet_body_size       = g_ota_status->packet_size - MDF_OTA_PACKET_HEAD_SIZE;
@@ -207,8 +193,6 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
 
         ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_DATA_FINISH, NULL);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, ret: %d", ret);
-
-        ota_upgrade_data_finish = true;
 
         return ESP_OK;
     }
