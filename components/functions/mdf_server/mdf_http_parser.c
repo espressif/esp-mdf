@@ -208,6 +208,13 @@ static esp_err_t mdf_root_ota_init(server_http_connect_t *conn)
     server_http_connect_t *ota_conn = NULL;
     wifi_mesh_addr_t ota_conn_addr = {0};
 
+    ota_conn = mdf_server_conn_find_ota();
+
+    if (ota_conn) {
+        MDF_LOGW("close old ota connect");
+        mdf_server_conn_delete(ota_conn);
+    }
+
     ret = mdf_http_header_parse(conn);
     MDF_ERROR_GOTO(ret < 0, ERR_EXIT, "mdf_http_header_parse, ret: %d", ret);
 
@@ -221,6 +228,7 @@ static esp_err_t mdf_root_ota_init(server_http_connect_t *conn)
     str2mac(ota_addr_str, (uint8_t *)&ota_conn_addr);
     ota_conn_addr.port = ntohs(ota_conn_addr.port);
 
+    response_status = 404;
     ota_conn = mdf_server_conn_find(&ota_conn_addr);
     MDF_ERROR_GOTO(!ota_conn, ERR_EXIT, "mdf_server_conn_find, ip: %s, port: %d",
                    inet_ntoa(ota_conn_addr.ip), ntohs(ota_conn_addr.port));
@@ -252,6 +260,11 @@ ERR_EXIT:
 
         ret = mdf_server_conn_send(conn, response_buf, response_size);
         MDF_ERROR_BREAK(ret < 0, "mdf_server_conn_send, ret: %d", ret);
+
+        if (response_status != 200) {
+            mdf_server_conn_delete(conn);
+        }
+
     } while (0);
 
     return ret;
