@@ -1,36 +1,24 @@
-menu "factory Config"
+menu "Factory Config"
 
-choice MDF_LOG_LEVEL
-    bool "Configure the mesh application layer's log"
-    default MDF_LOG_LEVEL_DEBUG
+config MDF_BOOTLOADER_CUSTOMIZATION
+    bool "Enable bootloader customization"
+    default y
     help
-       Specify how much output to see in logs by default.
-       Note that this setting limits which log statements
-       are compiled into the program. So setting this to, say,
-       "Warning" would mean that changing log level to "Debug"
-       at runtime will not be possible.
+       If you enable this configuration, you can switch the device to the factory mode
+       by switching power of device 3 to 10 times (each time within 500ms) consecutively.
 
-config MDF_LOG_LEVEL_NONE
-   bool "No output"
-config MDF_LOG_LEVEL_ERROR
-   bool "Error"
-config MDF_LOG_LEVEL_WARN
-   bool "Warning"
-config MDF_LOG_LEVEL_INFO
-   bool "Info"
-config MDF_LOG_LEVEL_DEBUG
-   bool "Debug"
-config MDF_LOG_LEVEL_VERBOSE
-   bool "Verbose"
-endchoice
+config MDF_BOOTLOADER_COUNT_MIN
+    int "Min Count of Switching Power"
+    default 3
+    depends on MDF_BOOTLOADER_CUSTOMIZATION
+    help
+        Configure min count of switching power to enter customized bootloader
 
-config MDF_LOG_LEVEL
-    int
-    default 0 if MDF_LOG_LEVEL_NONE
-    default 1 if MDF_LOG_LEVEL_ERROR
-    default 2 if MDF_LOG_LEVEL_WARN
-    default 3 if MDF_LOG_LEVEL_INFO
-    default 4 if MDF_LOG_LEVEL_DEBUG
-    default 5 if MDF_LOG_LEVEL_VERBOSE
+config MDF_BOOTLOADER_COUNT_MAX
+    int "Max Count of Switching Power"
+    default 10
+    depends on MDF_BOOTLOADER_CUSTOMIZATION
+    help
+        Configure max count of switching power to enter customized bootloader
 
 endmenu
