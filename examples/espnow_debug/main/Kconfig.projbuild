@@ -1,4 +1,4 @@
-menu "MDF Debug terminal"
+menu "Espnow debug terminal"
 
 config AUTO_CONNECT_TO_DEFAULT_AP
     bool "Auto connnect to default AP when power on"

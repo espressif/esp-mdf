@@ -4,6 +4,5 @@
 #
 
 PROJECT_NAME := mdf-factory
-EXTRA_COMPONENT_DIRS := $(shell pwd)/light_driver
 
 include $(MDF_PATH)/project.mk

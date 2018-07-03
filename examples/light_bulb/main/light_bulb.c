@@ -208,7 +208,11 @@ static esp_err_t light_bulb_event_loop_cb(mdf_event_loop_t event, void *ctx)
 
 void app_main()
 {
+#ifdef CONFIG_MDF_LIGHT_COREBOARD
+    ESP_ERROR_CHECK(light_init(GPIO_NUM_25, GPIO_NUM_26, GPIO_NUM_27, GPIO_NUM_19, GPIO_NUM_23));
+#elif CONFIG_MDF_LIGHT_COLORED
     ESP_ERROR_CHECK(light_init(GPIO_NUM_4, GPIO_NUM_16, GPIO_NUM_5, GPIO_NUM_19, GPIO_NUM_23));
+#endif
 
     ESP_ERROR_CHECK(mdf_device_init_config(1, "light", "0.0.1"));
 
