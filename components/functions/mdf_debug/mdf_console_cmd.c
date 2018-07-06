@@ -109,6 +109,12 @@ static int routetable(int argc, char **argv)
     ets_printf("mdf total node num: %d\n", ret);
 
     ret = esp_mesh_get_routing_table_size();
+
+    if (ret == 0) {
+        ets_printf("mesh has not been started or connected\n");
+        return 1;
+    }
+
     ets_printf("mdf router table size: %d\n", ret);
 
     int mdf_node_num       = 0;
