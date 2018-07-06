@@ -189,14 +189,15 @@ esp_err_t mdf_socket_timeout(sockfd_t sockfd, uint32_t send_timeout_ms, uint32_t
 {
     esp_err_t ret = 0;
     struct timeval timeout = {
-        .tv_usec = send_timeout_ms * 1000,
-        .tv_sec = 0,
+        .tv_usec = (send_timeout_ms % 1000) * 1000,
+        .tv_sec = send_timeout_ms / 1000,
     };
 
     ret = setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "socket setsockopt, ret: %d", ret);
 
-    timeout.tv_usec = recv_timeout_ms * 1000;
+    timeout.tv_usec = (recv_timeout_ms % 1000) * 1000;
+    timeout.tv_sec  = recv_timeout_ms / 1000;
     ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "socket setsockopt, ret: %d", ret);
 
