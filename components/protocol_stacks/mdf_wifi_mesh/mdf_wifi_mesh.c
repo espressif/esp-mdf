@@ -239,10 +239,10 @@ ssize_t mdf_wifi_mesh_send(const wifi_mesh_addr_t *dest_addr, const wifi_mesh_da
         .type = (data_type->group) ? MESH_OPT_SEND_GROUP : MESH_OPT_RECV_DS_ADDR,
     };
 
-    mesh_head_data.type.layer = esp_mesh_get_layer();
     memcpy(&mesh_head_data.type, data_type, sizeof(wifi_mesh_data_type_t));
     mesh_flag = (data_type->group) ? mesh_flag | MESH_DATA_GROUP : mesh_flag;
     mesh_flag = (data_type->to_server) ? mesh_flag | MESH_DATA_DROP : mesh_flag;
+    mesh_head_data.type.layer = esp_mesh_get_layer();
 
     for (mesh_head_data.seq = 0; size > 0; mesh_head_data.seq++, size -= WIFI_MESH_PACKET_MAX_SIZE) {
         mesh_data.data = (uint8_t *)data + mesh_head_data.seq * WIFI_MESH_PACKET_MAX_SIZE;

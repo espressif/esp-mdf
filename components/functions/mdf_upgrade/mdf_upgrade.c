@@ -61,7 +61,7 @@ esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
     MDF_PARAM_CHECK(ota_package_len);
     MDF_PARAM_CHECK(ota_bin_verson);
 
-    esp_err_t ret            = ESP_OK;
+    esp_err_t ret = ESP_OK;
     uint16_t packet_body_size = ota_package_len - MDF_OTA_PACKET_HEAD_SIZE;
 
     MDF_LOGD("ota_bin_len: %d, ota_package_len: %d, ota_bin_verson: %s",
@@ -103,21 +103,17 @@ esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
 esp_err_t mdf_upgrade_deinit(void)
 {
     MDF_PARAM_CHECK(g_ota_status);
-
     MDF_ERROR_CHECK(g_ota_status->packet_write_num < g_ota_status->packet_num, ESP_FAIL,
                     "the bin file received is incomplete, packet_write_num: %d, packet_num: %d",
                     g_ota_status->packet_write_num, g_ota_status->packet_num);
 
     esp_err_t ret = ESP_OK;
-
     ret = mdf_ota_stop();
-
     mdf_info_erase(MDF_OTA_STORE_KEY);
     mdf_free(g_ota_status);
 
     if (ret < 0) {
         MDF_LOGE("mdf_ota_stop, ret: %d", ret);
-
         ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_FAIL, NULL);
 
         if (ret != ESP_OK) {
@@ -126,7 +122,6 @@ esp_err_t mdf_upgrade_deinit(void)
 
         return ESP_FAIL;
     }
-
 
     ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_SUCCESS, NULL);
 
