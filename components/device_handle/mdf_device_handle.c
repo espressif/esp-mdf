@@ -69,8 +69,11 @@ static void mdf_show_sysinfo_timercb(void *timer)
     mesh_addr_t par_mac = {0};
     esp_mesh_get_parent_bssid(&par_mac);
 
-    MDF_LOGI("parent: "MACSTR", mac:"MACSTR", layer: %d, free heap: %u, compile time: %s %s",
-             MAC2STR(par_mac.addr), MAC2STR(sta_mac), esp_mesh_get_layer(),  esp_get_free_heap_size(), __DATE__, __TIME__);
+    mesh_assoc_t mesh_assoc = {0x0};
+    esp_wifi_vnd_mesh_get(&mesh_assoc);
+
+    MDF_LOGI("parent: "MACSTR", mac:"MACSTR", layer: %d, prarent_rssi: %d, router_rssi: %d, free heap: %u, compile time: %s %s",
+             MAC2STR(par_mac.addr), MAC2STR(sta_mac), esp_mesh_get_layer(), mesh_assoc.rssi, mesh_assoc.router_rssi,  esp_get_free_heap_size(), __DATE__, __TIME__);
 
     wifi_sta_list_t wifi_sta_list = {0};
     esp_wifi_ap_get_sta_list(&wifi_sta_list);
@@ -419,18 +422,32 @@ static esp_err_t mdf_device_ota_reboot(device_data_t *device_data)
 
 static esp_err_t mdf_device_get_info(device_data_t *device_data)
 {
-    esp_err_t ret                             = ESP_OK;
-    device_characteristics_t *characteristic  = g_device_config->characteristics;
-    const char *characteristic_format_str     = "{\"cid\":%d,\"name\":\"%s\",\"format\":\"int\","
-            "\"perms\":%d,\"value\":%d,\"min\":%d,\"max\":%d,\"step\":%d}";
-
-    char tid_str[5] = {0};
+    esp_err_t ret                            = ESP_OK;
+    mesh_addr_t mesh_id                      = {0};
+    char tmp_str[17]                         = {0};
+    device_characteristics_t *characteristic = g_device_config->characteristics;
+    const char *characteristic_format_str    = "[%d,\"%s\",\"int\",%d,%d,%d,%d,%d]";
+    char position[16]                        = {0x0};
+    char tid_str[5]                          = {0};
     sprintf(tid_str, "%d", g_device_config->tid);
+
+    if (mdf_info_load("position", position, sizeof(position)) > 0) {
+        ret = mdf_json_pack(device_data->response, "position", position);
+        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+    }
+
+    ret = mdf_json_pack(device_data->response, "protocol_version", 1);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
     ret = mdf_json_pack(device_data->response, "tid", tid_str);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
     ret = mdf_json_pack(device_data->response, "name", g_device_config->name);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    ESP_ERROR_CHECK(esp_mesh_get_id(&mesh_id));
+    mac2str(mesh_id.addr, tmp_str);
+    ret = mdf_json_pack(device_data->response, "mesh_id", tmp_str);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
     device_data->response_size = mdf_json_pack(device_data->response, "version", g_device_config->version);
@@ -620,48 +637,151 @@ static esp_err_t mdf_device_rename(device_data_t *device_data)
     return ESP_OK;
 }
 
-static esp_err_t mdf_device_get_topology(device_data_t *device_data)
+static esp_err_t mdf_device_get_wifi_mesh(device_data_t *device_data)
 {
-    esp_err_t ret              = 0;
-    wifi_vnd_mdf_assoc_t assoc = {0};
-    wifi_mesh_addr_t mesh_id   = {0};
-    char mesh_id_str[32]       = {0};
-
-    ESP_ERROR_CHECK(esp_wifi_vnd_mesh_get(&assoc));
-    ESP_ERROR_CHECK(esp_mesh_get_id((mesh_addr_t *)&mesh_id));
-    sprintf(mesh_id_str, MACSTR, MAC2STR(mesh_id.mac));
+    esp_err_t ret       = 0;
+    mesh_addr_t mesh_id = {0};
+    uint8_t bssid[6]    = {0};
+    char tmp_str[17]    = {0};
+    int interval_ms     = 0;
+    mesh_assoc_t mesh_assoc = {0x0};
 
     ret = mdf_json_pack(device_data->response, "free_heap", esp_get_free_heap_size());
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "tick_count", xTaskGetTickCount() * (1000 / configTICK_RATE_HZ));
+    ret = mdf_json_pack(device_data->response, "running_time",
+                        xTaskGetTickCount() * (1000 / configTICK_RATE_HZ));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "mesh_id", mesh_id_str);
+    ESP_ERROR_CHECK(esp_mesh_get_id(&mesh_id));
+    mac2str(mesh_id.addr, tmp_str);
+    ret = mdf_json_pack(device_data->response, "id", tmp_str);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "parent_rssi", assoc.rssi);
+    ret = mdf_json_pack(device_data->response, "max_layer", esp_mesh_get_max_layer());
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "router_rssi", assoc.router_rssi);
+    ret = mdf_json_pack(device_data->response, "max_connections", esp_mesh_get_ap_connections());
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "layer_capacity", assoc.layer_cap);
+    ret = mdf_json_pack(device_data->response, "layer", esp_mesh_get_layer());
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "children_capacity", assoc.leaf_cap);
+    ESP_ERROR_CHECK(esp_mesh_get_parent_bssid((mesh_addr_t *)bssid));
+    ADDR_AP2STA(bssid);
+    mac2str(bssid, tmp_str);
+    ret = mdf_json_pack(device_data->response, "parent_mac", tmp_str);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "children_value", assoc.leaf_assoc);
+    ret = mdf_json_pack(device_data->response, "type", esp_mesh_get_type());
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "root_cap", assoc.root_cap);
+    esp_wifi_vnd_mesh_get(&mesh_assoc);
+    ret = mdf_json_pack(device_data->response, "prarent_rssi", mesh_assoc.rssi);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
-    ret = mdf_json_pack(device_data->response, "total_device_value", assoc.assoc);
+    ret = mdf_json_pack(device_data->response, "router_rssi", mesh_assoc.router_rssi);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    ret = mdf_json_pack(device_data->response, "rc_rssi", mesh_assoc.rc_rssi);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    ESP_ERROR_CHECK(esp_mesh_get_beacon_interval(&interval_ms));
+    ret = mdf_json_pack(device_data->response, "beacon_interval", interval_ms);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    ret = mdf_json_pack(device_data->response, "assoc_expire", esp_mesh_get_ap_assoc_expire());
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    ret = mdf_json_pack(device_data->response, "capacity_num", esp_mesh_get_capacity_num());
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
 
     device_data->response_size = ret;
+
+    MDF_LOGI("wifi mesh config: %s", device_data->response);
+
+    return ESP_OK;
+}
+
+static esp_err_t mdf_device_set_wifi_mesh(device_data_t *device_data)
+{
+    esp_err_t ret                     = ESP_OK;
+    int timer                         = 0;
+    uint32_t max_layer                = 0;
+    uint32_t max_connection           = 0;
+    mesh_switch_parent_t switch_paras = {0};
+
+    if (mdf_json_parse(device_data->request, "beacon_interval", &timer) == ESP_OK) {
+        ret = esp_mesh_set_beacon_interval(timer);
+        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "esp_mesh_set_beacon_interval, ret: %d", ret);
+        MDF_LOGI("wifi mesh beacon interval: %d ms", timer);
+    }
+
+    if (mdf_json_parse(device_data->request, "passive_scan", &timer) == ESP_OK) {
+        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "esp_mesh_set_passive_scan_time, ret: %d", ret);
+        mdf_info_save("passive_scan", &timer, sizeof(uint32_t));
+        MDF_LOGI("wifi mesh passive scan time: %d ms", timer);
+    }
+
+    if (mdf_json_parse(device_data->request, "assoc_expire", &timer) == ESP_OK) {
+        mdf_info_save("assoc_expire", &timer, sizeof(uint32_t));
+        MDF_LOGI("wifi mesh assc expire time: %d ms", timer);
+    }
+
+    if (mdf_json_parse(device_data->request, "backoff_rssi", &switch_paras.backoff_rssi) == ESP_OK) {
+        mdf_info_save("backoff_rssi", &switch_paras.backoff_rssi, sizeof(int));
+        MDF_LOGI("wifi backoff rssi: %d", switch_paras.backoff_rssi);
+    }
+
+    if (mdf_json_parse(device_data->request, "select_rssi", &switch_paras.select_rssi) == ESP_OK) {
+        mdf_info_save("select_rssi", &switch_paras.select_rssi, sizeof(int));
+        MDF_LOGI("wifi select rssi: %d", switch_paras.select_rssi);
+    }
+
+    if (mdf_json_parse(device_data->request, "cnx_rssi", &switch_paras.cnx_rssi) == ESP_OK) {
+        mdf_info_save("cnx_rssi", &switch_paras.cnx_rssi, sizeof(int));
+        MDF_LOGI("wifi cnx rssi: %d", switch_paras.cnx_rssi);
+    }
+
+    if (mdf_json_parse(device_data->request, "switch_rssi", &switch_paras.switch_rssi) == ESP_OK) {
+        mdf_info_save("switch_rssi", &switch_paras.switch_rssi, sizeof(int));
+        MDF_LOGI("wifi switch rssi: %d", switch_paras.switch_rssi);
+    }
+
+    if (mdf_json_parse(device_data->request, "max_layer", &max_layer) == ESP_OK) {
+        mdf_info_save("max_layer", &max_layer, sizeof(uint32_t));
+        MDF_LOGI("wifi mesh max layer: %d", max_layer);
+    }
+
+    if (mdf_json_parse(device_data->request, "max_connection", &max_connection) == ESP_OK) {
+        mdf_info_save("max_connection", &max_connection, sizeof(uint32_t));
+        MDF_LOGI("wifi mesh max connections: %d", max_connection);
+    }
+
+    uint32_t rate_enable = false;
+
+    if (mdf_json_parse(device_data->request, "6m_rate", &rate_enable) == ESP_OK) {
+        mdf_info_save("6m_rate", &rate_enable, sizeof(uint32_t));
+
+        MDF_LOGI("wifi mesh 6m rate enable: %d", rate_enable);
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t mdf_device_set_position(device_data_t *device_data)
+{
+    esp_err_t ret     = ESP_OK;
+    char position[16] = {0};
+
+    if (mdf_json_parse(device_data->request, "position", position) < 0) {
+        return ESP_FAIL;
+    }
+
+    ret = mdf_info_save("position", position, sizeof(position));
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
+
+    MDF_LOGI("set device position: %s", position);
 
     return ESP_OK;
 }
@@ -678,8 +798,10 @@ static device_handle_t g_device_handle_list[DEVICE_HANDLE_SIZE] = {
     {"set_status",        mdf_device_set_status},
     {"add_device",        mdf_device_add},
     {"rename_device",     mdf_device_rename},
-    {"get_topology",      mdf_device_get_topology},
+    {"get_mesh_config",   mdf_device_get_wifi_mesh},
+    {"set_mesh_config",   mdf_device_set_wifi_mesh},
     {"config_debug",      mdf_device_config_debug},
+    {"set_position",      mdf_device_set_position},
     {NULL,                NULL},
 };
 

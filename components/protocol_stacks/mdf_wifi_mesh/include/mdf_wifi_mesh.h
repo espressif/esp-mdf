@@ -85,40 +85,7 @@ typedef union {
     uint32_t val;                 /**< collective of all device types */
 } wifi_mesh_data_type_t;
 
-typedef struct {
-    uint8_t eid;
-    uint8_t len;
-    uint8_t oui[3];
-    uint8_t type;
-    uint8_t version;
-    uint8_t mdf_type;
-    uint8_t mdf_id[6];
-    uint8_t layer_cap;
-    uint8_t layer;
-    uint8_t assoc_cap;
-    uint8_t assoc;
-    uint8_t leaf_cap;
-    uint8_t leaf_assoc;
-    uint16_t root_cap;
-    uint16_t self_assoc;
-    uint16_t layer2_cap;
-    uint16_t scan_ap_num;
-    int8_t rssi;
-    int8_t router_rssi;
-    uint8_t flag;
-    uint8_t rc_addr[6];
-    int8_t rc_rssi;
-    uint8_t vote_addr[6];
-    int8_t vote_rssi;
-    uint8_t vote_ttl;
-    uint16_t votes;
-    uint16_t my_votes;
-    uint8_t reason;
-    uint8_t child[6];
-    uint8_t toDS;
-} __attribute__((packed)) wifi_vnd_mdf_assoc_t;
-
-esp_err_t esp_wifi_vnd_mesh_get(wifi_vnd_mdf_assoc_t *mdf_assoc);
+esp_err_t esp_wifi_vnd_mesh_get(mesh_assoc_t *mesh_assoc);
 
 /**
  * @brief wifi mesh address
