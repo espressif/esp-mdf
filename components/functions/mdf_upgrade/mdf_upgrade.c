@@ -112,19 +112,24 @@ esp_err_t mdf_upgrade_deinit(void)
 
     ret = mdf_ota_stop();
 
+    mdf_info_erase(MDF_OTA_STORE_KEY);
+    mdf_free(g_ota_status);
+
     if (ret < 0) {
         MDF_LOGE("mdf_ota_stop, ret: %d", ret);
 
         ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_FAIL, NULL);
-        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, ret: %d", ret);
+
+        if (ret != ESP_OK) {
+            MDF_LOGW("mdf_event_loop_send MDF_EVENT_UPGRADE_SUCCESS, ret: %d", ret);
+        }
 
         return ESP_FAIL;
     }
 
-    mdf_info_erase(MDF_OTA_STORE_KEY);
-    mdf_free(g_ota_status);
 
     ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_SUCCESS, NULL);
+
     if (ret != ESP_OK) {
         MDF_LOGW("mdf_event_loop_send MDF_EVENT_UPGRADE_SUCCESS, ret: %d", ret);
     }

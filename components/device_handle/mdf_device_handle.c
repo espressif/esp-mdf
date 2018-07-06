@@ -48,6 +48,7 @@
 
 #define RESTART_DELAY_TIME                5000
 #define CHARACTERISTICS_MAX_NUM           30
+#define OTA_PROGRESS_ARRAY_LEN            512
 
 typedef struct {
     const char *func_name;
@@ -376,7 +377,7 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     MDF_LOGD("ota_progress_array: %p, ota_package_num: %d, ota_bin_version: %s, ota_write_num: %d",
              ota_progress_array, ota_package_num, ota_bin_version, ota_write_num);
 
-    ota_progress_array_str = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE);
+    ota_progress_array_str = mdf_malloc(OTA_PROGRESS_ARRAY_LEN);
 
     if (!ota_write_num) {
         loss_package_flag = true;
@@ -389,7 +390,7 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
 
             loss_package_flag = true;
 
-            if (mdf_json_pack(ota_progress_array_str, "[]", i) > WIFI_MESH_PACKET_MAX_SIZE - 64) {
+            if (mdf_json_pack(ota_progress_array_str, "[]", i) > OTA_PROGRESS_ARRAY_LEN) {
                 MDF_LOGV("ota_progress_array_str: %s", ota_progress_array_str);
                 break;
             }
@@ -410,9 +411,7 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
 
 static esp_err_t mdf_device_ota_reboot(device_data_t *device_data)
 {
-    esp_err_t ret = ESP_OK;
-    ret = mdf_upgrade_deinit();
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_upgrade_deinit, ret: %d", ret);
+    mdf_upgrade_deinit();
 
     return mdf_device_reboot(device_data);
 }
