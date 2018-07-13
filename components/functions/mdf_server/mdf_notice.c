@@ -297,7 +297,7 @@ esp_err_t mdf_notice_udp_server()
             g_udp_server_sockfd = MDF_SOCKET_INVALID_FD;
             MDF_LOGW("sendto, errno: %d, errno_str: %s", errno, strerror(errno));
 
-            continue;
+            break;
         };
     }
 

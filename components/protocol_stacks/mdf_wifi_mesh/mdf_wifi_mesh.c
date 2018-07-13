@@ -31,6 +31,7 @@
 #include "mdf_server.h"
 #include "mdf_notice.h"
 #include "mdf_upgrade.h"
+#include "mdf_info_store.h"
 
 static const char *TAG                      = "mdf_wifi_mesh";
 static bool wifi_mesh_connect_flag          = false;
@@ -169,11 +170,22 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
         .monitor_ie = 3
     };
 
+    uint32_t max_layer      = WIFI_MESH_MAX_LAYER;
+    uint32_t max_connection = WIFI_MESH_AP_CONNECTIONS;
+    uint32_t passive_scan   = 360;
+    uint32_t assoc_expire   = WIFI_MESH_AP_ASSOC_EXPIRE;
+
+    mdf_info_load("max_layer", &max_layer, sizeof(uint32_t));
+    mdf_info_load("max_connection", &max_connection, sizeof(uint32_t));
+    mdf_info_load("passive_scan", &passive_scan, sizeof(uint32_t));
+    mdf_info_load("assoc_expire", &assoc_expire, sizeof(uint32_t));
+
     /* mesh event callback */
     mesh_config.event_cb               = &esp_mesh_event_cb;
     mesh_config.channel                = config->channel;
     mesh_config.router.ssid_len        = strlen(config->ssid);
-    mesh_config.mesh_ap.max_connection = WIFI_MESH_AP_CONNECTIONS;
+    mesh_config.mesh_ap.max_connection = max_connection;
+    mesh_config.crypto_funcs           = NULL;
 
     memcpy(mesh_config.router.ssid, config->ssid, mesh_config.router.ssid_len);
     memcpy(mesh_config.router.bssid, config->bssid, sizeof(mesh_config.router.bssid));
@@ -185,12 +197,22 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
     ESP_ERROR_CHECK(esp_mesh_init());
     ESP_ERROR_CHECK(esp_mesh_set_config(&mesh_config));
     ESP_ERROR_CHECK(esp_mesh_set_attempts(&attempts));
-    ESP_ERROR_CHECK(esp_mesh_set_max_layer(WIFI_MESH_MAX_LAYER));
+    ESP_ERROR_CHECK(esp_mesh_set_max_layer(max_layer));
     ESP_ERROR_CHECK(esp_mesh_set_vote_percentage(WIFI_MESH_VOTE_PERCENTAGE / 100.0));
-    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(WIFI_MESH_AP_ASSOC_EXPIRE));
+    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(assoc_expire));
     ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(WIFI_WIFI_MESH_AUTH_MODE));
     ESP_ERROR_CHECK(esp_mesh_set_xon_qsize(WIFI_MESH_XON_QSIZE));
     ESP_ERROR_CHECK(esp_mesh_allow_root_conflicts(false));
+    ESP_ERROR_CHECK(esp_mesh_set_passive_scan_time(passive_scan));
+
+    mesh_switch_parent_t switch_parent;
+    ESP_ERROR_CHECK(esp_mesh_get_switch_parent_paras(&switch_parent));
+    mdf_info_load("backoff_rssi", &switch_parent.backoff_rssi, sizeof(int));
+    mdf_info_load("select_rssi", &switch_parent.select_rssi, sizeof(int));
+    mdf_info_load("cnx_rssi", &switch_parent.cnx_rssi, sizeof(int));
+    mdf_info_load("switch_rssi", &switch_parent.switch_rssi, sizeof(int));
+    ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_parent));
+
     ESP_ERROR_CHECK(esp_mesh_start());
 
     g_wifi_mesh_running_flag = true;
@@ -200,14 +222,14 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
 
 esp_err_t mdf_wifi_mesh_deinit()
 {
+    g_wifi_mesh_running_flag = false;
+
     ESP_ERROR_CHECK(esp_mesh_stop());
     ESP_ERROR_CHECK(esp_mesh_deinit());
     ESP_ERROR_CHECK(mdf_server_deinit());
 
     vSemaphoreDelete(g_wifi_mesh_send_lock);
     g_wifi_mesh_send_lock = NULL;
-
-    g_wifi_mesh_running_flag = false;
 
     return ESP_OK;
 }

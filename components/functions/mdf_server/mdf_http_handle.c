@@ -287,7 +287,7 @@ esp_err_t mdf_http_server_request()
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(struct sockaddr_in);
         int client_fd = accept(g_http_server_sockfd, (struct sockaddr *)&client_addr, &client_len);
-        MDF_ERROR_CHECK(client_fd < 0, ESP_FAIL, "accept, sockfd: %d", g_http_server_sockfd);
+        MDF_ERROR_CHECK(client_fd < 0, ESP_FAIL, "accept, sockfd: %d", client_fd);
 
         ret = mdf_server_conn_insert(client_fd, (wifi_mesh_addr_t *)&client_addr.sin_port);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_server_conn_insert, client_fd: %d, ip: %s, port: %d, ret: %d",
