@@ -1,22 +1,34 @@
-/* Console example — various system commands
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * ESPRESSIF MIT License
+ *
+ * Copyright (c) 2018 <ESPRESSIF SYSTEMS (SHANGHAI) PTE LTD>
+ *
+ * Permission is hereby granted for use on all ESPRESSIF SYSTEMS products, in which case,
+ * it is free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished
+ * to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "esp_console.h"
 #include "esp_system.h"
-
 #include "driver/rtc_io.h"
 #include "argtable3/argtable3.h"
 #include "soc/rtc_cntl_reg.h"
-
 #include "mdf_wifi_mesh.h"
 
 static void register_free();
@@ -28,7 +40,6 @@ void register_system()
 {
     register_free();
     register_restart();
-
     register_tasklist();
     register_routetable();
 }
@@ -36,9 +47,10 @@ void register_system()
 /** 'free' command prints available heap memory */
 static int free_mem(int argc, char **argv)
 {
-    ets_printf("free heap: %d\n", esp_get_free_heap_size());
+    printf("free heap: %d\n", esp_get_free_heap_size());
     return 0;
 }
+
 static void register_free()
 {
     const esp_console_cmd_t cmd = {
@@ -53,9 +65,10 @@ static void register_free()
 /** 'restart' command restarts the program */
 static int restart(int argc, char **argv)
 {
-    ets_printf("Restarting\n");
+    printf("Restarting\n");
     esp_restart();
 }
+
 static void register_restart()
 {
     const esp_console_cmd_t cmd = {
@@ -70,17 +83,18 @@ static void register_restart()
 /** 'tasklist' command list all tasks in system */
 static int tasklist(int argc, char **argv)
 {
-    ets_printf("list all tasks in system\n");
+    printf("list all tasks in system\n");
 
     char *task_info = malloc(2048);
     assert(task_info);
 
     vTaskList(task_info);
-    ets_printf("\n%s\n", task_info);
+    printf("\n%s\n", task_info);
     free(task_info);
 
     return 0;
 }
+
 static void register_tasklist()
 {
     const esp_console_cmd_t cmd = {
@@ -95,21 +109,27 @@ static void register_tasklist()
 /** 'routetable' command get route table of mdf network */
 static int routetable(int argc, char **argv)
 {
-    ets_printf("get route table of mdf network\n");
+    printf("get route table of mdf network\n");
 
     int ret = 0;
     ret = esp_mesh_get_type();
-    ets_printf("mdf node type: %s%s%s%s\n",
-               ret == MESH_ROOT ? "MESH_ROOT" : "",
-               ret == MESH_NODE ? "MESH_NODE" : "",
-               ret == MESH_LEAF ? "MESH_LEAF" : "",
-               ret == MESH_IDLE ? "MESH_IDLE" : "");
+    printf("mdf node type: %s%s%s%s\n",
+           ret == MESH_ROOT ? "MESH_ROOT" : "",
+           ret == MESH_NODE ? "MESH_NODE" : "",
+           ret == MESH_LEAF ? "MESH_LEAF" : "",
+           ret == MESH_IDLE ? "MESH_IDLE" : "");
 
     ret = esp_mesh_get_total_node_num();
-    ets_printf("mdf total node num: %d\n", ret);
+    printf("mdf total node num: %d\n", ret);
 
     ret = esp_mesh_get_routing_table_size();
-    ets_printf("mdf router table size: %d\n", ret);
+
+    if (ret == 0) {
+        printf("mesh has not been started or connected\n");
+        return 1;
+    }
+
+    printf("mdf router table size: %d\n", ret);
 
     int mdf_node_num       = 0;
     int router_table_size  = 0;
@@ -124,7 +144,7 @@ static int routetable(int argc, char **argv)
                     2048, &mdf_node_num));
 
     for (int i = 0; i < mdf_node_num; i++, ptr_temp += 6) {
-        ets_printf(MACSTR"%s", MAC2STR(ptr_temp), i % 8 ? ", ":"\n");
+        printf(MACSTR"%s", MAC2STR(ptr_temp), i % 8 ? ", ":"\n");
     }
 
     free(router_table_buf);

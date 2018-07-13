@@ -627,15 +627,14 @@ static void mdf_blufi_network_task(void *arg)
                 old_network_config.channel = channel;
                 ret = mdf_reconfig_network(&old_network_config);
                 MDF_ERROR_CONTINUE(ret < 0, "mdf_reconfig_network, ret: %d", ret);
-
-                break;
-            } else {
-                esp_restart();
             }
+
+            /**< ssid and channel do not change */
+            break;
         }
     }
 
-    esp_mesh_set_self_organized(true, false);
+    esp_mesh_set_self_organized(true, true);
 
     ret = mdf_blufi_deinit();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_deinit, ret: %d", ret);
