@@ -93,6 +93,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
                 case WIFI_REASON_MIC_FAILURE:
                 case WIFI_REASON_BEACON_TIMEOUT:
                 case WIFI_REASON_AUTH_LEAVE:
+                case WIFI_REASON_ASSOC_EXPIRE: /**< modify router's channel or pwd */
                     reason2_count = 0;
 
                     /**< root has children, when router destoried or pwd err,
