@@ -1,15 +1,21 @@
-## 0. 准备工作
+[[English]](../../en/application-notes/mdf_lan_protocol_guide_en.md)
 
-App 与 ESP-MDF 设备之间进行局域网通信的前提是：设备已经组网成功，且手机和 Mesh 网络处于同一个局域网中。
+#  MDF 设备与 ESP-Mesh App 之间的通信协议
 
-ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html#mesh-networking)，对用户来说，在 app 的设备页面中能够扫描到所以已配网的设备即可表示组网已经成功。关于 ESP-MDF 设备的配网操作过程请参考开发版本 Mesh APP 的使用说明 [mdf_app_guide_dev_version_cn.md](mdf_app_guide_dev_version_cn.md)。
+## 1. 准备工作
+
+ESP-Mesh app 与 ESP-MDF 设备之间进行局域网通信的前提是：设备已经组网成功，且手机和 Mesh 网络处于同一个局域网中。
+
+ESP-MDF 设备在配网成功后会自动进入[组网阶段](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html#mesh-networking)，对用户来说，在 ESP-Mesh app 的设备页面中能够扫描到所以已配网的设备即可表示组网已经成功。
 
 <div align=center>
-<img src="_static/esp32_mesh_topology_lan.png" width="600">
-<p> ESP-MESH 网络拓扑图 </p>
+<img src="../../_static/esp32_mesh_topology_lan.png" width="400">
+<p> ESP-Mesh Network Topology </p>
 </div>
 
-## 1. 通信流程
+> 下文中的 app 都表示 Android 版本的 [ESP-Mesh app](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)。
+
+## 2. 通信流程
 
 根节点是一个 Mesh 网络与外部通信的唯一出口，app 想要控制 Mesh 网络内设备，首先需要在该网络中找到根节点，之后通过根节点获取该 Mesh 网络内的设备列表，最后才能与该 Mesh 网络中任意设备进行通信。整个过程主要分为以下三步：
 
@@ -18,24 +24,24 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 3. App 与 Mesh 网络中任意设备进行通信
 
 <div align=center>
-<img src="_static/mesh_comm_procedure.png" width="800" />
+<img src="../../_static/mesh_comm_procedure.png" width="600" />
 <p> App 与设备局域网通信流程 </p>
 </div>
 
-## 2. 通信协议格式
+## 3. 通信协议
 
 本章节从通信流程角度，分别介绍这三个步骤中所涉及的通信协议格式。其中，app 获取 Mesh 网络设备列表，app 与 Mesh 网络中任意设备的通信采用标准的 HTTP 或 HTTPS 通信协议。此外，协议还包括以下两部分：
 
-1. 设备状态通知：为了方便用户通过 app 查看设备的实时状态，在现有协议中增加了设备通知功能，即在设备状态发生变化时主动发 UDP 广播通知 app，之后由 app 来获取设备详细状态的过程，详见章节 `2.5. 设备状态通知`。
+1. 设备状态通知：为了方便用户通过 app 查看设备的实时状态，在现有协议中增加了设备通知功能，即在设备状态发生变化时主动发 UDP 广播通知 app，之后由 app 来获取设备详细状态的过程，详见章节 `3.5. 设备状态通知`。
 2. 本地互联控制：实现局域网内设备间的互联控制
-    * 功能说明请参考文档 [mdf_features_cn.md](mdf_features_cn.md) 中章节 `3. ESP-MDF 设备互联控制详细说明`
-    * 协议说明请参考章节 `2.6 本地互联控制`
+    * 功能说明请参考文档 [Readme_cn.md](Readme_cn.md) 中章节 `3. ESP-MDF 设备互联控制详细说明`。
+    * 协议说明请参考章节 `3.6 本地互联控制`。
 
-### 2.1. App 获取根节点的  IP 地址，局域网通信端口和 MAC 地址
+### 3.1. App 获取根节点的 IP 地址，局域网通信端口和 MAC 地址
 
-现阶段，根节点会同时启动 mDNS 服务和接收 UDP 广播两种方式用于设备发现。设备发现表示 app 获取根节点的 IP 地址，通信端口和 mac 地址的过程。
+现阶段，根节点会同时启动 mDNS 服务和接收 UDP 广播两种方式用于设备发现。设备发现表示 app 获取根节点的 IP 地址，通信端口和 MAC 地址的过程。
 
-#### 2.1.1. mDNS 设备发现服务
+#### 3.1.1. mDNS 设备发现服务
 
     mDNS Service Info：
         hostname: "esp32_mesh"
@@ -47,11 +53,11 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
             key: "mac"
             value: "112233445566"
 
-当 app 查询到相关的 mDNS 服务时，便获取了根节点的 `IP`， 再通过该服务中 port 和 txt 字段可知根节点的 `局域网通信端口` 和 `mac 地址`。
+当 app 查询到相关的 mDNS 服务时，便获取了根节点的 `IP`，再通过该服务中 `port` 和 `txt` 字段可知根节点的 `局域网通信端口` 和 `mac 地址`。
 
-#### 2.1.2. 接收 UDP 广播
+#### 3.1.2. 接收 UDP 广播
 
-在设备发现阶段，App 会主动发送 UDP 广播包，并根据根节点的回复获取根节点的信息。
+在设备发现阶段，app 会主动发送 UDP 广播包，并根据根节点的回复获取根节点的信息。
 
 **Request:**
 
@@ -61,12 +67,12 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 
     "ESP32 Mesh 112233445566 http 80"
 
-> * `112233445566` 根节点的 mac 地址
-> * `80` http 服务器端口
+> * `112233445566` 为根节点的 MAC 地址
+> * `80` 是 http 服务器端口
 >
-> 此外，app 通过 UDP 回复包获取根节点的 IP 地址
+> 此外，app 通过 UDP 回复包获取根节点的 IP 地址。
 
-### 2.2. App 获取设备列表
+### 3.2. App 获取设备列表
 
 **Request:**
 
@@ -84,9 +90,9 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 > * `Mesh-Node-Mac` 节点的 Station Mac 地址，以逗号分隔
 > * `Host` HTTP/1.1 协议必须携带的字段，表示控制端 IP 地址和通信端口
 
-### 2.3. App 与 ESP-MDF 设备通信格式说明
+### 3.3. App 与 ESP-MDF 设备通信格式说明
 
-#### 2.3.1. App 请求格式
+#### 3.3.1. App 请求格式
 
 **Request:**
 
@@ -102,11 +108,11 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 > * `/device_request` app 对设备的控制操作，包括状态的设置和获取，通过 http 请求的 URL 字段实现
 > * `Content-Length` http 请求的 body 数据长度
 > * `Content-Type` http 请求的 body 数据类型，现阶段采用 `application/json` 格式
-> * `Root-Response` 是否只需要根节点回复。如果只需要根节点回复，则命令不会转发到 Mesh 网络内的设备。`1` 表示需要回复，`0` 表示不需要回复
+> * `Root-Response` 是否只需要根节点回复。如果只需要根节点回复，则命令不会转发到 Mesh 网络内的设备。`1` 表示需要回复，`0` 表示不需要回3
 > * `Host` HTTP/1.1 协议必须携带的字段，表示控制端 IP 地址和通信端口
 > * `**content_json**` http 请求的 body 数据，表示章节 `2.4. App 对 ESP-MDF 设备的控制操作` 中的 `Request` 部分
 
-#### 2.3.2. 设备回复格式
+#### 3.3.2. 设备回复格式
 
 **Response:**
 
@@ -124,11 +130,11 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 > * `Mesh-Node-Mac` 设备自身的 mac 地址
 > * `Mesh-Parent-Mac` 父节点的 mac 地址
 > * `Host` HTTP/1.1 协议必须携带的字段，表示控制端 IP 地址和通信端口
-> * `**content_json**` http 请求的 body 数据，表示章节 `2.4. App 对 ESP-MDF 设备的控制操作` 中的 `Response` 部分
+> * `**content_json**` http 请求的 body 数据，表示章节 `3.4. App 对 ESP-MDF 设备的控制操作` 中的 `Response` 部分
 
-### 2.4. App 对 ESP-MDF 设备的控制操作
+### 3.4. App 对 ESP-MDF 设备的控制操作
 
-#### 2.4.1. 获取设备信息：get_device_info
+#### 3.4.1. 获取设备信息：get_device_info
 
 **Request:**
 
@@ -228,7 +234,7 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 >       * 若参数没有执行权限，则无法执行设置对应的互联事件
 > * `"status_code"` 请求命令的回复值， `0` 表示正常，`-1` 表示错误
 
-#### 2.4.2. 获取设备状态：get_status
+#### 3.4.2. 获取设备状态：get_status
 
 **Request:**
 
@@ -241,7 +247,7 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         ]
     }
 
-> * `"cids"` 设备属性字段，后接请求的 CID 值列表
+> * `"cids"` 设备属性字段，后接请求的 CID 值列表。
 
 **Response:**
 
@@ -263,9 +269,9 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "status_code": 0
     }
 
-> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示请求中有非法参数，包括设备无对应的 CID 或 `"cids"` 列表中包含没有读权限的值
+> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示请求中有非法参数，包括设备无对应的 CID 或 `"cids"` 列表中包含没有读权限的值。
 
-#### 2.4.3. 修改设备状态：set_status
+#### 3.4.3. 修改设备状态
 
 **Request:**
 
@@ -293,9 +299,9 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "status_code": 0
     }
 
-> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示请求中有非法参数，包括设备无对应的 CID 或 `"cids"` 列表中包含没有写权限的值
+> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示请求中有非法参数，包括设备无对应的 CID 或 `"cids"` 列表中包含没有写权限的值。
 
-#### 2.4.4. 进入配网模式：config_network
+#### 3.4.4. 进入配网模式
 
 **Request:**
 
@@ -309,9 +315,9 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "status_code": 0
     }
 
-> * `"status_code"` 请求命令的回复值， `0` 表示正常，`-1` 表示错误
+> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示错误。
 
-#### 2.4.5. 重启设备：reboot
+#### 3.4.5. 重启设备：reboot
 
 **Request:**
 
@@ -320,7 +326,8 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "delay": 50
     }
 
-> `"delay"` 命令延时执行时间，该字段非必需，若不设，使用设备端默认延时 `2s`
+> `"delay"` 命令延时执行时间，该字段非必需，若不设，使用设备端默认延时 `2s`。
+
 
 **Response:**
 
@@ -328,9 +335,9 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "status_code": 0
     }
 
-> * `"status_code"` 请求命令的回复值， `0` 表示正常，`-1` 表示错误
+> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示错误。
 
-#### 2.4.6. 恢复出厂设置：reset
+#### 3.4.6. 恢复出厂设置：reset
 
 **Request:**
 
@@ -339,7 +346,7 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "delay": 50
     }
 
-> `"delay"` 命令延时执行时间，该字段非必需，若不设，使用设备端默认延时 `2s`
+> `"delay"` 命令延时执行时间，该字段非必需，若不设，使用设备端默认延时 `2s`。
 
 **Response:**
 
@@ -347,11 +354,12 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "status_code": 0
     }
 
-> * `"status_code"` 请求命令的回复值， `0` 表示正常，`-1` 表示错误
+> * `"status_code"` 请求命令的回复值，`0` 表示正常，`-1` 表示错误。
 
-### 2.5. 设备状态通知
+### 3.5. 设备状态通知
 
 当 ESP-MDF 设备状态（打开或关闭）、网络连接关系（连接或断开）、路由表（route table）信息等发生变化时，根节点会主动发送 UDP 广播，通知 app 来获取设备的最新状态。
+
 
 **UDP Broadcast:**
 
@@ -367,21 +375,21 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 >   * `"http"` 设备拓扑结构发生变化，并要求采用 http 通信协议获取设备拓扑结构
 >   * `"sniffer"` 监听到新的联网设备
 
-### 2.6 本地互联控制
+### 3.6 本地互联控制
 
-关于 ESP-MDF 本地互联控制的说明，请参考功能说明文档 [mdf_features_cn.md](mdf_features_cn.md) 中章节 `3. ESP-MDF 设备联动控制详细说明`。
+关于 ESP-MDF 本地互联控制的说明，请参考功能说明文档 [Readme_cn.md](../../../readme_cn.md) 中章节 `3. ESP-MDF 设备联动控制详细说明`。
 
-#### 2.6.1. 实现步骤
+#### 3.6.1. 实现步骤
 
-1. `获取设备信息`：获取设备已存在的互联控制信息
+1. `获取设备信息`：获取设备已存在的互联控制信息。
 
-2. `关联设备`：对关联设备（发起互联控制操作的设备）进行关联设置（如设定光敏传感器，当检测到光照强度低于某一个阈值时发送控制命令打开特定的电灯），关联设置完成后 app 会将关联数据按协议格式转成控制指令，发送给关联设备
+2. `关联设备`：对关联设备（发起互联控制操作的设备）进行关联设置（如设定光敏传感器，当检测到光照强度低于某一个阈值时发送控制命令打开特定的电灯），关联设置完成后 app 会将关联数据按协议格式转成控制指令，发送给关联设备。
 
-3. `触发互联控制`：当关联设备接收到关联设置指令后，将指令解析成 `触发条件` 和 `执行指令`。之后设备便会定时检查自身状态，当状态满足 `触发条件` 时，主动向目标设备发送 `执行指令`
+3. `触发互联控制`：当关联设备接收到关联设置指令后，将指令解析成 `触发条件` 和 `执行指令`。之后设备便会定时检查自身状态，当状态满足 `触发条件` 时，主动向目标设备发送 `执行指令`。
 
-#### 2.6.2. ESP-MDF 本地互联控制协议说明
+#### 3.6.2. ESP-MDF 本地互联控制协议说明
 
-#### 2.6.2.1. 获取已有互联事件：get_event
+#### 3.6.2.1. 获取已有互联事件
 
 **Request:**
 
@@ -389,8 +397,7 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "request": "get_event"
     }
 
-> * `"get_event"` 获取设备互联控制数据的命令
-
+> * `"get_event"` 获取设备互联控制数据的命令。
 **Response:**
 
     {
@@ -430,7 +437,7 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
 >   * `"execute_mac"` 互联事件的目标地址，及执行指令的执行设备地址
 > * `"status_code"` 请求命令的回复值， `0` 表示正常，`-1` 表示错误
 
-#### 2.6.2.2. 设置互联事件：set_event
+#### 3.6.2.2. 设置互联事件：set_event
 
 互联控制的协议主要在于对触发条件的理解和转换，即如何将用户设置的条件转成计算机可理解的条件判断。
 
@@ -481,7 +488,7 @@ ESP-MDF 设备在配网成功后会自动进入 [组网阶段](https://esp-idf.r
         "status_code": 0
     }
 
-#### 2.6.2.3. 删除互联事件：remove_event
+#### 3.6.2.3. 删除互联事件：remove_event
 
 **Request:**
 

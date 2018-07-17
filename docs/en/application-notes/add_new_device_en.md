@@ -1,41 +1,37 @@
+[[中文]](../../zh_CN/application-notes/add_new_device_cn.md)
 
-This document is intended as a user guide to help developers to add a new type of device into the mesh network based on the ESP-MDF.
+# User Guide to Adding a New ESP-MDF Device
 
-## ESP-MDF Overview
-
-ESP-MDF is an integrated solution for Internet of Things developed based on [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework).
-
-It includes a complete set of functions including device networking, local & remote control, firmware upgrade, linkage control between devices, and low-power consumption solutions. Users can develop multiple types of smart devices based on the ESP-MDF framework, including smart lights, buttons, sockets, smart door locks, smart curtains, etc.
+This document is intended to adding a new type of device into the mesh network based on ESP-MDF.
 
 ## 1. ESP-MDF Device Workflow
 
-Here's an introduction to the workflow of ESP-MDF devices:
+Below is an introduction to the workflow of ESP-MDF devices:
 
 <div align=center>
-<img src="_static/esp_mdf_work_flow.png" width="800">
-<p> ESP-MDF Device WorkFlow </p>
+<img src="../../_static/esp_mdf_work_flow.png" width="600">
+<p> ESP-MDF Device Workflow </p>
 </div>
 
 ### 1.1. Device Initialization
 
-Hardware initialization of ESP-MDF devices includes the initialization of the pins connected to a temperature sensor, the initilization of the pin corresponding to the PWM module, etc. Different types of devices need different drivers. Here's an example of the `light_bulb` driver:
+Hardware initialization of ESP-MDF devices includes the initialization of the pins connected to a temperature sensor, the initialization of the pin corresponding to the PWM module, etc. Different types of devices need different drivers. Here's an example of the `light_bulb` driver:
 
 ```c
 // init GPIO of light_bulb
 ESP_ERROR_CHECK(light_init(GPIO_NUM_4, GPIO_NUM_16, GPIO_NUM_5, GPIO_NUM_19, GPIO_NUM_23));
 ```
 
-### 1.2. Adding Characteristics to Device
+### 1.2. Adding Characteristics to a Device
 
-Different types of devices are assigned different Type ID (TID) and characteristic ID (CID). For example, light and button are different types of device and have different characteristics. The light has the charactersitics of color, shade, and switch while the button only has switches.
+Different types of devices are assigned different Type IDs (TID) and Characteristic IDs (CID). For example, lights and buttons are different types of devices which have different characteristics. The lights have the characteristics of color, shade, and power status, while the buttons have power status only.
 
 The app or the server needs to acquire the device TID and CID to configure the mesh device status. The following figure shows the CID list of the mesh light on the mobile phone app.
 
 <div align=center>
-<img src="_static/app_light_cid.png" width="400">
+<img src="../../_static/app_light_cid.png" width="400">
 <p> Light Bulb CID List </p>
 </div>
-
 
 Take the `light_bulb` as an example, the device characterstics are added with the function `mdf_device_add_characteristics(...)`.
 
@@ -50,7 +46,7 @@ ESP_ERROR_CHECK(mdf_device_add_characteristics(BRIGHTNESS_CID, "brightness", PER
 
 ### 1.3. Registering Status Update Interfaces
 
-The app or server configures the CID value with the API (`*_get_value, *_set_value`) provided by the device. The two APIs need to be user-defined and added to the device's `mdf_device_request_task` through registration. Take the `light_bulb` as an example:
+The app or server configures the CID value with the API (`*_get_value, *_set_value`) provided by the device. The two APIs need to be user-defined, created and added to the device's `mdf_device_request_task` through registration. Take the `light_bulb` as an example:
 
 ```c
 ESP_ERROR_CHECK(mdf_device_init_handle(light_bulb_event_loop_cb, light_bulb_get_value, light_bulb_set_value));
@@ -98,11 +94,11 @@ for (;;) {
 
 ### 1.6. Establishing Mesh Network
 
-The ESP-MESH implements manual networking and self-organized networking. Users can specify the root node, leaf nodes, and parent node. Other unspecified nodes are connected in a self-organized way. For more information on the ESP-MESH networking process, please refer to [Mesh Networking](https://espressif-docs.readthedocs-hosted.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-networking).
+The ESP-Mesh implements manual networking and self-organized networking. Users can specify the root node, leaf nodes, and parent node. Other unspecified nodes are connected in a self-organized way. For more information on the ESP-Mesh networking process, please refer to [Mesh Networking](https://espressif-docs.readthedocs-hosted.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-networking).
 
 ### 1.7. Creating Device Handle Task
 
-The device receives the data from the app, then parses the data to acquire instruction, inquires about the instruction list and executes the instruction, and replies as needed. For detailed code, please see `$MDF_PATH/esp32-mesh/components/mdf_application/mdf_device_handle.c`, for visualized process of data handling, please refer to Chapter 4 `HTTP Data Processing`. Below is the process of handling a data packet:
+The device receives the data from the app, then parses the data to acquire instruction, inquires about the instruction list and executes the instruction, and replies as needed. Below is the process of handling a data packet:
 
 * The device receives data from the app:
 
@@ -170,7 +166,7 @@ Two parts of ESP-MDF, `device driver` and `device status update interface` are r
 
 ### 2.1. Setting up a Project
 
-Clone an example of ESP-MDF into a new directory, or set up a project yourself. For details, please refer to [Get Started](get_started.md).
+Clone an example of ESP-MDF into a new directory, or set up a project yourself. For details, please refer to [Get Started](../get-started/get_started_en.md).
 
 ### 2.2. Creating a Driver
 
@@ -195,9 +191,9 @@ mdf_err_t mdf_light_blink_stop();
 mdf_err_t mdf_light_blink_set(uint8_t red, uint8_t green, uint8_t blue, int freq, int blink_ms);
 ```
 
-### 2.3. Defining device's TID/CID and Creating Corresponding APIs
+### 2.3. Defining Device's TID/CID and Creating Corresponding APIs
 
-The detailed description can be found in Chapter 1.2 `Adding Characteristics to Device` and Chapter 1.3 `Registration Status Update Interface`. Below is an exmaple of defining the characteristics of the light:
+The detailed description can be found in Chapter 1.2 `Adding Characteristics to Device` and Chapter 1.3 `Registration Status Update Interface`. Below is an example of defining the characteristics of the light:
 
 ```c
 enum light_status_cid {
@@ -214,11 +210,11 @@ static esp_err_t light_bulb_set_value(uint8_t cid, int value);
 static esp_err_t light_bulb_get_value(uint8_t cid, int *value);
 ```
 
-API `light_set_value`  and `light_get_value` are used by the app or server to set or get the status of the device.
+API `light_set_value` and `light_get_value` are used by the app or server to set or get the status of the device.
 
 ### 2.4. Organization of app_main
 
-The `app_main` function includes device information configuration, device initialization, configuring ESP-MDF parameters, and registering callback functions. Take the `light_bulb` as an example, the operate is showd blow:
+The `app_main` function includes device information configuration, device initialization, configuring ESP-MDF parameters, and registering callback functions. Take the `light_bulb` as an example, the operate is shown blow:
 
 ```c
 void app_main()
@@ -248,16 +244,15 @@ Root node is the only interface for the external communication of the mesh netwo
 3. The app communicates with the mesh devices
 
 <div align=center>
-<img src="_static/mesh_comm_procedure.png" width="800">
-<p> ESP-MDF Communication Procotol </p>
+<img src="../../_static/mesh_comm_procedure.png" width="600">
+<p> ESP-MDF Communication Protocol </p>
 </div>
 
-## 4. Customization of components
+## 4. Customization of Components
 
-ESP-IDF and ESP-MDF are composed by [components](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#component-makefiles), which can be used by different projects and examples. Meanwhile, users can customize the device function by modifying different components in the project (under directory `$IDF_PATH/components`, `$MDF_PATH/components`). To do so, the users need to set up a directory for the customized components and clone certain components of ESP-IDF or ESP-MDF to the newly establshed directory. For details, please refer to ESP-IDF [Build System](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#build-system).
+ESP-IDF and ESP-MDF are composed by [components](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#component-makefiles), which can be used by different projects and examples. Meanwhile, users can customize the device function by modifying different components in the project (under directory `$IDF_PATH/components`, `$MDF_PATH/components`). To do so, the users need to set up a directory for the customized components and clone certain components of ESP-IDF or ESP-MDF to the newly established directory. For details, please refer to ESP-IDF [Build System](https://esp-idf.readthedocs.io/en/latest/api-guides/build-system.html#build-system).
 
 ## 5. Resources
 
-* The [esp32.com forum](https://esp32.com/) is a place to ask questions and find community resources.
-
+* The [ESP32 BBS](https://esp32.com/) is a place to ask questions and find community resources.
 * [ESP Mesh Development Framework](https://github.com/espressif/esp-mdf) is based on [ESP IoT Development Framework](https://github.com/espressif/esp-id). For details, please refer to [ESP-IDF documentation](https://esp-idf.readthedocs.io).
