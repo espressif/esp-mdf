@@ -130,6 +130,10 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_ERROR_CHECK(ret < 0, ; , "mdf_server_init, ret: %d", ret);
             break;
 
+        case MESH_EVENT_ROOT_LOST_IP:
+            esp_wifi_connect();
+            break;
+
         case MESH_EVENT_ROUTING_TABLE_ADD:
         case MESH_EVENT_ROUTING_TABLE_REMOVE:
             MDF_LOGI("router num new: %d, change: %d",
