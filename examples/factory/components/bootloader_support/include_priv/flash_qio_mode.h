@@ -11,38 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __BOOT_CONFIG_H__
-#define __BOOT_CONFIG_H__
-
-#include <stdint.h>
+#pragma once
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#include "esp_flash_data_types.h"
-#include "soc/soc.h"
+/** @brief Enable Quad I/O mode in bootloader (if configured)
+ *
+ * Queries attached SPI flash ID and sends correct SPI flash
+ * commands to enable QIO or QOUT mode, then enables this mode.
+ */
+void bootloader_enable_qio_mode(void);
 
-#define SPI_SEC_SIZE 0x1000
-
-#define SPI_ERROR_LOG "spi flash error"
-
-#define MAX_OTA_SLOTS 16
-
-typedef struct {
-    esp_partition_pos_t ota_info;
-    esp_partition_pos_t factory;
-    esp_partition_pos_t test;
-    esp_partition_pos_t ota[MAX_OTA_SLOTS];
-    uint32_t app_count;
-    uint32_t selected_subtype;
-} bootloader_state_t;
-
-bool flash_encrypt(bootloader_state_t *bs);
+/**
+ * @brief Read flash ID by sending 0x9F command
+ * @return flash raw ID
+ *     mfg_id = (ID >> 16) & 0xFF;
+       flash_id = ID & 0xffff;
+ */
+uint32_t bootloader_read_flash_id();
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __BOOT_CONFIG_H__ */
