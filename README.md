@@ -40,27 +40,27 @@ You can develop multiple types of smart devices based on the ESP-MDF system fram
         * This includes router password changes, password errors, router damage, etc.
     * Security
         * Asymmetric encryption: Asymmetric encryption: Networking information gets encrypted asymmetrically during the BluFi and ESP-NOW networking;
-        * White lists: Scan the device's Bluetooth signal or the QR code, a unique identifier printed on the device packaging, to generate a white list of devices to be networked, and configure the devices exclusively on the white list when networking.
+        * White lists: Scan the device's Bluetooth signal or the QR code, a unique identifier printed on the device packaging, to generate a white list of devices to be networked, and configure the devices exclusively on the white list when networking.
 
 2. Wireless control
     * LAN control
 
     > For details of the ESP-MDF LAN control protocol, please refer to the document [Communication Protocol Between MDF Devices and the App](docs/en/application-notes/mdf_lan_protocol_guide_en.md).
 
-2. Rapid and stable upgrades
+3. Rapid and stable upgrades
     * Dedicated upgrade connection: it takes as short as 3 minutes to upgrade 50 devices at the same time;
-    * Support for breakpoint resumption: improves the success rate of upgrading the devices in a complex network environment;
+    * Support for breakpoint resumption: improves the success rate of upgrading the devices in a complex network environment;
 
 4. Comprehensive debugging tools
     * Command terminal: Add, modify, delete, and control ESP-MDF devices using command line
-    * Acquisition of networking information: Get the Root IP, MAC, Mesh-ID, and other information of the Mesh network through the mDNS service
-    * Log statistics: statistics of the received log, including: the number of ERR and WARN logs, the number of device restarts, the number of coredumps received, the system running time, etc.
-    * Log reservation: Receives device's log and coredump information and save it to SD card
+    * Acquisition of networking information: Get the Root IP, MAC, Mesh-ID, and other information of the Mesh network through the mDNS service
+    * Log statistics: statistics of the received log, including: the number of ERR and WARN logs, the number of device restarts, the number of coredumps received, the system running time, etc.
+    * Log reservation: Receives device's log and coredump information and save it to SD card
 
     > For details on using the debugging tool, please refer to the README.md document of the project [espnow_debug](https://github.com/espressif/esp-mdf/tree/master/examples/espnow_debug).
 
 5. Support for low power mode
-    * The leaf nodes can enter Deep Sleep mode when necessary to reduce system power consumption, in which the current consumption can be as low as 5 μA.
+    * The leaf nodes can enter Deep Sleep mode when necessary to reduce system power consumption, in which the current consumption can be as low as 5 μA.
 
 6. Support for iBeacon function
     * Suitable for indoor positioning (especially for indoor positioning scenarios in which GPS is unavailable) and product promotion (whereby sellers push product information and promotions in real time via iBeacon to handheld devices).
@@ -69,11 +69,10 @@ You can develop multiple types of smart devices based on the ESP-MDF system fram
     * Applicable to pedestrian flow monitoring (which can be done by calculating the number of portable IOT devices using ESP32 to sniffer data packets in the air) and path tracking (which can be done by sampling the wireless data packets of the same device at multiple locations and note down the time the packets are sent from the device at different locations).
 
 8. Support for sensor device gateway
-    
    * ESP32 can be connected to various sensor devices while running Wi-Fi and Bluetooth protocol stacks. It can easily transmit various sensor data to the server, thus serving as a gateway for a variety of sensor devices, such as Bluetooth devices, infrared sensors, temperature sensors, etc.
 
 9. Device Connectivity control
-	* ESP-MDF contains a device connectivity control scheme within the Mesh network based on the existing LAN communication protocols. The user configures the connectivity control operations in the ESP-Mesh app (such as turning on the lights in the living room when the door is opened, turning off the lights in the kitchen while turning on the lights in the living room when the user leaves the kitchen, etc.). Then the app converts the configurations into commands and sends them to the device. While running, the device continuously monitors the environment and its own state. When the condition for triggering the connectivity control operation is satisfied, the commands are directly sent to the target device.
+    * ESP-MDF contains a device connectivity control scheme within the Mesh network based on the existing LAN communication protocols. The user configures the connectivity control operations in the ESP-Mesh app (such as turning on the lights in the living room when the door is opened, turning off the lights in the kitchen while turning on the lights in the living room when the user leaves the kitchen, etc.). Then the app converts the configurations into commands and sends them to the device. While running, the device continuously monitors the environment and its own state. When the condition for triggering the connectivity control operation is satisfied, the commands are directly sent to the target device.
 
 ## 3. Resources
 
