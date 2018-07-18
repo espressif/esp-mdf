@@ -105,6 +105,15 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
         ESP_LOGD(TAG, "type=%x subtype=%x", partition->type, partition->subtype);
         partition_usage = "unknown";
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+        extern uint32_t g_flag_prt_addr;
+        /**< get flag partition address */
+        if (!strcmp((const char *)partition->label, "factory_flag")) {
+            g_flag_prt_addr = partition->pos.offset;
+        }
+
+#endif /**< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
         /* valid partition table */
         switch(partition->type) {
         case PART_TYPE_APP: /* app partition */
@@ -223,6 +232,21 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
         if(sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) {
             ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF)");
+
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+#define OTA0_INDEX (0)
+#define OTA1_INDEX (1)
+
+            if (bs->ota[0].offset != 0) {
+                ESP_LOGI(TAG, "Enter ota0 image");
+                return OTA0_INDEX;
+            } else if (bs->ota[1].offset != 0) {
+                ESP_LOGI(TAG, "Enter ota1 image");
+                return OTA1_INDEX;
+            }
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
             if (bs->factory.offset != 0) {
                 ESP_LOGI(TAG, "Defaulting to factory image");
                 return FACTORY_INDEX;

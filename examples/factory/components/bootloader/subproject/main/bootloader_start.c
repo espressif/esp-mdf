@@ -27,6 +27,72 @@
 
 static const char* TAG = "boot";
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+#include "bootloader_flash.h"
+
+static uint32_t g_secure_flag = 0;
+static uint32_t g_bootloader_cnt = 0;
+uint32_t g_flag_prt_addr  = 0;
+
+// -----------------------------------------------------------
+// | g_bootloader_cnt A | g_bootloader_cnt B | g_secure_flag |
+// -----------------------------------------------------------
+static void bootlooder_cnt_save(void)
+{
+    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
+
+    if (g_secure_flag == 0) {
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 1);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 1, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
+
+        g_secure_flag = 1;
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
+    } else {
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE);
+        bootloader_flash_write(g_flag_prt_addr, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
+
+        g_secure_flag = 0;
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
+    }
+
+    return true;
+}
+
+static void bootlooder_cnt_load(void)
+{
+    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
+
+    if (g_secure_flag == 0) {
+        bootloader_flash_read(g_flag_prt_addr, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
+    } else {
+        bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 1, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
+    }
+}
+
+// esp-mdf use the flag to decide whether return to factory partition,
+// must be after load_partition_table(), because g_flag_prt_addr was assigned in it.
+static void update_bootloader_cnt(void)
+{
+    bootlooder_cnt_load();
+
+    // if customer want to disable factory partition, set g_bootloader_cnt 0
+    if (g_bootloader_cnt) {
+        if (g_bootloader_cnt == UINT32_MAX) {
+            // first time power-on or been erased
+            g_bootloader_cnt = 1;
+        } else {
+            g_bootloader_cnt++;
+        }
+
+        ESP_LOGI(TAG, "g_bootloader_cnt: %d", g_bootloader_cnt);
+        bootlooder_cnt_save();
+    }
+}
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
 static esp_err_t select_image (esp_image_metadata_t *image_data);
 static int selected_boot_partition(const bootloader_state_t *bs);
 /*
@@ -61,6 +127,10 @@ static esp_err_t select_image (esp_image_metadata_t *image_data)
         return ESP_FAIL;
     }
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+    update_bootloader_cnt();
+#endif
+
     // 2. Select boot partition
     int boot_index = selected_boot_partition(&bs);
     if(boot_index == INVALID_INDEX) {
@@ -71,6 +141,28 @@ static esp_err_t select_image (esp_image_metadata_t *image_data)
     if (!bootloader_utility_load_boot_image(&bs, boot_index, image_data)) {
         return ESP_FAIL;
     }
+
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+    bootlooder_cnt_load();
+
+    if (g_bootloader_cnt) {
+        if (g_bootloader_cnt >= CONFIG_MDF_BOOTLOADER_COUNT_MIN
+                && g_bootloader_cnt <= CONFIG_MDF_BOOTLOADER_COUNT_MAX) {
+            ESP_LOGI(TAG, "g_bootloader_cnt: %d, enter factory app", g_bootloader_cnt);
+
+            memset(&image_data, 0, sizeof(esp_image_metadata_t));
+
+            if (!bootloader_utility_load_boot_image(&bs, FACTORY_INDEX, image_data)) {
+                return ESP_FAIL;
+            }
+        }
+
+        g_bootloader_cnt = UINT32_MAX;
+        bootlooder_cnt_save();
+    }
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
     return ESP_OK;
 }
 
