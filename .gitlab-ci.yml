@@ -44,7 +44,7 @@ before_script:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - iot
+    - build
   variables:
     ARTIFACTS_NAME: "default"
     DEFAULT_CONFIG: ""
