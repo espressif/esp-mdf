@@ -822,6 +822,11 @@ void mdf_device_request_task(void *arg)
     };
 
     for (;;) {
+        if (!mdf_wifi_mesh_is_running()) {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            continue;
+        }
+
         status_code                = ESP_FAIL;
         device_data.response_size  = WIFI_MESH_PACKET_MAX_SIZE;
         device_data.response_proto = MDF_PROTO_JSON;
