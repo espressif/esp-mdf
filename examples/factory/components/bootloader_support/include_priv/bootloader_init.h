@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,17 +13,16 @@
 // limitations under the License.
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "esp_err.h"
 
-/** @brief Enable Quad I/O mode in bootloader (if configured)
+/* @brief Prepares hardware for work.
  *
- * Queries attached SPI flash ID and sends correct SPI flash
- * commands to enable QIO or QOUT mode, then enables this mode.
- */
-void bootloader_enable_qio_mode(void);
+ * Setting up:
+ * - Disable Cache access for both CPUs;
+ * - Initialise cache mmu;
+ * - Setting up pins and mode for SD, SPI, UART, Clocking.
 
-#ifdef __cplusplus
-}
-#endif
+ *  @return ESP_OK   - If the setting is successful.
+ *          ESP_FAIL - If the setting is not successful.
+ */
+esp_err_t bootloader_init();
