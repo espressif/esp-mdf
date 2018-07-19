@@ -73,7 +73,42 @@ esp_err_t espnow_sd_coredump_write(const uint8_t *mac_addr, uint8_t *data, size_
  *     - ESP_OK
  *     - others : fail
  */
-esp_err_t espnow_sdcard_init(void);
+esp_err_t espnow_sd_init(void);
+
+/**
+ * @brief  list files in sdcard with given file type(all, log or dmp)
+ *         list all files if no paramaters.
+ *
+ * @param  type given file type
+ *
+ * @return
+ *     - ESP_OK
+ *     - others : fail
+ */
+esp_err_t espnow_sd_ls(const char *type);
+
+/**
+ * @brief  remove files in sdcard with given type(log or dmp) or filename
+ *
+ * @param  file given file type or filename
+ *
+ * @return
+ *     - ESP_OK
+ *     - others : fail
+ */
+esp_err_t espnow_sd_rm(const char *file);
+
+/**
+ * @brief  read file(currently only support coredump file) with specific filename
+ *
+ * @param  file given filename
+ *
+ * @return
+ *     - ESP_OK
+ *     - others : fail
+ */
+esp_err_t espnow_sd_read(const char *file);
+
 
 
 #ifdef __cplusplus

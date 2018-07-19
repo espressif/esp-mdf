@@ -162,8 +162,8 @@ void app_main()
 #endif /**< CONFIG_SHOW_IN_LCD */
 
 #ifdef CONFIG_SAVE_TO_SDCARD
-    esp_err_t ret = espnow_sdcard_init();
-    MDF_ERROR_CHECK(ret < 0, ; , "espnow_sdcard_init fail, ret:%d", ret);
+    esp_err_t ret = espnow_sd_init();
+    MDF_ERROR_CHECK(ret < 0, ; , "espnow_sd_init fail, ret:%d", ret);
 #endif /**< CONFIG_SAVE_TO_SDCARD */
 
     /**< init mdns before wifi init */
@@ -178,9 +178,11 @@ void app_main()
     /* disable all logs except console log, espnow_term warn log and log received from DUT via espnow. */
     esp_log_level_set("*", ESP_LOG_NONE);
     esp_log_level_set("espnow_term", ESP_LOG_WARN);
+    esp_log_level_set("espnow_recv_handle", ESP_LOG_WARN);
     esp_log_level_set("espnow_cmd", ESP_LOG_INFO);
     esp_log_level_set("dut_recv", ESP_LOG_INFO);
     esp_log_level_set("dut_core_dump", ESP_LOG_INFO);
+    esp_log_level_set("espnow_sdcard", ESP_LOG_INFO);
 
     /**< start mdns task to find mesh network */
     xTaskCreate(espnow_mdns_task, "espnow_mdns_task", 1024 * 3, NULL, 5, NULL);
