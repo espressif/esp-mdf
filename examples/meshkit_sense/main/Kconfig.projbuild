@@ -1,0 +1,54 @@
+menu "ESP32-MeshKit-Sense config"
+
+    config ENABLE_ULP_WAKEUP
+        bool "Use ulp as a wakeup stub"
+        default y
+        help
+            This option enables wake up from deep sleep using ULP.
+            ULP program monitors the luminance sensor bh1750 and
+            wakes up the chip when the luminance goes outside of
+            low and upper threshold.
+
+    config ULP_READ_INTERVAL
+        int "Time interval of ulp read data from sensor (millisecond)"
+        default 500
+        depends on ENABLE_ULP_WAKEUP
+
+    config LUMINANCE_THRESHOLD_LOW
+        int "Low threshold of luminance to trigger"
+        default 200
+        range 0 500
+        depends on ENABLE_ULP_WAKEUP
+
+    config LUMINANCE_THRESHOLD_UPPER
+        int "Upper threshold of luminance to trigger"
+        default 600
+        range 500 65536
+        depends on ENABLE_ULP_WAKEUP
+
+    config ENABLE_EXT1_WAKEUP
+        bool "Use extern interrupt 1 as a wakeup stub"
+        default y
+        help
+            The GPIO EXT1 is GPIO_NUM_34, actually it's WakeUp button in board,
+            and when the chip wakes up from EXT1, it will switch to mesh mode.
+
+    config ENABLE_TIMER_WAKEUP
+        bool "Use timer as a wakeup stub"
+        default n
+
+    config TIMER_INTERVAL_DEEPSLEEP
+        int "Timer interval of deepsleep (millisecond)"
+        default 60000
+        range 10000 65536
+        depends on ENABLE_TIMER_WAKEUP
+
+    config SENSE_DEEPSLEEP_DELAY_TIME
+        int "Sleep delay time of touchpad in deepsleep mode(start from wakeup to deepsleep start, Calculated in milliseconds)"
+        default 3000
+
+    config USE_EPAPER_DISPLAY
+        bool "Use epaper to display sensor status"
+        default n
+
+endmenu
