@@ -71,7 +71,8 @@ static esp_err_t mdf_http_header_parse(server_http_connect_t *conn)
     MDF_ERROR_CHECK(mac_str_len <= 0, ESP_FAIL,
                     "mdf_http_get_header Mesh-Node-Mac, mac_str_len: %d", mac_str_len);
 
-    conn->dest_addrs = mdf_calloc(1, mac_str_len / 2);
+    conn->dest_addrs_num = 0;
+    conn->dest_addrs     = mdf_calloc(1, mac_str_len / 2);
 
     for (char *tmp = mdf_node_mac_str; *tmp != '\r'; tmp++) {
         if (*tmp == ',') {
