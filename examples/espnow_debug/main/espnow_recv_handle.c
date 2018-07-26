@@ -187,7 +187,12 @@ static void espnow_recv_handle_task(void *arg)
 
 #ifdef CONFIG_SAVE_TO_SDCARD
                     /**< del exit device's correspondding coredump */
-                    ESP_ERROR_CHECK(espnow_sd_coredump_write(mac_addr, NULL, 0, ESPNOW_SDCARD_DEL_TEM));
+                    ret = espnow_sd_coredump_write(mac_addr, NULL, 0, ESPNOW_SDCARD_DEL_TEM);
+
+                    if (ret < 0) {
+                        MDF_LOGW("espnow_sd_coredump_write MDF_ESPNOW_COREDUMP_START, ret: %d", ret);
+                    }
+
 #endif /**< CONFIG_SAVE_TO_SDCARD */
 
                     coredump_total_len = espnow_debug_pkt->size;
@@ -215,8 +220,12 @@ static void espnow_recv_handle_task(void *arg)
 
 #ifdef CONFIG_SAVE_TO_SDCARD
                     /**< save date to sdcard temp file */
-                    ESP_ERROR_CHECK(espnow_sd_coredump_write(mac_addr, espnow_debug_pkt->data,
-                                    espnow_debug_pkt->size, ESPNOW_SDCARD_WRITE_TEM));
+                    ret = espnow_sd_coredump_write(mac_addr, espnow_debug_pkt->data, espnow_debug_pkt->size, ESPNOW_SDCARD_WRITE_TEM);
+
+                    if (ret < 0) {
+                        MDF_LOGW("espnow_sd_coredump_write MDF_ESPNOW_COREDUMP_TRANSFERRING, ret: %d", ret);
+                    }
+
 #endif /**< CONFIG_SAVE_TO_SDCARD */
 
                     ret = mdf_espnow_write(MDF_ESPNOW_DEBUG, mac_addr, response,
@@ -263,8 +272,12 @@ static void espnow_recv_handle_task(void *arg)
 
 #ifdef CONFIG_SAVE_TO_SDCARD
                         /**< save to sdcard */
-                        ESP_ERROR_CHECK(espnow_sd_coredump_write(mac_addr, espnow_debug_pkt->data,
-                                        espnow_debug_pkt->size, ESPNOW_SDCARD_SAVE));
+                        ret = espnow_sd_coredump_write(mac_addr, espnow_debug_pkt->data, espnow_debug_pkt->size, ESPNOW_SDCARD_SAVE);
+
+                        if (ret < 0) {
+                            MDF_LOGW("espnow_sd_coredump_write MDF_ESPNOW_COREDUMP_END, ret: %d", ret);
+                        }
+
 #endif /**< CONFIG_SAVE_TO_SDCARD */
 
 #ifdef CONFIG_SHOW_IN_LCD

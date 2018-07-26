@@ -39,6 +39,7 @@
 #include "mdf_espnow.h"
 #include "mdf_espnow_debug.h"
 
+#include "espnow_sdcard.h"
 #include "espnow_console.h"
 
 static const char *TAG = "espnow_cmd";
@@ -84,6 +85,15 @@ typedef struct {
     char password[64];
 } wifi_connect_t;
 
+/**< file operation cmd args, including: ls, rm, read */
+typedef struct {
+    struct arg_str *type;
+    struct arg_end *end;
+} file_oprt_args;
+file_oprt_args ls_args = { 0 };
+file_oprt_args rm_args = { 0 };
+file_oprt_args read_args = { 0 };
+
 /* the remote peer could be in scanning or espnow network config state
  * this means it will switch channel for every 100 ms
  * the espnow terminal tries to send multiple times to make sure they can receive */
@@ -112,6 +122,7 @@ static void register_log();
 static void register_dumpreq();
 static void register_dumperase();
 static void register_wifi();
+static void file_oprt();
 
 void register_cmds()
 {
@@ -130,6 +141,9 @@ void register_cmds()
     register_log();
     register_dumpreq();
     register_dumperase();
+
+    /**< file operation cmd, including: ls, rm, read */
+    file_oprt();
 }
 
 static inline bool str_to_mac(const char *str, uint8_t *dest)
@@ -746,3 +760,90 @@ static void register_wifi(void)
     ESP_ERROR_CHECK( esp_console_cmd_register(&channel_cmd) );
 }
 
+static int ls_file(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &ls_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, ls_args.end, argv[0]);
+        return 1;
+    }
+
+    MDF_LOGI("list file type: %s", ls_args.type->sval[0]);
+    if (!ls_args.type->sval[0][0] || !strcmp("all", ls_args.type->sval[0])){
+        espnow_sd_ls("ALL");
+    } else if (!strcmp("log", ls_args.type->sval[0])){
+        espnow_sd_ls("LOG");
+    } else if (!strcmp("dmp", ls_args.type->sval[0])){
+        espnow_sd_ls("DMP");
+    } else {
+        MDF_LOGW("unsupported file type: %s", ls_args.type->sval[0]);
+        return 1;
+    }
+    return 0;
+}
+
+static int rm_file(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &rm_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, rm_args.end, argv[0]);
+        return 1;
+    }
+    if(rm_args.type->sval[0] == NULL){
+        return 1;
+    }
+    MDF_LOGI("file: %s", rm_args.type->sval[0]);
+    espnow_sd_rm(rm_args.type->sval[0]);
+    return 0;
+}
+
+static int read_file(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &read_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, read_args.end, argv[0]);
+        return 1;
+    }
+    if (read_args.type->sval[0] == NULL) {
+        return 1;
+    }
+    MDF_LOGI("read file: %s", read_args.type->sval[0]);
+    espnow_sd_read(read_args.type->sval[0]);
+    return 0;
+}
+
+static void file_oprt()
+{
+    ls_args.type = arg_str0(NULL, NULL, "<type>", "ls file");
+    ls_args.end = arg_end(1);
+    const esp_console_cmd_t ls_cmd = {
+        .command = "ls",
+        .help = "list files with given file type([all], log, dump)",
+        .hint = NULL,
+        .func = &ls_file,
+        .argtable = &ls_args,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&ls_cmd) );
+
+    rm_args.type = arg_str1(NULL, NULL, "<type>", "rm file");
+    rm_args.end = arg_end(1);
+    const esp_console_cmd_t rm_cmd = {
+        .command = "rm",
+        .help = "remove files with given file type or name",
+        .hint = NULL,
+        .func = &rm_file,
+        .argtable = &rm_args,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&rm_cmd) );
+
+    read_args.type = arg_str1(NULL, NULL, "<type>", "read file");
+    read_args.end = arg_end(1);
+    const esp_console_cmd_t read_cmd = {
+        .command = "read",
+        .help = "read files with given file name(curedump only)",
+        .hint = NULL,
+        .func = &read_file,
+        .argtable = &read_args,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&read_cmd) );
+}

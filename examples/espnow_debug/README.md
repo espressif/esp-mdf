@@ -8,6 +8,7 @@ Espnow_debug 接收板提供的主要功能包括：
 2. 接收 ESP-MDF 设备的运行日志与 coredump 信息并保存至 SD 卡
 3. 通过 mDNS 服务获取 Mesh 网络的基本信息，包括：Mesh-ID、根节点 IP、根节点 MAC 地址等（espnow_debug 接收板和 ESP-MDF 设备需要连接到同一个路由器）
 4. 对接收的运行日志进行统计，显示所有已添加的 ESP-MDF 设备的运行状态，包括：ERR 和 WARN 日志数量、重启次数、Coredump 接收个数、设备运行时间等
+5. 支持 SD 卡文件操作，命令包括：ls（显示 SD 卡文件列表），rm（删除 SD 卡文件） 和 read（读取 SD 卡文件内容）
 
 <div align=center>
 <img src="docs/_static/espnow_debug.png" width="800">
@@ -67,21 +68,21 @@ espnow_debug
 
 ### 2.3. 串口命令格式说明
 
-* Espnow_debug 接收板支持的串口指令包括: join、channel、add、del、list、log、llog、dumpreq 和 dumperase
+* Espnow_debug 接收板支持的串口指令包括: join、channel、add、del、list、log、llog、dumpreq、dumperase、ls、rm 和 read。
 
 * 串口命令的交互遵循以下规则：
     1. 控制命令通过串口，从 PC 端发送给 Espnow_debug 接收板，串口通信波特率为 115200
     2. 控制命令定义中，字符均为小写字母, 字符串不需要带引号
     3. 命令描述中括号 {} 包含的元素整体, 表示一个参数, 需要根据实际情况进行替换
     4. 命令描述中方括号 [] 包含的部分，表示为缺省值, 可以填写或者可能显示
-    4. 串口命令的模式如下所示，每个元素之间，以空格符分隔
+    5. 串口命令的模式如下所示，每个元素之间，以空格符分隔
 
         ```
         命令＋参数＋参数，例如： join ap_ssid ap_password
         命令＋选项＋参数，例如： add -m aa:bb:cc:dd:ee:ff -m 12:34:56:78:90:ab
         ```
-    5. 换行符支持 '\n' 或者 '\r\n'。
-    6. 串口以 115200 波特率返回执行结果
+    6. 换行符支持 '\n' 或者 '\r\n'。
+    7. 串口以 115200 波特率返回执行结果
 
 * 下面以操作流程为序，介绍每条命令的使用。
 
@@ -220,9 +221,61 @@ espnow_debug
     |参数|无||
     |响应|OK|命令执行成功|
 
-> 此外还包括：`free` 和 `restart` 命令用于调试。
-> * `free`: 显示系统剩余 Heap Memory
-> * `restart`: 重启 espnow_debug 接收板
+#### 2.3.5. SD 卡文件操作命令
+
+1. ls
+
+    |||||
+    |-|-|-|-|
+    |命令定义|ls [{type}]||
+    |指令|ls|显示 SD 卡中文件列表|
+    |参数|type|文件类型|
+    |||all // 显示所有文件<br>log // 显示所有日志文件<br>dmp // 显示所有 coredump 文件<br>如果不带任何参数，则显示所有文件 |
+    |示例|ls log|显示 SD 卡中所有日志文件|
+    |响应|OK|设置成功|
+
+2. rm
+
+    |||||
+    |-|-|-|-|
+    |命令定义|rm {type}||
+    |指令|rm|删除 SD 卡中指定类型或指定文件名的文件|
+    |参数|type|文件类型或文件名|
+    |||all // 删除所有日志文件和 coredump 文件<br>log // 删除所有日志文件<br>dmp // 删除所有 coredump 文件<br><filename> //删除指定文件 |
+    |示例|rm log|删除 SD 卡中所有日志文件|
+    |响应|OK|设置成功|
+
+3. read
+
+    |||||
+    |-|-|-|-|
+    |命令定义|read file||
+    |指令|read|读取 SD 卡中指定文件|
+    |参数|file|要读取文件的文件名|
+    |示例|read abcdef.dmp|读取 SD 卡中文件名为 abcdef.dmp 的 coredump 文件|
+    |响应|OK|设置成功|
+
+read 命令使用说明：read 命令目前只支持读取 coredump 文件，用户需要通过如下步骤解析接收到的 coredump 数据：
+
+* read 命令读取 coredump 文件：`read abcdef.dmp`。 read 读取的文件经过 base64 编码后打印到串口，以如下格式显示，
+
+    ```
+    ================= CORE DUMP START =================
+    <body of base64-encoded core dump, save it to file on disk>
+    ================= CORE DUMP END ===================
+    ```
+
+* 将 `================= CORE DUMP START =================` 和 `================= CORE DUMP END ===================` 之间的数据拷贝到一个全新文件中（假设为 file_A）
+* 通过 Linux 命令：`base64 -d file_A > file_B` 将打印的 base64 编码的数据再次转换成原始二进制数据，并保存到一个全新文件中（假设为 file_B）
+* 通过命令：`python esp-idf/components/espcoredump/espcoredump.py info_corefile -t raw -c <path/to/doredump/file> <path/to/project/elf/file>` 解析接收到的 file_B 文件
+
+> * read 命令目前只支持读取 coredump 文件
+> * 经过 base64 编码（从 SD 卡打印到串口）和解码（命令 `base64 -d file_A > file_B`）过程，文件 abcdef.dmp 和 file_B 的内容完全一致。
+
+#### 2.3.6. 其他命令
+
+* `free`: 显示系统剩余 Heap Memory
+* `restart`: 重启 espnow_debug 接收板
 
 ## 3. 性能影响说明
 
