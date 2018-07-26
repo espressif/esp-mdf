@@ -22,6 +22,7 @@
  *
  */
 
+#include "rom/rtc.h"
 #include "mdf_info_store.h"
 #include "mdf_event_loop.h"
 #include "mdf_network_config.h"
@@ -291,9 +292,11 @@ static void mdf_reboot_num_clear(void *timer)
 
 esp_err_t mdf_reboot_event_init()
 {
-    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_UNDEFINED) {
+    RESET_REASON reason = rtc_get_reset_reason(0);
+
+    if (reason != POWERON_RESET && reason != RTCWDT_RTC_RESET) {
+        MDF_LOGI("rtc_get_reset_reason reason: %d", reason);
         mdf_info_erase(REBOOT_NUM_KEY);
-        return ESP_OK;
     }
 
     TimerHandle_t timer = NULL;
