@@ -89,7 +89,9 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
             switch (disconnected->reason) {
                 /**< pwd err */
+                case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
                 case WIFI_REASON_HANDSHAKE_TIMEOUT:
+                    mdf_info_erase(MDF_NETWORK_CONFIG_KEY);
                 case WIFI_REASON_MIC_FAILURE:
                 case WIFI_REASON_BEACON_TIMEOUT:
                 case WIFI_REASON_AUTH_LEAVE:

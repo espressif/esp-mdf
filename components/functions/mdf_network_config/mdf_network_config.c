@@ -585,6 +585,7 @@ static void mdf_blufi_network_task(void *arg)
     esp_err_t ret                       = ESP_OK;
     network_config_t network_config     = {0};
     network_config_t old_network_config = {0};
+    size_t old_config_len               = 0;
 
     vTaskDelay(10000 / portTICK_RATE_MS);
 
@@ -598,7 +599,7 @@ static void mdf_blufi_network_task(void *arg)
 
     MDF_LOGD("start blue network configured");
 
-    mdf_info_load(MDF_NETWORK_CONFIG_KEY, &old_network_config, sizeof(network_config_t));
+    old_config_len = mdf_info_load(MDF_NETWORK_CONFIG_KEY, &old_network_config, sizeof(network_config_t));
 
     ret = mdf_blufi_init();
     MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_blufi_init, ret: %d", ret);
@@ -618,7 +619,7 @@ static void mdf_blufi_network_task(void *arg)
         }
 
         /**< channel migration */
-        if (!mdf_blufi_connecting_wifi()) {
+        if (!mdf_blufi_connecting_wifi() && old_config_len > 0) {
             uint8_t channel = 0;
             ret = mdf_channel_get(old_network_config.ssid, &channel);
             MDF_ERROR_CONTINUE(ret < 0, "mdf_channel_get, ret: %d", ret);
