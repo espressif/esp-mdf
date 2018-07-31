@@ -57,7 +57,7 @@ config MDF_HTTP_SERVER_PORT
 
 config MDF_CONNECT_NUM
     int "Maximum number of connections"
-    default 8
+    default 5
     help
         Maximum number of connections
 
