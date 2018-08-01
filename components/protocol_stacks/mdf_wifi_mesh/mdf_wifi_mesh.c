@@ -395,7 +395,7 @@ ssize_t mdf_wifi_mesh_root_send(wifi_mesh_addr_t *src_addr, wifi_mesh_addr_t *de
     memcpy(&mesh_head_data.addr, src_addr, sizeof(wifi_mesh_addr_t));
     mesh_flag = (data_type->group) ? mesh_flag | MESH_DATA_GROUP : mesh_flag;
 
-    for (mesh_head_data.seq = 0; size > 0; mesh_head_data.seq++, size -= WIFI_MESH_PACKET_MAX_SIZE) {
+    for (mesh_head_data.seq = 0; size > 0; mesh_head_data.seq++, mesh_head_data.id = packet_id++, size -= WIFI_MESH_PACKET_MAX_SIZE) {
         mesh_data.data = (uint8_t *)data + mesh_head_data.seq * WIFI_MESH_PACKET_MAX_SIZE;
         mesh_data.size = (size > WIFI_MESH_PACKET_MAX_SIZE) ? WIFI_MESH_PACKET_MAX_SIZE : size;
 
