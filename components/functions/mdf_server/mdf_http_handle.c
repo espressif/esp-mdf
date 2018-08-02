@@ -315,17 +315,15 @@ esp_err_t mdf_http_server_request()
         if (FD_ISSET(conn->sockfd, &readset)) {
             if (!conn->http_head) {
                 conn->http_size = 0;
-                conn->http_head = mdf_calloc(1, MDF_CONNECT_BUF_SIZE * 2);
+                conn->http_head = mdf_calloc(1, MDF_CONNECT_BUF_SIZE);
             }
 
             MDF_LOGD("conn->sockfd: %d, conn->http_size: %d", conn->sockfd, conn->http_size);
 
 #ifdef CONFIG_MDF_USE_HTTPS
-            ret = mdf_ssl_recv(conn->ssl, conn->http_head + conn->http_size,
-                               MDF_CONNECT_BUF_SIZE * 2 - conn->http_size);
+            ret = mdf_ssl_recv(conn->ssl, conn->http_head + conn->http_size, MDF_CONNECT_BUF_SIZE - conn->http_size);
 #else
-            ret = mdf_socket_recv(conn->sockfd, conn->http_head + conn->http_size,
-                                  MDF_CONNECT_BUF_SIZE * 2 - conn->http_size);
+            ret = mdf_socket_recv(conn->sockfd, conn->http_head + conn->http_size, MDF_CONNECT_BUF_SIZE - conn->http_size);
 #endif
 
             if (ret <= 0 || (!conn->type.ota && conn->http_size > MDF_CONNECT_BUF_SIZE)) {
