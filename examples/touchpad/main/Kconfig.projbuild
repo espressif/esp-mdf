@@ -1,0 +1,14 @@
+menu "Mesh_touchpad config"
+
+config TOUCHPAD_DEEPSLEEP_DELAY_TIME
+    int "Sleep delay time of touchpad in deepsleep mode(start from wakeup to deepsleep start, Calculated in milliseconds)"
+    default 3000
+
+config COVER_THICK_LINEAR_SLIDER
+    int "Linear slider plastic cover thickness (0 mm~1 mm)"
+    range 0 1
+    default 1
+    help
+        Supports plastic cover from 0 mm to 1 mm thickness
+
+endmenu
