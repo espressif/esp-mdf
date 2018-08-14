@@ -21,7 +21,7 @@
 * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *
 */
-
+#include "driver/rtc_io.h"
 #include "iot_led.h"
 #include "sense_led.h"
 #include "mdf_common.h"
@@ -34,8 +34,29 @@ static CLED *g_wifi_led = NULL;
 static CLED *g_network_led = NULL;
 static const char *TAG = "sense_led";
 
+void sense_state_led_io_hold()
+{
+    gpio_set_level((gpio_num_t)WIFI_STATUS_LED_IO, LED_DARK_HIGH);
+    rtc_gpio_hold_en((gpio_num_t)WIFI_STATUS_LED_IO);
+    gpio_set_level((gpio_num_t)NETWORK_STATUS_LED_IO, LED_DARK_LOW);
+    rtc_gpio_hold_en((gpio_num_t)NETWORK_STATUS_LED_IO);
+}
+
 void sense_state_led_init()
 {
+    gpio_config_t led_io_config;
+    led_io_config.pin_bit_mask = 1 << WIFI_STATUS_LED_IO | 1 << NETWORK_STATUS_LED_IO;
+    led_io_config.mode = GPIO_MODE_OUTPUT;
+    led_io_config.pull_up_en = GPIO_PULLUP_DISABLE;
+    led_io_config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    led_io_config.intr_type = GPIO_INTR_DISABLE;
+
+    gpio_config(&led_io_config);
+    gpio_set_level((gpio_num_t)WIFI_STATUS_LED_IO, LED_DARK_HIGH);
+    gpio_set_level((gpio_num_t)NETWORK_STATUS_LED_IO, LED_DARK_LOW);
+    rtc_gpio_hold_dis((gpio_num_t)WIFI_STATUS_LED_IO);
+    rtc_gpio_hold_dis((gpio_num_t)NETWORK_STATUS_LED_IO);
+
     if (!g_wifi_led) {
         g_wifi_led = new CLED(WIFI_STATUS_LED_IO, LED_DARK_HIGH);
         gpio_set_direction(WIFI_STATUS_LED_IO, GPIO_MODE_INPUT_OUTPUT);
