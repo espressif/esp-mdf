@@ -26,14 +26,7 @@ ESP_ERROR_CHECK(light_init(GPIO_NUM_4, GPIO_NUM_16, GPIO_NUM_5, GPIO_NUM_19, GPI
 
 Different types of devices are assigned different Type IDs (TID) and Characteristic IDs (CID). For example, lights and buttons are different types of devices which have different characteristics. The lights have the characteristics of color, shade, and power status, while the buttons have power status only.
 
-The app or the server needs to acquire the device TID and CID to configure the mesh device status. The following figure shows the CID list of the mesh light on the mobile phone app.
-
-<div align=center>
-<img src="../../_static/app_light_cid.png" width="400">
-<p> Light Bulb CID List </p>
-</div>
-
-Take the `light_bulb` as an example, the device characterstics are added with the function `mdf_device_add_characteristics(...)`.
+The app or the server needs to acquire the device TID and CID to configure the mesh device status. Take the `light_bulb` as an example, the device characterstics are added with the function `mdf_device_add_characteristics(...)`.
 
 ```c
 ESP_ERROR_CHECK(mdf_device_add_characteristics(STATUS_CID, "on", PERMS_READ_WRITE_TRIGGER, 0, 1, 1));
