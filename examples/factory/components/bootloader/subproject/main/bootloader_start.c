@@ -27,73 +27,7 @@
 
 static const char* TAG = "boot";
 
-#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
-#include "bootloader_flash.h"
-
-static uint32_t g_secure_flag = 0;
-static uint32_t g_bootloader_cnt = 0;
-uint32_t g_flag_prt_addr  = 0;
-
-// -----------------------------------------------------------
-// | g_bootloader_cnt A | g_bootloader_cnt B | g_secure_flag |
-// -----------------------------------------------------------
-static void bootlooder_cnt_save(void)
-{
-    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
-
-    if (g_secure_flag == 0) {
-        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 1);
-        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 1, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
-
-        g_secure_flag = 1;
-        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
-        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
-    } else {
-        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE);
-        bootloader_flash_write(g_flag_prt_addr, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
-
-        g_secure_flag = 0;
-        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
-        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
-    }
-
-    return true;
-}
-
-static void bootlooder_cnt_load(void)
-{
-    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &g_secure_flag, sizeof(g_secure_flag), false);
-
-    if (g_secure_flag == 0) {
-        bootloader_flash_read(g_flag_prt_addr, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
-    } else {
-        bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 1, &g_bootloader_cnt, sizeof(g_bootloader_cnt), false);
-    }
-}
-
-// esp-mdf use the flag to decide whether return to factory partition,
-// must be after load_partition_table(), because g_flag_prt_addr was assigned in it.
-static void update_bootloader_cnt(void)
-{
-    bootlooder_cnt_load();
-
-    // if customer want to disable factory partition, set g_bootloader_cnt 0
-    if (g_bootloader_cnt) {
-        if (g_bootloader_cnt == UINT32_MAX) {
-            // first time power-on or been erased
-            g_bootloader_cnt = 1;
-        } else {
-            g_bootloader_cnt++;
-        }
-
-        ESP_LOGI(TAG, "g_bootloader_cnt: %d", g_bootloader_cnt);
-        bootlooder_cnt_save();
-    }
-}
-
-#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
-
-static esp_err_t select_image (esp_image_metadata_t *image_data);
+static int select_partition_number (bootloader_state_t *bs);
 static int selected_boot_partition(const bootloader_state_t *bs);
 /*
  * We arrive here after the ROM bootloader finished loading this second stage bootloader from flash.
@@ -103,67 +37,32 @@ static int selected_boot_partition(const bootloader_state_t *bs);
 void call_start_cpu0()
 {
     // 1. Hardware initialization
-    if(bootloader_init() != ESP_OK){
+    if (bootloader_init() != ESP_OK) {
         return;
     }
 
-    // 2. Select image to boot
-    esp_image_metadata_t image_data;
-    if(select_image(&image_data) != ESP_OK){
-        return;
-    }
-
-    // 3. Loading the selected image
-    bootloader_utility_load_image(&image_data);
-}
-
-// Selects image to boot
-static esp_err_t select_image (esp_image_metadata_t *image_data)
-{
-    // 1. Load partition table
+    // 2. Select the number of boot partition
     bootloader_state_t bs = { 0 };
-    if (!bootloader_utility_load_partition_table(&bs)) {
-        ESP_LOGE(TAG, "load partition table error!");
-        return ESP_FAIL;
-    }
-
-#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
-    update_bootloader_cnt();
-#endif
-
-    // 2. Select boot partition
-    int boot_index = selected_boot_partition(&bs);
-    if(boot_index == INVALID_INDEX) {
-        return ESP_FAIL; // Unrecoverable failure (not due to corrupt ota data or bad partition contents)
+    int boot_index = select_partition_number(&bs);
+    if (boot_index == INVALID_INDEX) {
+        return;
     }
 
     // 3. Load the app image for booting
-    if (!bootloader_utility_load_boot_image(&bs, boot_index, image_data)) {
-        return ESP_FAIL;
+    bootloader_utility_load_boot_image(&bs, boot_index);
+}
+
+// Select the number of boot partition
+static int select_partition_number (bootloader_state_t *bs)
+{
+    // 1. Load partition table
+    if (!bootloader_utility_load_partition_table(bs)) {
+        ESP_LOGE(TAG, "load partition table error!");
+        return INVALID_INDEX;
     }
 
-#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
-    bootlooder_cnt_load();
-
-    if (g_bootloader_cnt) {
-        if (g_bootloader_cnt >= CONFIG_MDF_BOOTLOADER_COUNT_MIN
-                && g_bootloader_cnt <= CONFIG_MDF_BOOTLOADER_COUNT_MAX) {
-            ESP_LOGI(TAG, "g_bootloader_cnt: %d, enter factory app", g_bootloader_cnt);
-
-            memset(&image_data, 0, sizeof(esp_image_metadata_t));
-
-            if (!bootloader_utility_load_boot_image(&bs, FACTORY_INDEX, image_data)) {
-                return ESP_FAIL;
-            }
-        }
-
-        g_bootloader_cnt = UINT32_MAX;
-        bootlooder_cnt_save();
-    }
-
-#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
-
-    return ESP_OK;
+    // 2. Select the number of boot partition
+    return selected_boot_partition(bs);
 }
 
 /*
