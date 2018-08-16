@@ -61,6 +61,11 @@ static int select_partition_number (bootloader_state_t *bs)
         return INVALID_INDEX;
     }
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+extern void update_bootloader_cnt(void);
+    update_bootloader_cnt();
+#endif
+
     // 2. Select the number of boot partition
     return selected_boot_partition(bs);
 }
@@ -88,7 +93,8 @@ static int selected_boot_partition(const bootloader_state_t *bs)
             if (bootloader_common_erase_part_type_data(list_erase, ota_data_erase) == false) {
                 ESP_LOGE(TAG, "Not all partitions were erased");
             }
-            return bootloader_utility_get_selected_boot_partition(bs);
+            return TEST_APP_INDEX;
+            // return bootloader_utility_get_selected_boot_partition(bs);
         }
 #endif
        // TEST firmware.

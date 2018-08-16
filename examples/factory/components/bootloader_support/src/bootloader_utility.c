@@ -52,6 +52,71 @@
 
 static const char* TAG = "boot";
 
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+static uint32_t g_flag_prt_addr = 0;
+
+uint32_t bootlooder_cnt_load(void)
+{
+    uint32_t secure_flag = UINT32_MAX;
+    uint32_t bootloader_cnt = UINT32_MAX;
+    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+
+    if (secure_flag == 0) {
+        bootloader_flash_read(g_flag_prt_addr, &bootloader_cnt, sizeof(bootloader_cnt), false);
+    } else {
+        bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 1, &bootloader_cnt, sizeof(bootloader_cnt), false);
+    }
+    return bootloader_cnt;
+}
+
+// -----------------------------------------------------
+// | bootloader_cnt A | bootloader_cnt B | secure_flag |
+// -----------------------------------------------------
+void bootlooder_cnt_save(uint32_t bootloader_cnt)
+{
+    uint32_t secure_flag = UINT32_MAX;
+    bootloader_flash_read(g_flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+
+    if (secure_flag == 0) {
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 1);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 1, &bootloader_cnt, sizeof(bootloader_cnt), false);
+
+        secure_flag = 1;
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+    } else {
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE);
+        bootloader_flash_write(g_flag_prt_addr, &bootloader_cnt, sizeof(bootloader_cnt), false);
+
+        secure_flag = 0;
+        bootloader_flash_erase_sector(g_flag_prt_addr / SPI_SEC_SIZE + 2);
+        bootloader_flash_write(g_flag_prt_addr + SPI_SEC_SIZE * 2, &secure_flag, sizeof(secure_flag), false);
+    }
+
+    return true;
+}
+
+// esp-mdf use the flag to decide whether return to factory partition,
+// must be after load_partition_table(), because g_flag_prt_addr was assigned in it.
+void update_bootloader_cnt(void)
+{
+    uint32_t bootloader_cnt = bootlooder_cnt_load();
+
+    // if customer want to disable factory partition, set bootloader_cnt 0
+    if (bootloader_cnt) {
+        if (bootloader_cnt == UINT32_MAX) {
+            // first time power-on or been erased
+            bootloader_cnt = 1;
+        } else {
+            bootloader_cnt++;
+        }
+
+        ESP_LOGI(TAG, "bootloader_cnt: %d", bootloader_cnt);
+        bootlooder_cnt_save(bootloader_cnt);
+    }
+}
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
 /* Reduce literal size for some generic string literals */
 #define MAP_ERR_MSG "Image contains multiple %s segments. Only the last one will be mapped."
 
@@ -93,6 +158,14 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
         ESP_LOGD(TAG, "load partition table entry 0x%x", (intptr_t)partition);
         ESP_LOGD(TAG, "type=%x subtype=%x", partition->type, partition->subtype);
         partition_usage = "unknown";
+
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+        /**< get flag partition address */
+        if (!strcmp((const char *)partition->label, "factory_flag")) {
+            g_flag_prt_addr = partition->pos.offset;
+        }
+
+#endif /**< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
 
         /* valid partition table */
         switch(partition->type) {
@@ -212,6 +285,21 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         ESP_LOGD(TAG, "OTA sequence values A 0x%08x B 0x%08x", sa.ota_seq, sb.ota_seq);
         if ((sa.ota_seq == UINT32_MAX && sb.ota_seq == UINT32_MAX) || (bs->app_count == 0)) {
             ESP_LOGD(TAG, "OTA sequence numbers both empty (all-0xFF) or partition table does not have bootable ota_apps (app_count=%d)", bs->app_count);
+
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+#define OTA0_INDEX (0)
+#define OTA1_INDEX (1)
+
+            if (bs->ota[0].offset != 0) {
+                ESP_LOGI(TAG, "Enter ota0 image");
+                return OTA0_INDEX;
+            } else if (bs->ota[1].offset != 0) {
+                ESP_LOGI(TAG, "Enter ota1 image");
+                return OTA1_INDEX;
+            }
+
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
+
             if (bs->factory.offset != 0) {
                 ESP_LOGI(TAG, "Defaulting to factory image");
                 return FACTORY_INDEX;
@@ -319,6 +407,16 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
 
     if (try_load_partition(&bs->test, &image_data)) {
         ESP_LOGW(TAG, "Falling back to test app as only bootable partition");
+
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+        uint32_t bootloader_cnt = bootlooder_cnt_load();
+
+        if (bootloader_cnt >= CONFIG_MDF_BOOTLOADER_COUNT_MIN && bootloader_cnt <= CONFIG_MDF_BOOTLOADER_COUNT_MAX) {
+            bootlooder_cnt_save(UINT32_MAX);
+            ESP_LOGI(TAG, "enter factory app, bootloader_cnt: %d", bootloader_cnt);
+        }
+#endif
+
         load_image(&image_data);
     }
 
@@ -364,6 +462,14 @@ static void load_image(const esp_image_metadata_t* image_data)
         return;
     }
 #endif
+
+#ifdef CONFIG_MDF_BOOTLOADER_CUSTOMIZATION
+    uint32_t bootloader_cnt = bootlooder_cnt_load();
+    if (bootloader_cnt >= CONFIG_MDF_BOOTLOADER_COUNT_MIN && bootloader_cnt <= CONFIG_MDF_BOOTLOADER_COUNT_MAX) {
+        ESP_LOGI(TAG, "bootloader_cnt: %d, enter factory app", bootloader_cnt);
+        return;
+    }
+#endif /*!< CONFIG_MDF_BOOTLOADER_CUSTOMIZATION */
 
     ESP_LOGI(TAG, "Disabling RNG early entropy source...");
     bootloader_random_disable();
