@@ -56,6 +56,11 @@ void sense_state_led_init();
  */
 void sense_state_led_oprt(state_led_type_t led_type, state_led_oprt_t led_oprt);
 
+/**
+ * @brief hold the electrical level of state led pin in deep-sleep mode
+ */
+void sense_state_led_io_hold();
+
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */

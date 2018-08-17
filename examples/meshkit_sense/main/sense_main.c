@@ -209,6 +209,7 @@ static void sense_deepsleep_set()
     ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup((uint64_t)(((uint64_t)1) << GPIO_WAKE_UP_IO), GPIO_WAKE_UP_LEVEL));
 #endif
 
+    sense_state_led_io_hold();
 }
 
 static void sense_mode_switch_task(void *arg)
