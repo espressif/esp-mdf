@@ -19,7 +19,7 @@ Introduction to ESP32-DevKitC V4:
 | IO           | lead out most of the pins of ESP32-WROOM-32 |
 
 <div align=center>
-<img src="docs/_static/esp32_devkitc_v4_front.jpg" width="300">
+<img src="../../_static/esp32_devkitc_v4_front.jpg" width="300">
 <p> ESP32-DevKitC V4 </p>
 </div>
 

@@ -15,5 +15,5 @@ This is a smart light example that you can run on ESP SMART LIGHT or [ESP32-DevK
 * Exceptions: Blinking Red
 
 ## Related Links
-* Compiling: [ESP-MDF Get Started](https://github.com/espressif/esp-mdf/blob/master/docs/get_started.md)。
+* Compiling: [ESP-MDF Get Started](https://github.com/espressif/esp-mdf/blob/master/docs/en/get-started/get_started_en.md)。
 * Device Driver: [esp-iot-solution](https://github.com/espressif/esp-iot-solution/tree/master/components/general/light)
