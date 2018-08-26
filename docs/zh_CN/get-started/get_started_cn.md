@@ -6,13 +6,13 @@
 
 ## 硬件准备
 
-您需要准备至少两块 [ESP32-DevKitC V4](https://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) 开发板。
+您需要准备至少两块 [ESP32-DevKitC V4](https://esp-idf.readthedocs.io/zh_CN/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) 开发板。
 
 ESP32-DevKitC V4 功能模块介绍:
 
 | 接口/模块 | 说明 |
 | --------- | :--- |
-| ESP32-WROOM-32 | [ESP32-WROOM-32](http://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards.html#esp-modules-and-boards-esp-wroom-32) 模组 |
+| ESP32-WROOM-32 | [ESP32-WROOM-32](http://esp-idf.readthedocs.io/zh_CN/latest/hw-reference/modules-and-boards.html#esp-modules-and-boards-esp-wroom-32) 模组 |
 | EN           | 复位按键，按下此轻触开关，系统复位。|
 | Boot         | 下载键，按下此按键，然后再按下 EN 按键，系统进入下载模式，通过串口对 flash 进行下载。 |
 | USB          | USB 接口，既为开发板提供电源，以作为通信接口连接 PC 与 ESP32-WROOM-32 模组。 |
@@ -37,7 +37,7 @@ ESP-MDF 会被下载到 `~/esp/esp-mdf`。
 
 ## 设置 ESP 工具链
 
-首先，您需要搭建 ESP-IDF 软件开发环境之后才能使用 ESP-MDF。请根据您的电脑操作系统（[Windows](http://esp-idf.readthedocs.io/en/latest/get-started/windows-setup.html)，[Linux](http://esp-idf.readthedocs.io/en/latest/get-started/linux-setup.html) 或 [Mac OS](http://esp-idf.readthedocs.io/en/latest/get-started/macos-setup.html)）参考 [ESP32 编程指南](http://esp-idf.readthedocs.io/zh_CN/latest/index.html)进行配置。
+首先，您需要搭建 ESP-IDF 软件开发环境之后才能使用 ESP-MDF。请根据您的电脑操作系统（[Windows](https://esp-idf.readthedocs.io/zh_CN/latest/get-started/windows-setup.html)，[Linux](http://esp-idf.readthedocs.io/zh_CN/latest/get-started/linux-setup.html) 或 [Mac OS](http://esp-idf.readthedocs.io/zh_CN/latest/get-started/macos-setup.html)）参考 [ESP32 编程指南](http://esp-idf.readthedocs.io/zh_CN/latest/index.html)进行配置。
 
 建议您在 Ubuntu 系统上使用 ESP-MDF。在 Ubuntu 上运行脚本 `setup_toolchain.sh`，创建开发环境，包括所有 SDK 的安装，交叉编译工具链的配置以及系统变量的配置。
 
@@ -45,7 +45,7 @@ ESP-MDF 会被下载到 `~/esp/esp-mdf`。
 ./tools/setup_toolchain.sh
 ```
 
-您也可以使用 [make](http://esp-idf.readthedocs.io/en/latest/get-started/make-project.html) 命令或使用 [Eclipse IDE](http://esp-idf.readthedocs.io/en/latest/get-started/eclipse-setup.html) 编译上传代码到 ESP32。
+您也可以使用 [make](http://esp-idf.readthedocs.io/zh_CN/latest/get-started/make-project.html) 命令或使用 [Eclipse IDE](http://esp-idf.readthedocs.io/zh_CN/latest/get-started/eclipse-setup.html) 编译上传代码到 ESP32。
 
 >  这里使用 `~/esp` 目录来演示如何安装预编译的工具链、ESP-IDF 和示例程序，您也可以使用其它目录，但是需要注意调整相应的指令。
 

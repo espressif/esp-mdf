@@ -10,7 +10,7 @@ Mesh-Touchpad 示例基于 Espressif 开发的 [ESP32-Sense Kit 套件](https://
 <img src="docs/_static/touch_eb_overview.jpg" width="600">
 </div>
 
-> 目前该示例的代码仅支持线性滑条（Linear Slider）子板，关于其他类型子板的程序开发请参考 [ESP32 触摸功能开发套件](https://github.com/espressif/esp-iot-solution/blob/master/examples/touch_pad_evb)。
+> 目前该示例的代码仅支持线性滑条（Linear Slider）子板，关于其他类型子板的程序开发请参考 [ESP32 触摸功能开发套件](hhttps://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_cn.md)。
 
 在进行 Mesh-Touchpad 开发之前，请详细阅读 [ESP-MDF 入门指南](https://github.com/espressif/esp-mdf/blob/master/docs/zh_CN/get-started/get_started_cn.md)，完成 [代码获取](https://github.com/espressif/esp-mdf/blob/master/docs/zh_CN/get-started/get_started_cn.md#%E8%8E%B7%E5%8F%96-esp-mdf)，[编译工具链](https://github.com/espressif/esp-mdf/blob/master/docs/zh_CN/get-started/get_started_cn.md#%E8%AE%BE%E7%BD%AE-esp-%E5%B7%A5%E5%85%B7%E9%93%BE) 安装，[ESP-MDF 路径设置](https://github.com/espressif/esp-mdf/blob/master/docs/zh_CN/get-started/get_started_cn.md#%E8%AE%BE%E7%BD%AE-esp-mdf-%E8%B7%AF%E5%BE%84) 等工作。
 
@@ -19,7 +19,7 @@ Mesh-Touchpad 示例基于 Espressif 开发的 [ESP32-Sense Kit 套件](https://
 ### 1.1. 硬件准备
 
 * [ESP32-Sense 开发套件](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_cn.md) 中主板和线性滑条子板
-* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf) 一个或数个
+* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/ESP32-MeshKit-Light_User_Guide__CN.pdf) 一个或数个
 * [ESP-Prog](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_cn.md) 调试器（调试用，非必须）
 
 <table><tr>
@@ -63,7 +63,7 @@ Mesh-Touchpad 示例基于 Espressif 开发的 [ESP32-Sense Kit 套件](https://
 
 通过以下命令进行代码烧录，并启动日志监视程序： `make erase_flash flash monitor -j5`
 
-如果在上述过程中没有错误，Mesh-Touchpad 开发板上的 RGB 三色灯会表现为黄色闪烁，表示设备已进入 **配网状态**。下一步需要使用 [ESP-Mesh App for Android](hrttps://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) 进行配网操作。
+如果在上述过程中没有错误，Mesh-Touchpad 开发板上的 RGB 三色灯会表现为黄色闪烁，表示设备已进入 **配网状态**。下一步需要使用 [ESP-Mesh App for Android](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) 进行配网操作。
 
 ```
 I (904) wifi: mode : sta (30:ae:a4:30:77:90)
@@ -127,9 +127,7 @@ Mesh-Touchpad 具有两种工作模式：Mesh 工作模式和低功耗工作模�
 
 #### 2.2.2. 低功耗工作模式
 
-为了便利传感器方案的开发，ESP-MDF 特别设计了低功耗工作模式，本示例属于 [使用 Touchpad 触摸/GPIO 按键唤醒的用户交互场景（如控制面板）](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md) 的用户交互场景，在 Deep-sleep 状态下，当设置唤醒源为 touchpad 唤醒时，芯片的平均电流大约为 50 uA。
-
-> 更多关于 ESP32 低功耗方案，请参考 [ESP32 低功耗方案概述](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md)。
+考虑传感器设备的低功耗需求，ESP-MDF 特别设计了低功耗工作模式。本示例属于 `使用 Touchpad 触摸/GPIO 按键唤醒的用户交互场景（如控制面板）` 的用户交互场景，在 Deep-sleep 状态下，当设置唤醒源为 touchpad 唤醒时，芯片的平均电流大约为 50 uA。更多功耗情况说明，请参考 [ESP32 低功耗方案概述](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md)。
 
 在低功耗工作模式下，Mesh-Touchpad 会有两种状态：
 
@@ -180,12 +178,12 @@ Mesh-Touchpad 具有两种工作模式：Mesh 工作模式和低功耗工作模�
 ## 5. 相关资源
 
 * [ESP-MDF 入门指南](https://github.com/espressif/esp-mdf/blob/master/docs/zh_CN/get-started/get_started_cn.md)
-* [ESP-MESH 介绍](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html)
-* [ESP-NOW 介绍](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html)
-* [Deep Sleep Wake Stubs 介绍](https://esp-idf.readthedocs.io/en/latest/api-guides/deep-sleep-stub.html)
+* [ESP-MESH 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-guides/mesh.html)
+* [ESP-NOW 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-reference/wifi/esp_now.html)
+* [Deep Sleep Wake Stubs 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-guides/deep-sleep-stub.html)
 * [ESP32-MeshKit-Light 用户指南](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)
 * [ESP-Prog 下载与调试板介绍](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_cn.md)
 * [ESP32 低功耗方案概述](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md)
 * [触摸传感器应用设计参考文档](https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_cn.md)
-* [下载 ESP-Mesh App for Android](hrttps://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)
+* [下载 ESP-Mesh App for Android](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)
 * [驱动代码](https://github.com/espressif/esp-iot-solution/tree/master/components)
