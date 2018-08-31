@@ -248,4 +248,4 @@ ESP-IDF and ESP-MDF are composed by [components](https://esp-idf.readthedocs.io/
 ## 5. Resources
 
 * The [ESP32 BBS](https://esp32.com/) is a place to ask questions and find community resources.
-* [ESP Mesh Development Framework](https://github.com/espressif/esp-mdf) is based on [ESP IoT Development Framework](https://github.com/espressif/esp-id). For details, please refer to [ESP-IDF documentation](https://esp-idf.readthedocs.io).
+* [ESP Mesh Development Framework](https://github.com/espressif/esp-mdf) is based on [ESP IoT Development Framework](https://github.com/espressif/esp-idf). For details, please refer to [ESP-IDF documentation](https://esp-idf.readthedocs.io).

@@ -13,7 +13,7 @@ The ESP-MDF devices automatically enter the [networking stage](https://esp-idf.r
 <p> ESP-Mesh Network Topology </p>
 </div>
 
-> The [ESP-Mesh app](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) is hereafter referred to as "app" in this document.
+> The [ESP-Mesh app](https://www.espressif.com/en/support/download/apps?keys=&field_technology_tid%5B%5D=18) is hereafter referred to as "app" in this document.
 
 ## 2. Communication Process
 
@@ -34,9 +34,7 @@ The whole process is divided into three steps:
 This chapter illustrates the communication protocols involved in the three steps mentioned above. The app gets the list of networked mesh devices, and communicates with devices in the mesh network using the standard HTTP or HTTPS communication protocol. In addition, the communication protocol also includes:
 
 1. Device status notification: This is to allow the users to check the real-time status of the device through the app. That is, when the device status changes, the device will send UDP broadcast packets notifying the app of the changes, and then the app will inquire about the updated status of the device. For details, see section `3.5. Device Status Notification`.
-2. Local connectivity control: connectivity control between devices on the LAN.
- * For detailed description, please refer to Section `3. ESP-MDF Device Connectivity Control` in the document [Readme_en.md](..／../Readme_en.md).
- * For protocol description, please refer to Section `3.6 Local Connectivity Control`.
+2. Local connectivity control: connectivity control between devices on the LAN. For protocol description, please refer to Section `3.6 Local Connectivity Control`.
 
 ### 3.1. App Gets the IP Address, Port Number and MAC Address of the Root Node
 

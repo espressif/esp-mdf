@@ -18,7 +18,7 @@ Espnow_debug 接收板提供的主要功能包括：
 
 ### 1.1. 概述
 
-Espnow_debug 接收板通过 [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html) 无线传输技术接收 ESP-MDF 设备的运行日志和 Coredump 数据。ESP-NOW 是由 Espressif 定义的一种无连接的 Wi-Fi 通信协议，广泛应用于智能照明，遥控，传感器等领域。在 ESP-NOW 中，数据被封装在 Wi-Fi Action 帧中进行数据的收发，在没有连接的情况下从一个 Wi-Fi 设备传输数据到另一个 Wi-Fi 设备。
+Espnow_debug 接收板通过 [ESP-NOW](https://esp-idf.readthedocs.io/zh_CN/latest/api-reference/wifi/esp_now.html) 无线传输技术接收 ESP-MDF 设备的运行日志和 Coredump 数据。ESP-NOW 是由 Espressif 定义的一种无连接的 Wi-Fi 通信协议，广泛应用于智能照明，遥控，传感器等领域。在 ESP-NOW 中，数据被封装在 Wi-Fi Action 帧中进行数据的收发，在没有连接的情况下从一个 Wi-Fi 设备传输数据到另一个 Wi-Fi 设备。
 
 ### 1.2. ESP-NOW 特性
 
@@ -28,7 +28,7 @@ Espnow_debug 接收板通过 [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/
 4. 通过注册回调函数的方式接收数据包，以及检查发送情况（成功或失败）
 5. 利用 CTR 和 CBC-MAC 协议（CCMP）保护数据的安全
 
-> 更多关于 ESP-NOW 的原理介绍，请参考 Espressif 官方手册 [ESP-NOW 使用说明](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html) 和 ESP-IDF 示例 [espnow](https://github.com/espressif/esp-idf/tree/master/examples/wifi/espnow)。
+> 更多关于 ESP-NOW 的原理介绍，请参考 Espressif 官方手册 [ESP-NOW 使用说明](https://esp-idf.readthedocs.io/zh_CN/latest/api-reference/wifi/esp_now.html) 和 ESP-IDF 示例 [espnow](https://github.com/espressif/esp-idf/tree/master/examples/wifi/espnow)。
 
 ## 2. ESPNOW_DEBUG 示例使用说明
 
@@ -36,7 +36,7 @@ Espnow_debug 接收板通过 [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/
 
 | 硬件 | 数量 | 备注 |
 | :--- | :--- | :--- |
-| [ESP-WROVER-KIT V2](https://esp-idf.readthedocs.io/en/latest/hw-reference/modules-and-boards-previous.html#esp-wrover-kit-v2) 开发板 | 1 | [使用说明](https://esp-idf.readthedocs.io/en/latest/get-started/get-started-wrover-kit-v2.html) |
+| [ESP-WROVER-KIT V2](https://esp-idf.readthedocs.io/zh_CN/latest/hw-reference/modules-and-boards-previous.html#esp-wrover-kit-v2) 开发板 | 1 | [使用说明](https://esp-idf.readthedocs.io/zh_CN/latest/get-started/get-started-wrover-kit-v2.html) |
 | TF 卡 | 1 | 保存 ESP-MDF 设备的运行日志和 coredump 数据，容量建议大于 1G |
 | MiniUSB 数据线 | 1 | |
 

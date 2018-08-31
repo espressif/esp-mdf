@@ -4,7 +4,7 @@ ESP32-MeshKit-Sense 示例是对 ESP-MDF 设备类型的进一步扩充，在 ES
 
 ## 0. ESP32-MeshKit-Sense 示例概述
 
-[ESP32-MeshKit-Sense 开发板](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-sense_hardware_design_guidelines_cn.pdf) 集成了温湿度传感器 (HTS221)、光照强度传感器 (BH1750) 和状态指示灯外设。在本示例中，ESP32-MeshKit-Sense 通过检测外设传感器的状态变化，实现与其他设备的联动控制。同时，本示例还结合了 ESP32 在 Deep-sleep 模式下能够使用 ULP 读取传感器的功能，实现低功耗传感器方案。
+[ESP32-MeshKit-Sense 开发板](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md) 集成了温湿度传感器 (HTS221)、光照强度传感器 (BH1750) 和状态指示灯外设。在本示例中，ESP32-MeshKit-Sense 通过检测外设传感器的状态变化，实现与其他设备的联动控制。同时，本示例还结合了 ESP32 在 Deep-sleep 模式下能够使用 ULP 读取传感器的功能，实现低功耗传感器方案。
 
 > 关于 ESP32-MeshKit-Sense 与其他设备的联动控制，目前只支持根据光照强度传感器的数值，控制
  [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/ESP32-MeshKit-Light_User_Guide__CN.pdf) 的开关，后续会增加通过检测温湿度传感器的数值，控制更多其他类型设备。
@@ -15,7 +15,7 @@ ESP32-MeshKit-Sense 示例是对 ESP-MDF 设备类型的进一步扩充，在 ES
 
 ### 1.1. 硬件准备
 
-* [ESP32-MeshKit-Sense 开发板](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-sense_hardware_design_guidelines_cn.pdf) 一个
+* [ESP32-MeshKit-Sense 开发板](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md) 一个
 * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/ESP32-MeshKit-Light_User_Guide__CN.pdf) 一个或数个
 * [ESP-Prog 调试器](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_cn.md) （调试用，非必须）
 * 墨水屏（非必须）
@@ -65,7 +65,7 @@ ESP32-MeshKit-Sense 示例是对 ESP-MDF 设备类型的进一步扩充，在 ES
 
 通过以下命令进行代码烧录，并启动日志监视程序： `make erase_flash flash monitor -j5`
 
-如果在上述过程中没有错误，则 ESP32-MeshKit-Sense 开发板上的 Sensor 指示灯亮，表示设备正常上电运行。Network 指示灯会出现绿色慢闪，表示设备已进入 **配网模式**。下一步需要使用 [ESP-Mesh App for Android](hrttps://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) 进行配网操作。
+如果在上述过程没有错误，则 ESP32-MeshKit-Sense 开发板上的 Sensor 指示灯红色常亮，表示设备正常上电运行。Network 指示灯现绿色慢闪，表示设备处于 **配网模式**。下一步需要使用 [ESP-Mesh App for Android](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) 进行配网操作。
 
 ```
 I (612) wifi: mode : sta (30:ae:a4:90:f3:c0)
@@ -114,7 +114,7 @@ ESP32-MeshKit-Sense 具有两种工作模式：Mesh 工作模式和低功耗工�
 
 #### 2.1.2. 低功耗工作模式
 
-为了便利传感器方案的开发，ESP-MDF 特别设计了低功耗工作模式，本示例属于 [数据采集或异常检测（不支持 GPIO 触发、不需要频繁上传数据）](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md#%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E6%88%96%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B%E4%B8%8D%E6%94%AF%E6%8C%81-gpio-%E8%A7%A6%E5%8F%91%E4%B8%8D%E9%9C%80%E8%A6%81%E9%A2%91%E7%B9%81%E4%B8%8A%E4%BC%A0%E6%95%B0%E6%8D%AE) 的应用场景。具体功耗情况，请参考 [ESP32 低功耗方案概述](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md)。
+对于传感器设备，由于安装环境的限制（一般为建筑物角落，工业现场等环境），难以采用线缆供电，多采用电池供电，一次安装后需要能够长时间工作，因此传感器设备对功耗有很高的要求。针对这类应用场景，ESP-MDF 提供了低功耗传感器的使用例程。具体功耗情况，可参考 [ESP32 低功耗方案概述](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md)。
 
 在低功耗工作模式下，ESP32-MeshKit-Sense 有两种状态：
 
@@ -186,9 +186,9 @@ ESP32-MeshKit-Sense 通过 WakeUp 按键 (GPIO34) 进行 Mesh 工作模式和低
 ## 5. 相关资源
 
 * [ESP-MDF 入门指南](https://github.com/espressif/esp-mdf/blob/master/docs/zh_CN/get-started/get_started_cn.md)
-* [ESP-MESH 介绍](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html)
-* [ESP-NOW 介绍](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html)
-* [Deep Sleep Wake Stubs 介绍](https://esp-idf.readthedocs.io/en/latest/api-guides/deep-sleep-stub.html)
+* [ESP-MESH 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-guides/mesh.html)
+* [ESP-NOW 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-reference/wifi/esp_now.html)
+* [Deep Sleep Wake Stubs 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-guides/deep-sleep-stub.html)
 * [ESP32-MeshKit-Sense 硬件设计指南](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-sense_hardware_design_guidelines_cn.pdf)
 * [ESP32-MeshKit-Light 用户指南](https://www.espressif.com/sites/default/files/documentation/ESP32-MeshKit-Light_User_Guide__CN.pdf)
 * [ESP-Prog 下载与调试板介绍](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_cn.md)

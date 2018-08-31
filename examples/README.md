@@ -6,7 +6,7 @@ This directory contains a growing number of simple example projects for esp-mdf,
 
 Building examples is the same as building any other project:
 
-* Follow the setup instructions in the corresponding sections of [ESP-MDF Get Started](docs/get-started.md).
+* Follow the setup instructions in the corresponding sections of [ESP-MDF Get Started](../docs/en/get-started/get_started_en.md).
 
 * Run the script `setup_toolchain.sh` in Ubuntu to set up the development environment.
 * Set `MDF_PATH` environment variable to point to the path to the esp-mdf top-level directory.
@@ -25,7 +25,7 @@ The `MDF_PATH` environment variable is the only thing that connects the example 
 
 If you have a new example you think we'd like, please consider sending it to us as a Pull Request.
 
-Please read the esp-mdf [Contribute](docs/contribute.md) file which lays out general contribution rules.
+Please read the esp-mdf [Contribute](../docs/en/contribute/contribute_en.md) file which lays out general contribution rules.
 
 In addition, here are some tips for creating good examples:
 

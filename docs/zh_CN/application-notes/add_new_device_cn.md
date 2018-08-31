@@ -249,4 +249,4 @@ ESP-IDF 和 ESP-MDF 项目中模块采用 [component](https://esp-idf.readthedoc
 ## 5. 资源
 
 * ESP32 官方论坛请点击 [ESP32 BBS](https://esp32.com/)。
-* [ESP-MDF](https://github.com/espressif/esp-mdf) 是基于乐鑫物联网开发框架 [ESP-IDF](https://github.com/espressif/esp-id)，详情请参考 [ESP-IDF 文档](https://esp-idf.readthedocs.io)。
+* [ESP-MDF](https://github.com/espressif/esp-mdf) 是基于乐鑫物联网开发框架 [ESP-IDF](https://github.com/espressif/esp-idf)，详情请参考 [ESP-IDF 文档](https://esp-idf.readthedocs.io)。
