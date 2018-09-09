@@ -349,7 +349,6 @@ static esp_err_t mdf_trigger_handle(trigger_device_t *event)
     }
 
     trigger_compare->value = value;
-    variation              = true;
 
     if (!equal || !unequal || !greater_than || !less_than || !variation || !rising || !falling) {
         return ESP_OK;
