@@ -844,7 +844,8 @@ void mdf_device_request_task(void *arg)
 
         /**< if we can find this HTTP PATH from our list, we will handle this request. */
         for (int i = 0; g_device_handle_list[i].func; i++) {
-            if (!strncmp(func_name, g_device_handle_list[i].func_name, strlen(g_device_handle_list[i].func_name))) {
+            if (strlen(func_name) == strlen(g_device_handle_list[i].func_name)
+                    && !strncmp(func_name, g_device_handle_list[i].func_name, strlen(g_device_handle_list[i].func_name))) {
                 status_code = g_device_handle_list[i].func(&device_data);
                 MDF_LOGV("status_code: %d, func: %s, type: %x", status_code, func_name, data_type.val);
                 break;
@@ -898,8 +899,9 @@ esp_err_t mdf_device_add_handle(const char *func_name, void *func)
     int i = 0;
 
     for (i = 0; g_device_handle_list[i].func_name && i < DEVICE_HANDLE_SIZE; i++) {
-        if (!strncasecmp(g_device_handle_list[i].func_name, func_name,
-                         strlen(g_device_handle_list[i].func_name))) {
+        if (strlen(g_device_handle_list[i].func_name) == strlen(func_name)
+                && !strncasecmp(g_device_handle_list[i].func_name, func_name,
+                                strlen(g_device_handle_list[i].func_name))) {
             g_device_handle_list[i].func = (device_func_t)func;
             return ESP_OK;
         }
