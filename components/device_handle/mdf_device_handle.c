@@ -151,16 +151,11 @@ esp_err_t mdf_reconfig_network(network_config_t *network_config)
 
 esp_err_t mdf_device_init_config(uint16_t tid, const char name[32], const char version[16])
 {
-    esp_err_t ret = ESP_OK;
-
     g_device_config = mdf_calloc(1, sizeof(device_config_t));
 
     if (mdf_info_load("device_name", g_device_config->name, sizeof(g_device_config->name)) < 0) {
-        ret = mdf_wifi_init();
-        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_init, ret: %x", ret);
-
         uint8_t mac[6] = {0};
-        ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
+        ESP_ERROR_CHECK(esp_efuse_mac_get_default(mac));
         snprintf(g_device_config->name, sizeof(g_device_config->name) - 1,
                  "%s_%02x%02x%02x", name, mac[3], mac[4], mac[5]);
     }
@@ -393,7 +388,9 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
 
             loss_package_flag = true;
 
-            if (mdf_json_pack(ota_progress_array_str, "[]", i) > OTA_PROGRESS_ARRAY_LEN) {
+            /**< Add some buffer here. If the return value of mdf_json_pack(...) is larger than OTA_PROGRESS_ARRAY_LEN,
+            it hava already overwrited the memory behind ota_progress_array_str */
+            if (mdf_json_pack(ota_progress_array_str, "[]", i) > OTA_PROGRESS_ARRAY_LEN - 16) {
                 MDF_LOGV("ota_progress_array_str: %s", ota_progress_array_str);
                 break;
             }
@@ -815,9 +812,9 @@ void mdf_device_request_task(void *arg)
     wifi_mesh_addr_t dest_addr      = {0};
 
     device_data_t device_data = {
-        .request       = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE),
+        .request       = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE * 2),
         .request_size  = 0,
-        .response      = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE),
+        .response      = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE * 2),
         .response_size = 0,
     };
 
@@ -828,14 +825,14 @@ void mdf_device_request_task(void *arg)
         }
 
         status_code                = ESP_FAIL;
-        device_data.response_size  = WIFI_MESH_PACKET_MAX_SIZE;
+        device_data.response_size  = WIFI_MESH_PACKET_MAX_SIZE * 2;
         device_data.response_proto = MDF_PROTO_JSON;
 
-        memset(device_data.response, 0, WIFI_MESH_PACKET_MAX_SIZE);
-        memset(device_data.request, 0, WIFI_MESH_PACKET_MAX_SIZE);
+        memset(device_data.response, 0, WIFI_MESH_PACKET_MAX_SIZE * 2);
+        memset(device_data.request, 0, WIFI_MESH_PACKET_MAX_SIZE * 2);
 
         device_data.request_size = mdf_wifi_mesh_recv(&src_addr, &data_type, device_data.request,
-                                   WIFI_MESH_PACKET_MAX_SIZE, portMAX_DELAY);
+                                   WIFI_MESH_PACKET_MAX_SIZE * 2, portMAX_DELAY);
         MDF_ERROR_CONTINUE(device_data.request_size < 0 || data_type.proto != MDF_PROTO_JSON,
                            "mdf_wifi_mesh_recv, ret: %d, proto: %d", device_data.request_size, data_type.proto);
         ret = mdf_json_parse(device_data.request, "request", func_name);

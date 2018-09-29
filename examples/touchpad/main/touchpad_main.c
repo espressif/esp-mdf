@@ -136,9 +136,6 @@ void app_main()
     /**< wake up from deepsleep mode */
     if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TOUCHPAD) {
         int tp_num = esp_sleep_get_touchpad_wakeup_status();
-        tp_num = tp_num == 9 ? 8 :
-                 tp_num == 8 ? 9 : tp_num;
-
         MDF_LOGI("wake up from touch on pad %d", tp_num);
         rgb_led_set(COLOR_LED_G, 100);
 

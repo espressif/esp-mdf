@@ -389,10 +389,10 @@ esp_err_t mdf_http_server_response()
     wifi_mesh_addr_t src_addr       = {0};
     wifi_mesh_data_type_t data_type = {0};
     ssize_t recv_size               = 0;
-    uint8_t *recv_data              = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE);
+    uint8_t *recv_data              = mdf_malloc(WIFI_MESH_PACKET_MAX_SIZE * 2);
 
     ret = mdf_wifi_mesh_root_recv(&src_addr, &dest_addr, &data_type,
-                                  recv_data, WIFI_MESH_PACKET_MAX_SIZE, 1000);
+                                  recv_data, WIFI_MESH_PACKET_MAX_SIZE * 2, 1000);
 
     if (ret == -ESP_ERR_MESH_TIMEOUT) {
         goto EXIT;

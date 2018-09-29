@@ -199,8 +199,6 @@ esp_err_t mdf_wifi_mesh_init(const wifi_mesh_config_t *config)
     memcpy(mesh_config.router.bssid, config->bssid, sizeof(mesh_config.router.bssid));
     memcpy(mesh_config.router.password, config->password, strlen(config->password));
     memcpy(mesh_config.mesh_id.addr, config->mesh_id.mac, 6);
-    memcpy(mesh_config.mesh_ap.password, mesh_config.router.password,
-           sizeof(mesh_config.mesh_ap.password));
 
     ESP_ERROR_CHECK(esp_mesh_init());
     ESP_ERROR_CHECK(esp_mesh_set_config(&mesh_config));
