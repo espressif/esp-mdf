@@ -78,6 +78,7 @@ static CTouchPadSlide *g_tp_slide;
 static touch_status_t g_touch_status;
 static TimerHandle_t g_deepsleep_timer;
 static bool g_button_cd[3] = { false, false, false };
+static bool g_switching_mode = false;
 
 void deepsleep_timer_pass(TimerHandle_t timer)
 {
@@ -215,7 +216,10 @@ static void touch_slide_handle(void *arg)
             pos_prev = pos;
             g_touch_status.slide = pos * 100 / TOUCH_SLIDE_PAD_RANGE;
 
-            mdf_trigger_isr();
+            if (!g_switching_mode){
+                mdf_trigger_isr();
+            }
+
             deepsleep_timer_reset();
         }
 
@@ -249,8 +253,8 @@ static esp_err_t touchpad_switch_mode()
 
     if (mode == (mdf_running_mode_t)(POWER_DEEP_SLEEP | TRANS_ESPNOW)) {
         MDF_LOGI("esp deep sleep start");
-        touchpad_calibrate();
         ch450_clear();
+        touchpad_calibrate();
         ESP_ERROR_CHECK(esp_sleep_enable_touchpad_wakeup());
         esp_deep_sleep_start();
     } else {
@@ -266,6 +270,8 @@ static void touch_button_handle(void *arg)
 
     for (;;) {
         if (is_all_button_pushed()) {
+            g_switching_mode = true;
+
             if (mdf_get_running_mode() == (mdf_running_mode_t)(POWER_DEEP_SLEEP | TRANS_ESPNOW)) {
                 rgb_led_set(COLOR_LED_B, 100);
             } else {
@@ -311,7 +317,10 @@ static void touch_button_push_cb(void *arg)
     g_button_cd[idx] = true;
     ch450_write_button(idx);
 
-    mdf_trigger_isr();
+    if (!g_switching_mode){
+        mdf_trigger_isr();
+    }
+
     deepsleep_timer_reset();
 }
 

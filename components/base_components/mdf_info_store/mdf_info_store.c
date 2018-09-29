@@ -70,6 +70,7 @@ esp_err_t mdf_info_erase(const char *key)
     }
 
     nvs_commit(handle);
+    nvs_close(handle);
 
     MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "nvs_erase_key key:%s, ret:%x", key, ret);
 

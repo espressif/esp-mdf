@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := mdf-factory
+PROJECT_NAME := factory
 
 include $(MDF_PATH)/project.mk
