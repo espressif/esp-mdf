@@ -60,7 +60,7 @@ This step prepares the device for starting networking or initiating the ESP-MESH
 
 After the hardware initialization and software initialization of the device are completed, the system reads the networking configuration information from the NVS. If the read is successful (namely the device has already been configured with network), this step will be skipped.
 
-The device networking is completed through Blufi networking and ESP-NOW chain networking, which is fast and convenient. The first device to be networked communicates with the app via Bluetooth, and the other devices are networked via ESP-NOW chain networking. The relevant code is located at `$MDF_PATH/components/mdf_network_config`.
+Devices configure themselves to join the mesh network through Blufi networking and ESP-NOW chain networking, which is fast and convenient. The first device to be networked communicates with the app via Bluetooth, and the other devices receive configuration for the mesh network via ESP-NOW chain networking. The relevant code is located at `$MDF_PATH/components/mdf_network_config`.
 
 ```c
 for (;;) {

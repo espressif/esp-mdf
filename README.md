@@ -10,7 +10,7 @@ ESP-MDF is a multi-hop mesh networking solution, based on the [ESP-IDF](https://
 
 Below are the main features of ESP-MDF:
 
-* Fast networking: combining Blufi networking and ESP-NOW chain networking
+* Fast mesh network configuration: combining Blufi networking and ESP-NOW chain networking to configure devices
 * Various control methods: app control, sensor control, linkage control, and remote control
 * Fast and stable upgrade: continuous transmission of breakpoints is adopted to improve the success rate of equipment upgrades in complex network environments
 * Low-power solutions: reduced system power consumption through a variety of low-power solutions
@@ -33,7 +33,7 @@ You can develop multiple types of smart devices based on the ESP-MDF system fram
 
 1. Safe and efficient distribution network
     * High speed
-        * ESP-Mesh implements a networking scenario combining [BluFi](https://esp-idf.readthedocs.io/en/latest/api-reference/bluetooth/esp_blufi.html) and [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html). The first device is connected to the router via BluFi, and all subsequent devices are connected via ESP-NOW. (A device that has been successfully deployed in the network will transmit the networking information to devices that are yet to be connected to the network.) In a test we've conducted, the shortest time to network 100 devices is one minute.
+        * Devices are configured for ESP-Mesh using [BluFi](https://esp-idf.readthedocs.io/en/latest/api-reference/bluetooth/esp_blufi.html) and [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html). The first device is connected to the router via BluFi, and all subsequent devices are connected via ESP-NOW. (A device that has been successfully deployed in the network will transmit the networking information to devices that are yet to be connected to the network.) In a test we've conducted, the shortest time to network 100 devices is one minute.
     * Convenient operation
         * The networking information is stored in all the devices that have been networked. Adding a new device to the mesh network can be easily accomplished by tapping `add devices` on the ESP-Mesh app.
     * Comprehensive error handling mechanism
