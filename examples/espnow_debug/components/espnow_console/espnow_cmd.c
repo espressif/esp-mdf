@@ -94,6 +94,18 @@ file_oprt_args ls_args = { 0 };
 file_oprt_args rm_args = { 0 };
 file_oprt_args read_args = { 0 };
 
+/**< Arguments used by 'manual' function */
+static struct {
+    struct arg_int *type; /**< -t manual type */
+    struct arg_end *end;
+} manual_args;
+
+/**< Arguments used by 'erase_nvs' function */
+static struct {
+    struct arg_str *key; /**< -k key */
+    struct arg_end *end;
+} erase_nvs_args;
+
 /* the remote peer could be in scanning or espnow network config state
  * this means it will switch channel for every 100 ms
  * the espnow terminal tries to send multiple times to make sure they can receive */
@@ -123,6 +135,8 @@ static void register_dumpreq();
 static void register_dumperase();
 static void register_wifi();
 static void file_oprt();
+static void register_manual();
+static void register_erase_nvs();
 
 void register_cmds()
 {
@@ -144,6 +158,9 @@ void register_cmds()
 
     /**< file operation cmd, including: ls, rm, read */
     file_oprt();
+
+    register_manual();
+    register_erase_nvs();
 }
 
 static inline bool str_to_mac(const char *str, uint8_t *dest)
@@ -846,4 +863,95 @@ static void file_oprt()
         .argtable = &read_args,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&read_cmd) );
+}
+
+/* 'manual' command control device */
+static int manual(int argc, char** argv)
+{
+    int nerrors   = 0;
+    bool send_ret = true;
+    mdf_espnow_debug_pkt_t *espnow_pkt = NULL;
+
+    nerrors = arg_parse(argc, argv, (void**) &manual_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, manual_args.end, argv[0]);
+        return 1;
+    }
+
+    if (manual_args.type->count == 0) {
+        MDF_LOGE("manual no parameter");
+        return 1;
+    }
+
+    espnow_pkt = mdf_calloc(1, sizeof(mdf_espnow_debug_pkt_t));
+    espnow_pkt->type = MDF_ESPNOW_DEBUG_MANUAL;
+    espnow_pkt->oprt = manual_args.type->ival[0];
+    MDF_LOGI("espnow manual control: %d", espnow_pkt->oprt);
+
+    send_ret = espnow_send_to_all(espnow_pkt, sizeof(mdf_espnow_debug_pkt_t), true);
+    mdf_free(espnow_pkt);
+    MDF_ERROR_CHECK(!send_ret, 1, "not all devices send ok");
+
+    return 0;
+}
+static void register_manual()
+{
+    manual_args.type = arg_int0("t", "type", "<type>", "espnow manual");
+    manual_args.end = arg_end(1);
+
+    const esp_console_cmd_t manual_cmd = {
+        .command = "manual",
+        .help = "espnow manual control device: reboot, reset, config [0,1,2]",
+        .hint = NULL,
+        .func = &manual,
+        .argtable = &manual_args,
+    };
+
+    ESP_ERROR_CHECK( esp_console_cmd_register(&manual_cmd) );
+}
+
+static int erase_nvs(int argc, char **argv)
+{
+    int nerrors = 0;
+    bool send_ret = true;
+    mdf_espnow_debug_pkt_t *espnow_pkt = NULL;
+
+    nerrors = arg_parse(argc, argv, (void**) &erase_nvs_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, erase_nvs_args.end, argv[0]);
+        return 1;
+    }
+
+    if (erase_nvs_args.key->sval[0] == NULL) {
+        MDF_LOGE("erase nvs no key");
+        return 1;
+    }
+
+    MDF_LOGI("erase_nvs key: %s", erase_nvs_args.key->sval[0]);
+
+    espnow_pkt = mdf_calloc(1, sizeof(mdf_espnow_debug_pkt_t) + strlen(erase_nvs_args.key->sval[0]));
+    espnow_pkt->type = MDF_ESPNOW_DEBUG_MANUAL;
+    espnow_pkt->oprt = MDF_ESPNOW_MANUAL_ERASE;
+    espnow_pkt->size = strlen(erase_nvs_args.key->sval[0]);
+    memcpy(espnow_pkt->data, erase_nvs_args.key->sval[0], espnow_pkt->size);
+    send_ret = espnow_send_to_all(espnow_pkt, (sizeof(mdf_espnow_debug_pkt_t) + espnow_pkt->size), true);
+    mdf_free(espnow_pkt);
+    MDF_ERROR_CHECK(!send_ret, 1, "not all devices send ok");
+
+    return 0;
+}
+
+static void register_erase_nvs()
+{
+    erase_nvs_args.key = arg_str1("k", "key", "<key>", "nvs key to erase");
+    erase_nvs_args.end = arg_end(1);
+
+    const esp_console_cmd_t erase_nvs_cmd = {
+        .command = "erase_nvs",
+        .help = "erase nvs by given key",
+        .hint = NULL,
+        .func = &erase_nvs,
+        .argtable = &erase_nvs_args,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&erase_nvs_cmd) );
 }

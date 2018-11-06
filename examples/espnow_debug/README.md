@@ -9,6 +9,7 @@ Espnow_debug 接收板提供的主要功能包括：
 3. 通过 mDNS 服务获取 Mesh 网络的基本信息，包括：Mesh-ID、根节点 IP、根节点 MAC 地址等（espnow_debug 接收板和 ESP-MDF 设备需要连接到同一个路由器）
 4. 对接收的运行日志进行统计，显示所有已添加的 ESP-MDF 设备的运行状态，包括：ERR 和 WARN 日志数量、重启次数、Coredump 接收个数、设备运行时间等
 5. 支持 SD 卡文件操作，命令包括：ls（显示 SD 卡文件列表），rm（删除 SD 卡文件） 和 read（读取 SD 卡文件内容）
+6. 支持设备调试操作，包括：重启，重置，重配网设备，以及擦除设备 NVS 存储区域中的指定数据
 
 <div align=center>
 <img src="docs/_static/espnow_debug.png" width="800">
@@ -272,7 +273,31 @@ read 命令使用说明：read 命令目前只支持读取 coredump 文件，用
 > * read 命令目前只支持读取 coredump 文件
 > * 经过 base64 编码（从 SD 卡打印到串口）和解码（命令 `base64 -d file_A > file_B`）过程，文件 abcdef.dmp 和 file_B 的内容完全一致。
 
-#### 2.3.6. 其他命令
+#### 2.3.6. 设备调试命令
+
+1. manual -t type
+
+    |||||
+    |-|-|-|-|
+    |命令定义|manual -t {type}||
+    |指令|manual|给 ESP-MDF 设备发送调试命令|
+    |选项符|-t|表示给 ESP-MDF 设备发送的调试命令|
+    |参数|type|调试命令类型：reboot, reset, config [0,1,2]|
+    |示例|manual -t 0|给 ESP-MDF 设备发送 `重启` 调试命令|
+    |响应|OK|设置成功|
+
+2. nvs_erase -k key
+
+    |||||
+    |-|-|-|-|
+    |命令定义|erase_nvs -k {key}||
+    |指令|erase_nvs|擦除 ESP-MDF 设备 NVS 存储区域的指定数据|
+    |选项符|-k|指定 ESP-MDF 设备 NVS 存储区域的 key|
+    |参数|key|NVS 存储的 key，key 的长度在 15 个字节及以内，且前后不需要加引号|
+    |示例|erase_nvs -t mdf_network|擦除 ESP-MDF 设备中的配网信息|
+    |响应|OK|设置成功|
+
+#### 2.3.7. 其他命令
 
 * `free`: 显示系统剩余 Heap Memory
 * `restart`: 重启 espnow_debug 接收板

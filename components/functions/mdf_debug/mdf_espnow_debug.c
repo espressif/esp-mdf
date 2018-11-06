@@ -27,6 +27,8 @@
 #include "mdf_espnow_debug.h"
 #include "mdf_info_store.h"
 #include "mdf_wifi_mesh.h"
+#include "mdf_event_loop.h"
+#include "mdf_network_config.h"
 
 /**< in espnow_debug module, all ESP_LOG* will be redirected to espnow_debug,
      so the log of itself should be restored to other log channel, use ets_printf here */
@@ -68,8 +70,8 @@ static EventGroupHandle_t g_event_group = NULL;
 static xQueueHandle g_log_queue         = NULL;
 
 static uint8_t g_espnow_log_level                        = MDF_ESPNOW_LOG_NONE;
-static uint8_t g_espnow_dest_mac[ESP_NOW_ETH_ALEN]       = { 0x00 };
-static const uint8_t g_espnow_null_mac[ESP_NOW_ETH_ALEN] = { 0x00 };
+static uint8_t g_espnow_dest_mac[ESP_NOW_ETH_ALEN]       = {0x00};
+static const uint8_t g_espnow_null_mac[ESP_NOW_ETH_ALEN] = {0x00};
 
 int mdf_espnow_log_write(const char *fmt, va_list vp);
 
@@ -349,7 +351,7 @@ static esp_err_t mdf_coredump_detect(void)
     MDF_ERROR_CHECK(!g_espnow_debug_start, ESP_FAIL, "g_espnow_debug_start not set");
     MDF_ERROR_CHECK(g_coredump_is_sending, ESP_OK, "coredump_send_task has been created");
 
-    esp_err_t ret                 = ESP_OK;
+    esp_err_t ret                  = ESP_OK;
     size_t coredump_len            = 0;
     coredump_info_t *coredump_info = NULL;
 
@@ -430,7 +432,8 @@ static esp_err_t mdf_espnow_start(void)
 void mdf_espnow_debug_task(void *pvParameter)
 {
     esp_err_t ret                            = ESP_OK;
-    uint8_t mac_addr[ESP_NOW_ETH_ALEN]       = { 0 };
+    char nvs_key[16]                         = {0};
+    uint8_t mac_addr[ESP_NOW_ETH_ALEN]       = {0};
     uint8_t *recv_data                       = mdf_calloc(1, DEBUG_MAX_DATA_LEN);
     mdf_espnow_debug_pkt_t *espnow_debug_pkt = NULL;
 
@@ -509,6 +512,55 @@ void mdf_espnow_debug_task(void *pvParameter)
                     MDF_LOGW("mdf_espnow_set_config fail, ret: %d", ret);
                 }
 
+                break;
+            case MDF_ESPNOW_DEBUG_MANUAL:
+                MDF_LOGI("MDF_ESPNOW_DEBUG_MANUAL, oprt: %d", espnow_debug_pkt->oprt);
+
+                switch (espnow_debug_pkt->oprt) {
+                    case MDF_ESPNOW_MANUAL_REBOOT:
+                        ret = mdf_event_loop_delay_send(MDF_EVENT_SYSTEM_REBOOT, NULL, 5000);
+                        if (ret < 0) {
+                            MDF_LOGW("mdf_event_loop_delay_send, ret: %d", ret);
+                        }
+                        break;
+
+                    case MDF_ESPNOW_MANUAL_RESET:
+                        ret = mdf_coredump_erase();
+                        if (ret < 0) {
+                            MDF_LOGW("mdf_coredump_erase, ret: %d", ret);
+                        }
+                        ret = mdf_event_loop_delay_send(MDF_EVENT_SYSTEM_RESET, NULL, 5000);
+                        if (ret < 0) {
+                            MDF_LOGW("mdf_event_loop_delay_send, ret: %d", ret);
+                        }
+                        break;
+
+                    case MDF_ESPNOW_MANUAL_CONFIG:
+                        ret = mdf_network_clear_config();
+                        if (ret < 0) {
+                            MDF_LOGW("mdf_network_clear_config, ret: %d", ret);
+                        }
+                        ret = mdf_event_loop_delay_send(MDF_EVENT_SYSTEM_REBOOT, NULL, 5000);
+                        if (ret < 0) {
+                            MDF_LOGW("mdf_event_loop_delay_send, ret: %d", ret);
+                        }
+                        break;
+
+                    case MDF_ESPNOW_MANUAL_ERASE:
+                        MDF_ERROR_BREAK(espnow_debug_pkt->size >= 16, "nvs key too long: %d", espnow_debug_pkt->size);
+                        memset(nvs_key, 0 , 16);
+                        memcpy(nvs_key, espnow_debug_pkt->data, espnow_debug_pkt->size);
+                        MDF_LOGI("mdf_info_erase key: %s", espnow_debug_pkt->data);
+                        ret = mdf_info_erase(nvs_key);
+                        if (ret < 0) {
+                            MDF_LOGW("mdf_info_erase, ret: %d", ret);
+                        }
+                        break;
+
+                    default:
+                        MDF_LOGI("MDF_ESPNOW_DEBUG, type error: %d", espnow_debug_pkt->type);
+                        break;
+                }
                 break;
 
             default:
