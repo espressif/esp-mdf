@@ -1,0 +1,79 @@
+menu "MDF Mcommon"
+
+config MDF_TASK_DEFAULT_PRIOTY
+    int "Task's priority "
+    default 6
+    help
+        Configure the priority of all mesh tasks
+
+choice MDF_TASK_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which MDF run"
+    depends on !FREERTOS_UNICORE
+    help
+        Which the cpu core to run MDF. Can choose core0 and core1.
+        Can not specify no-affinity.
+
+config MDF_PINNED_TO_CORE_0
+    bool "Core 0 (PRO CPU)"
+config MDF_PINNED_TO_CORE_1
+    bool "Core 1 (APP CPU)"
+    depends on !FREERTOS_UNICORE
+endchoice
+
+config MDF_TASK_PINNED_TO_CORE
+    int
+    default 0 if MDF_PINNED_TO_CORE_0
+    default 1 if MDF_PINNED_TO_CORE_1
+    default 0
+
+config MDF_MEM_DEBUG
+    bool "Memory debug"
+    default y
+    help
+        Memory debug.
+
+config MDF_ERR_TO_NAME_LOOKUP
+    bool "Enable lookup of error code strings"
+    default y
+    help
+        Functions mdf_err_to_name() return string representations of error codes
+        from a pre-generated lookup table. This option can be used to turn off
+        the use of the look-up table in order to save memory but this comes at
+        the price of sacrificing  distinguishable (meaningful) output string
+        representations.
+
+choice MDF_LOG_LEVEL
+    bool "Configure the mesh application layer's log"
+    default MDF_LOG_LEVEL_DEBUG
+    help
+         Specify how much output to see in logs by default.
+         Note that this setting limits which log statements
+         are compiled into the program. So setting this to, say,
+         "Warning" would mean that changing log level to "Debug"
+         at runtime will not be possible.
+
+config MDF_LOG_LEVEL_NONE
+   bool "No output"
+config MDF_LOG_LEVEL_ERROR
+   bool "Error"
+config MDF_LOG_LEVEL_WARN
+   bool "Warning"
+config MDF_LOG_LEVEL_INFO
+   bool "Info"
+config MDF_LOG_LEVEL_DEBUG
+   bool "Debug"
+config MDF_LOG_LEVEL_VERBOSE
+   bool "Verbose"
+endchoice
+
+config MDF_LOG_LEVEL
+    int
+    default 0 if MDF_LOG_LEVEL_NONE
+    default 1 if MDF_LOG_LEVEL_ERROR
+    default 2 if MDF_LOG_LEVEL_WARN
+    default 3 if MDF_LOG_LEVEL_INFO
+    default 4 if MDF_LOG_LEVEL_DEBUG
+    default 5 if MDF_LOG_LEVEL_VERBOSE
+
+
+endmenu

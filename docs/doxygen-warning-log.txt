@@ -1,0 +1,11 @@
+warning: source ../../components/mespnow/include/mespnow.h is not a readable file or directory... skipping.
+warning: source ../../components/mcommon/include/mdf_event_loop.h is not a readable file or directory... skipping.
+warning: source ../../components/mcommon/include/mdf_mem.h is not a readable file or directory... skipping.
+warning: source ../../components/mcommon/include/mdf_common.h is not a readable file or directory... skipping.
+warning: source ../../components/mcommon/include/mdf_err.h is not a readable file or directory... skipping.
+warning: source ../../components/mwifi/include/mwifi.h is not a readable file or directory... skipping.
+warning: source ../../components/mconfig/include/mconfig_queue.h is not a readable file or directory... skipping.
+warning: source ../../components/mconfig/include/mconfig_blufi.h is not a readable file or directory... skipping.
+warning: source ../../components/mconfig/include/mconfig_chain.h is not a readable file or directory... skipping.
+warning: source ../../components/mconfig/include/mconfig_security.h is not a readable file or directory... skipping.
+warning: source ../../components/mupgrade/include/mupgrade.h is not a readable file or directory... skipping.

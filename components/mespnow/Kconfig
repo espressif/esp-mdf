@@ -1,0 +1,21 @@
+menu "MDF Mespnow"
+
+config MESPNOW_RETRANSMIT_NUM
+    int "Number of data retransmissions"
+    default 3
+    help
+        Number of data retransmissions
+
+config MESPNOW_DEFAULT_PMK
+    string "primary master key is used to encrypt local master key"
+    default "pmk1234567890123"
+    help
+        primary master key is used to encrypt local master key
+
+config MESPNOW_LOG_LEVEL
+    int "Mespnow logging level"
+    default 2
+    help
+        Config mespnow logging level (0-5).
+
+endmenu

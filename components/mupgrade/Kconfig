@@ -1,0 +1,48 @@
+menu "MDF Mupgrade"
+
+config MUPGRADE_RETRY_COUNT
+    int "Maximum length of a single packet transmitted"
+    default 10
+    help
+        Maximum length of a single packet transmitted
+
+config MUPGRADE_WAIT_RESPONSE_TIMEOUT
+    int "Timeout waiting for a response (ms)"
+    default 3000
+    help
+        Timeout period for requesting an upgrade status waiting for a response
+
+config MUPGRADE_STATUS_REPORT_INTERVAL
+    int "The interval at which the upgrade progress is actively reported"
+    range 1 100
+    default 10
+    help
+        The interval at which the upgrade progress is actively reported
+
+config MUPGRADE_FIRMWARE_CHECK
+    bool "Check if the Mupgrade module is included"
+    default n
+    help
+       Check if the Mupgrade module is included.
+
+config MUPGRADE_VERSION_FALLBACK_RESTART
+    bool "Fall back to the previous version"
+    default y
+    help
+       If there is a factory partition, it will switch to the factory partition.
+
+config MUPGRADE_RESTART_COUNT
+    int "How many times to restart continuously"
+    default 10
+    depends on MUPGRADE_VERSION_FALLBACK_RESTART
+    help
+       How many times to restart continuously.
+
+config MUPGRADE_RESTART_TIMEOUT
+    int "Continuous restart interval(ms)"
+    default 5000
+    depends on MUPGRADE_VERSION_FALLBACK_RESTART
+    help
+       Continuous restart interval.
+
+endmenu

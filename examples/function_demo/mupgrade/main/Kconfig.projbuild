@@ -1,0 +1,42 @@
+menu "Example Configuration"
+
+config DEVICE_VERSION
+    string "Device version"
+    default "0.0.1"
+    help
+        Config device version
+
+config ROUTER_SSID
+    string "Router SSID"
+        default "ROUTER_SSID"
+        help
+            Router SSID.
+
+config ROUTER_PASSWORD
+    string "Router password"
+        default "ROUTER_PASSWORD"
+        help
+            Router password.
+
+config ROUTER_CHANNEL
+    int "Router channel"
+    range 0 14
+    default 0
+    help
+        When the channel is set to 0, it is automatically acquired by the device.
+        Mesh and router will be on the same channel.
+
+config MESH_ID
+    string "Mesh ID"
+        default "123456"
+        help
+            Mesh network identification, Nodes with the same mesh ID can
+            communicate with each other.
+
+config FIRMWARE_UPGRADE_URL
+    string "Firmware upgrade url endpoint"
+    default "http://192.168.0.3:8070/hello-world.bin"
+    help
+        URL of server which hosts the firmware image.
+
+endmenu

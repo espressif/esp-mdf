@@ -1,0 +1,43 @@
+menu "MDF Mconfig"
+
+config MCONFIG_WHITELIST_ENABLE
+    bool "Enables mconfig whitelist"
+    default y
+    help
+        When configuring the network, the devices on the non-white list will be filtered.
+
+config MCONFIG_WHITELIST_SECURITY_ENABLE
+    bool "Prevent counterfeit device attacks"
+    default n
+    depends on MCONFIG_WHITELIST_ENABLE
+    help
+        Perform RSA key pair verification to prevent pseudo device attacks.
+
+config MCONFIG_WHITELIST_CHECKSUM_SIZE
+    int "RSA's public key check code length"
+    default 32
+    depends on MCONFIG_WHITELIST_SECURITY_ENABLE
+    help
+        RSA's public key check code length.
+
+config MCONFIG_PARTITION_SUBTYPE
+    int "RSA partition type"
+    default 154
+    depends on MCONFIG_WHITELIST_SECURITY_ENABLE
+    help
+        Partition type, one of esp_partition_type_t values.
+
+config MCONFIG_PARTITION_LABLE
+    string "RSA partition label"
+    default "mconfig_rsa"
+    depends on MCONFIG_WHITELIST_SECURITY_ENABLE
+    help
+        Set this value if looking for partition with a specific name.
+
+config MCONFIG_CHAIN_LMK
+    string "Espnow communication encrypted key"
+    default "lmk1234567890123"
+    help
+        Espnow communication encrypted key in mconfig distribution network.
+
+endmenu
