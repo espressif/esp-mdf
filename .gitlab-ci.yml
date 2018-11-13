@@ -33,7 +33,6 @@ before_script:
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
   # replace submodule esp-idf to internal repository to speedup cloning
   - sed -i "s%https://github.com/espressif/esp-idf.git%${GITLAB_SSH_SERVER}/idf/esp-idf.git%" .gitmodules
-  - sed -i "s%https://github.com/adafruit/Adafruit-GFX-Library.git%${GITLAB_SSH_SERVER}/utility/Adafruit-GFX-Library.git%" .gitmodules
   - git submodule update --init
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source esp-idf/tools/ci/configure_ci_environment.sh
@@ -45,7 +44,7 @@ before_script:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - build
+    - iot
   variables:
     ARTIFACTS_NAME: "default"
     DEFAULT_CONFIG: ""
@@ -66,17 +65,35 @@ before_script:
     - make -j5
     - make print_flash_cmd | tail -n 1 > build/download.config
 
-build_example_light_bulb:
+build_example_get_started:
   <<: *build_template
   variables:
-    ARTIFACTS_NAME: "light"
-    EXAMPLE_PATH: "examples/light_bulb"
+    ARTIFACTS_NAME: "get-started"
+    EXAMPLE_PATH: "examples/get-started"
 
-build_example_factory:
+build_example_mconfig:
   <<: *build_template
   variables:
-    ARTIFACTS_NAME: "factory"
-    EXAMPLE_PATH: "examples/factory"
+    ARTIFACTS_NAME: "mconfig"
+    EXAMPLE_PATH: "examples/function_demo/mconfig"
+
+build_example_mupgrade:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mupgrade"
+    EXAMPLE_PATH: "examples/function_demo/mupgrade"
+
+build_example_mwifi:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mwifi"
+    EXAMPLE_PATH: "examples/function_demo/mwifi"
+
+build_example_mcommon:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mcommon"
+    EXAMPLE_PATH: "examples/function_demo/mcommon"
 
 push_master_to_github:
   stage: deploy
@@ -106,3 +123,37 @@ push_master_to_github:
     # NB: In gitlab 9.x, CI_BUILD_REF was deprecated. New name is CI_COMMIT_REF. If below command suddenly
     # generates bash syntax errors, this is probably why.
     - eval $(git for-each-ref --shell bash --format 'if [ $CI_BUILD_REF == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)
+
+
+# If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
+
+build_docs:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build_docs
+  artifacts:
+    when: always
+    paths:
+      # English version of documentation
+      - docs/en/doxygen-warning-log.txt
+      - docs/en/sphinx-warning-log.txt
+      - docs/en/sphinx-warning-log-sanitized.txt
+      - docs/en/_build/html
+      # Chinese version of documentation
+      - docs/zh_CN/doxygen-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log-sanitized.txt
+      - docs/zh_CN/_build/html
+    expire_in: 1 mos
+  script:
+    - cd docs
+    - ./check_lang_folder_sync.sh
+    - cd en
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh
+    - cd ../zh_CN
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh

@@ -1,0 +1,59 @@
+menu "Example Configuration"
+
+config ROUTER_SSID
+    string "Router SSID"
+        default "ROUTER_SSID"
+        help
+            Router SSID.
+
+config ROUTER_PASSWORD
+    string "Router password"
+        default "ROUTER_PASSWORD"
+        help
+            Router password.
+
+config ROUTER_CHANNEL
+    int "Router channel"
+    range 0 14
+    default 0
+    help
+        When the channel is set to 0, it is automatically acquired by the device.
+        Mesh and router will be on the same channel.
+
+config MESH_ID
+    string "Mesh ID"
+        default "123456"
+        help
+            Mesh network identification, Nodes with the same mesh ID can
+            communicate with each other.
+
+
+config MESH_PASSWORD
+    string "Mesh Password"
+    default "MESH_PASSWORD"
+    help
+        Mesh AP password. Password length must be 8 bits smaller than 64 bits,Set to null to not encrypt
+
+config LED_GPIO_NUM
+    int "LED pin GPIO number"
+    range 0 33
+    default 25
+    help
+        There are more enumerations like that
+        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+        They are not shown here to reduce redundant information.
+        @note GPIO34..39 are input mode only.
+
+config SERVER_IP
+    string "Server IP address"
+        default "192.168.0.1"
+        help
+            Server IP address.
+
+config SERVER_PORT
+    int "Server port"
+        default "8070"
+        help
+            Server port.
+
+endmenu

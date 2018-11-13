@@ -1,87 +1,148 @@
-[[English]](README.md)
+# ESP-MESH 开发框架 [[English]](./README_en.md)
 
-# 乐鑫 ESP-Mesh 开发框架
+[![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
 
-乐鑫 ESP-Mesh 开发框架（ESP-MDF）是基于乐鑫芯片 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 的官方 Mesh 开发框架。
+ESP-MDF (Espressif Mesh Development Framework) 是基于 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 芯片的 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 开发框架。ESP-MESH 是一种基于 Wi-Fi 构建的 MESH 网络通信协议。
 
-## 1. ESP-MDF 概述
+## 概述
 
-ESP-MDF 是一种多节点组网和数据通信的综合解决方案，基于 [ESP-IDF](https://github.com/espressif/esp-idf) (Espressif IoT Development Framework) 框架和 [ESP-Mesh](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) 无线通信协议开发，包含设备配网，本地和远程控制，固件升级，设备间联动控制，低功耗方案等一套完整的功能。
+ESP-MDF 在 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 协议栈的基础上增加了配网、升级、调试机制及应用示例。使用 ESP-MDF 您可以快速上手 ESP-MESH 开发。其主要特点如下：
 
-以下是 ESP-MDF 主要功能：
+* **快速配网**：在 app 配网的基础上增加了设备间链式配网，以实现大范围快速配网；
+* **稳定升级**：通过断点续传、数据压缩、版本回退和固件检查等机制达到高效升级；
+* **高效调试**：支持指令终端、通过无线进行日志传输和调试等多种调试方式；
+* **局域网控制**：支持 app 控制、传感器控制等；
+* **丰富的示例**：提供了基于 ESP-MESH 的照明、室内定位等综合解决方案。
 
-* 快速配网：采用 Blufi 与 Wi-Fi 链式配网相结合的方案；
-* 多种控制方式：APP 控制、传感器控制、联动控制、远程控制、联动控制；
-* 快速稳定升级：采用断点续传功能，提高设备在复杂网络环境下的升级成功率；
-* 低功耗方案：可将设备切换至 deepsleep 工作模式，以降低设备功耗；
-* 蓝牙应用：蓝牙网关和 iBeacon 功能；
-* Sniffer: 用于人流量检测、物品跟踪、室内定位等场景；
-* Debug 机制：终端指令配置、设备日志无线传输、设备日志分析；
-* 紧急恢复模式：当设备出现不可升级的异常情况时能够进入紧急恢复模式进行固件升级；
+## 框架
 
-以下为 ESP-MDF 的功能框图：
+ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示），他们之间的关系：Utils 是 ESP-IDF APIs 的抽象封装以及第三方库，Components 是基于 Utils APIs 组成的 ESP-MDF 功能模块，Examples 是基于 Components 完成的 ESP-MESH 解决方案。
 
-<div align=center>
-<img src="docs/_static/esp_mdf_block_diagram.png" width="800">
-</div>
+<img src="docs/_static/mdf_framework.jpg">
 
-## 2. ESP-MDF 特性
+- **Utils**：
+    - Third Party：第三方的组件
+        - [Driver](https://github.com/espressif/esp-iot-solution)：常用的按键、LED 等驱动
+        - [Miniz](https://github.com/richgel999/miniz)：无损高性能数据压缩库
+        - [Aliyun](https://github.com/espressif/esp-aliyun): 阿里云物联网套件
 
-ESP-MDF [工程](https://github.com/espressif/esp-mdf) 已全部在 GitHub
-开源，您可以基于 ESP-MDF 系统框架开发多种类型的智能设备：智能灯，按键，插座，智能门锁，智能窗帘等。ESP-MDF 主要包含如下功能：
+    - Transmission: 设备间数据通信方式
+        - [Mwifi](docs/zh_CN/api-reference/mwifi/index.rst): 对 ESP-MESH 的封装，在其基础上增加了重包过滤、数据压缩、分包传输和 P2P 组播
+        - [Mespnow](docs/zh_CN/api-reference/mespnow/index.rst): 对 ESP-NOW 的封装，在其基础上增加了重包过滤、CRC 校验、数据分包
 
-1. 安全高效的配网方式
-    * 速度快
-        * 结合 [BluFi](https://esp-idf.readthedocs.io/en/latest/api-reference/bluetooth/esp_blufi.html) 与 [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html) 链式配网两种配网方式，只有第一个设备采用单连接的 BluFi 配网，之后的所有设备都采用 ESP-NOW 链式配网（已配网成功的设备在一定时间内将配网信息传递给周围未配网的设备）。经测试，对一百个设备进行配网，最快仅需 1 分钟。
-    * 操作便捷
-        * 配网信息存储于所有已配网的设备中，添加新设备时仅需要在 app 端一键 `添加设备` 即可完成对新设备的配网操作。
-    * 完善的异常处理机制
-        * 包括路由器密码配置变更、密码错误、路由器损坏等特殊情况的处理。
-    * 安全
-        * 非对称加密：对 BluFi 和 ESP-NOW 链式配网过程中的网络配置数据进行非对称加密；
-        * 白名单机制：扫描设备的蓝牙信号或产品包装上的二维码信息生成待配网设备白名单，配网时仅对白名单上的设备进行配网。
+    - Mcommon：ESP-MDF 各组件之间的共用模块
+        - Event loop: ESP-MDF 的事件处理
+        - Error Check: ESP-MDF 的错误码管理
 
-2. 无线控制
-    * 局域网控制
+- **Components**：
+    - [Mconfig](docs/zh_CN/api-guides/mconfig.md)：配网模块
+    - [Mupgrade](docs/zh_CN/api-guides/mupgrade.md)：升级模块
+    - [Mdebug](docs/zh_CN/api-guides/mdebug.md)：调试模块
+    - [Mlink](docs/zh_CN/api-guides/mlink)：局域网控制模块
 
-    > 关于 ESP-MDF 的局域网控制协议说明，请参考相关协议说明文档: [MDF 设备与 App 之间的通信协议](docs/zh_CN/application-notes/mdf_lan_protocol_guide_cn.md)。
+- **Examples**：
+    - Function demo：各个功能块的使用示例
+    - Development Kit：ESP32-MeshKit 和 ESP32-Buddy 使用示例
+    - Solution：室内定位、无路由、路灯等解决方案
 
-3. 快速稳定的升级过程
-    * 专用升级连接：50 个设备同时升级，最快仅需 3 分钟；
-    * 支持断点续传：提高设备在复杂网络环境下的升级成功率；
+## 使用 ESP-MDF 进行开发
+### 开发板指南
+#### ESP32-MeshKit
+ESP32-MeshKit 包含一整套完整的 [ESP-MESH 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)（如下图所示），可配套 ESP-Mesh App（[iOS 版](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8)和[安卓版](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)）使用，用于调研和了解 ESP-MESH，也可以进行二次开发。
 
-4. 完善的调试工具
-    * 指令终端: 通过命令行实现添加、修改、删除和控制 ESP-MDF 设备
-    * 概要信息: 通过 mDNS 服务获取 Mesh 网络的 Root IP、MAC、Mesh-ID 等信息
-    * 日志统计: 对接收的日志数据进行统计，包括：ERR 和 WARN 日志的数量，设备重启次数，Coredump 接收个数，系统运行时间等
-    * 日志保存: 接收设备的日志与 coredump 信息并保存至 SD 卡中
+<table>
+        <tr>
+            <td ><img src="docs/_static/ESP32-MeshKit_Light.jpg" width="550"><p align=center>ESP32-MeshKit Light</p></td>
+            <td ><img src="docs/_static/ESP32-MeshKit_Sense.jpg" width="600"><p align=center>ESP32-MeshKit Sense</p></td>
+        </tr>
+    </table>
 
-    > 关于调试工具的使用，请参考项目示例 [espnow_debug](https://github.com/espressif/esp-mdf/tree/master/examples/espnow_debug) 的 README.md 说明文档。
+* 产品：
+    * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：RGBW 智能灯，直观反应控制结果，可用于测试组网时间、响应速度、距离测试、稳定性测试等。
+    * [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md)：带有光强传感器和温湿度传感器，可用于功耗测量和低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和 Debug。
+    * ESP32-MeshKit-Button：作为开关控制，用于低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和 Debug（即将上线，敬请期待）。
 
-5. 支持低功耗模式
-    * 叶子结点可选择进入 Deep Sleep 运行模式，降低系统功耗，电流最低可至 5 微安。
+#### ESP32-Buddy
+ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，采用 USB 供电，方便做大数量设备的测试及距离测试（即将上线，敬请期待）。
 
-6. 支持 iBeacon 功能
-    * 可应用于室内定位（弥补 GPS 无法覆盖的室内定位场景）和产品推广（商家可以通过 iBeacon 实时推送产品信息和优惠活动）领域。
+* 功能：
+    * 16 MB 的 flash：存储运行日志
+    * OLED 屏：显示当前设备所在的层级、连接状态等信息
+    * LED：运行状态指示
+    * 温湿度传感器：数据采集
 
-7. 支持 BLE & Wi-Fi 监听功能
-    * 可应用于人流量统计（通过抓取空气中的无线数据包来统计手持联网设备的数量，进而统计人流量）和路径追踪（通过多个采集点对同一设备的无线数据包在时间上的统计，达到追踪某一联网设备的目的）领域。
+### 快速开始
+通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
 
-8. 支持传感器设备网关
-    * ESP32 芯片在运行 Wi-Fi 和 蓝牙协议栈的同时还可以接入多种传感器设备，能很方便的将各种传感器数据传给服务器，因此可以作为多种传感器设备的网关，包括蓝牙设备，红外传感器设备，温度传感器设备等。
+1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html#get-started-setup-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/macos-setup.html)）进行配置。
 
-9. 设备联动控制
-    * ESP-MDF 基于现有的局域网通信协议开发了一种 Mesh 网络内部的设备联动控制方案。用户通过移动端 app 页面设置联动控制方式（比如一打开房门就将客厅的灯全部点亮，离开厨房时关闭厨房的灯，同时打开客厅的灯等）；之后 app 会将用户配置好的条件转换成设备可执行的命令数据发送给设备；设备在运行过程中不断检测环境和自身状态，满足判断条件时，就直接向目标设备发送设定好的控制信息。
+2. **获取 ESP-MDF**：
+    ```shell
+    git clone --recursive https://github.com/espressif/esp-mdf.git
+    ```
+    > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init`
 
-## 3. 相关资源
+3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/add-idf_path-to-profile.html)
+    ```shell
+    export MDF_PATH=~/esp/esp-mdf
+    ```
+
+4. **创建一个工程**：此工程为 ESP-MESH 两个设备之间通信的示例
+    ```shell
+    cp -r $MDF_PATH/examples/get-started/ .
+    cd get-started/
+    ```
+
+5. **编译和烧写**：除串口号需要修改外，其余使用默认配置即可
+    ```shell
+    make menuconfig
+    make erase_flash flash
+    ```
+
+6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
+    ```shell
+    make monitor
+    ```
+
+7. **更新 ESP-MDF**：
+    ```shell
+    cd ~/esp/esp-mdf
+    git pull
+    git submodule update --init --recursive
+    ```
+
+## ESP-MESH 的优势
+
+* **布置方便**：采用 Wi-Fi 组网，无需布线安装等复杂工作，支持自组网、自修复和自管理，用户只需配置路由器的密码即可；
+
+* **无需网关**：ESP-MESH 采用去中心化的结构，其无需网关避免了单点故障造成整个网络瘫痪，仅一个 ESP-MESH 设备也能正常工作；
+* **传输更安全**：数据链路层和应用层均可实施加密；
+* **传输更可靠**：两个设备之间的是可靠传输和流控，支持单播、组播和广播；
+* **网络容量大**：ESP-MESH 采用树状结构，单个设备最多直接连接 10 个设备，单个网络可容纳 1000 个节点以上；
+* **传输范围广**：两个设备之间的传输距离隔墙 30 m，空旷环境 200 m（测试基于 ESP32-DevKitC）；
+    * **智能家居**：即使仅有三五个设备且隔墙也能够组成网络，可以满足家庭环境中，设备数量少无法相互通信的问题；
+    * **路灯方案**：可能满足路灯场景中两个相距较远的设备之间的通信。
+* **传输速率高**：基于 Wi-Fi 传输，高达 10 Mbps 的传输率；
+    * **环境控制系统**：可以直接传输传感器采集到的原始数据，对大量数据的分析来校准算法提高传感器准确性；
+    * **背景音乐系统**：可以进行音视频传输。
+* **能同时运行 BLE 协议栈**：ESP32 芯片可以同时运行 Wi-Fi 和 BLE 协议栈，利用 ESP-MESH 做为主干网络进行数据的传输，通过 BLE 接收探针、发送广播和连接设备；
+    * **物品跟踪**：通过多个采集点监控同一设备发出的 BLE 或 Wi-Fi 数据包；
+    * **人流量检测**：统计 Wi-Fi 设备发出的 Probe Request （探测请求）帧；
+    * **室内定位**：每个设备相当于 Beacon 基站不断向四周发送蓝牙信号，手机通过分析与设备之间的信号强度，计算出当前的位置；
+    * **产品推广**：通过 iBeacon 实时推送产品信息和优惠活动；
+    * **蓝牙网关**：每个设备可以相当于一个蓝牙网关，使传统的蓝牙设备也能连接 ESP-MESH 网络。
+
+## 相关资源
 
 * 查看 ESP-MDF 项目文档请点击 [docs](docs)。
-* [ESP-IDF 编程指南](https://esp-idf.readthedocs.io/en/latest/) 是乐鑫物联网开发框架的说明文档。
+* [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html) 是乐鑫物联网开发框架的说明文档。
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
-* [BluFi](https://esp-idf.readthedocs.io/en/latest/api-reference/bluetooth/esp_blufi.html) 是一种利用蓝牙配置 Wi-Fi 连接的方式。
-* [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html) 是乐鑫开发的一种无连接的 Wi-Fi 通信协议。
-* 项目示例 [espnow-debug](https://github.com/espressif/esp-mdf/tree/master/examples/espnow_debug) 即为 ESP-MDF 项目的调试工具代码。
-* 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 issue 中是否已经有您的问题。
-* 如果您想在 ESP-MDF 上贡献代码，请点击 [贡献代码指南](docs/zh_CN/contribute/contribute_cn.md)。
+* 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 Issues 中是否已经有您的问题。
+* 如果您想在 ESP-MDF 上贡献代码，请点击[贡献代码指南](docs/zh_CN/contribute/contribute_cn.md)。
 * 访问 ESP32 官方论坛请点击 [ESP32 BBS](https://esp32.com/) 。
 * 关于 ESP32-MeshKit 硬件文档，请至[乐鑫官网](https://www.espressif.com/zh-hans/support/download/documents?keys=&field_technology_tid%5B%5D=18)查看。
+* ESP32-MeshKit-Light 购买链接：[淘宝](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail)。
+* ESP32-Buddy 购买链接：即将上架。
+
+
+

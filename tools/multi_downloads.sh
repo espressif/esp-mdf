@@ -16,6 +16,9 @@ if [ ! -d "serial_log" ]; then
     mkdir serial_log
 fi
 
+if [ ! -d "bin" ]; then
+    mkdir bin
+fi
 
 # make clean
 make -j8
@@ -56,18 +59,10 @@ echo "============================="
 for i in $(seq 0 1 $loop_end )
 do
 {
-   {
-    python esptool.py --chip esp32 --port /dev/ttyUSB$i erase_flash
-    python esptool.py --chip esp32 --port /dev/ttyUSB$i --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x8000 partitions.bin 0xc0000 $PROJECT_NAME.bin
+    echo "download ttyUSB$i"
+    {
+        make erase_flash flash monitor -j5 ESPPORT=/dev/ttyUSB$i ESPBAUD=921600
     }>/dev/null
-
-    rst_arr[$i]="$?"
-    rst=$[rst_arr[$i]]
-    if [ "$rst" == "0" ];then
-        echo "============= download success ttyUSB$i ============="
-    else
-        echo "XXXXXXXXXXXXXX  download fail ttyUSB$i  XXXXXXXXXXXXX"
-    fi
 }&
 done
 wait

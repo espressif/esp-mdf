@@ -1,0 +1,71 @@
+/*
+ * ESPRESSIF MIT License
+ *
+ * Copyright (c) 2018 <ESPRESSIF SYSTEMS (SHANGHAI) PTE LTD>
+ *
+ * Permission is hereby granted for use on all ESPRESSIF SYSTEMS products, in which case,
+ * it is free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished
+ * to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
+@COMMENT@
+
+#include <string.h>
+#if __has_include("soc/soc.h")
+#include "soc/soc.h"
+#endif
+@HEADERS@
+
+#ifdef CONFIG_MDF_ERR_TO_NAME_LOOKUP
+#define ERR_TBL_IT(err)    {err, #err}
+
+typedef struct {
+    mdf_err_t code;
+    const char *msg;
+} mdf_err_msg_t;
+
+static const mdf_err_msg_t mdf_err_msg_table[] = {
+@ERROR_ITEMS@
+};
+#endif //CONFIG_MDF_ERR_TO_NAME_LOOKUP
+
+static const char mdf_unknown_msg[] =
+#ifdef CONFIG_MDF_ERR_TO_NAME_LOOKUP
+    "ERROR";
+#else
+    "UNKNOWN ERROR";
+#endif //CONFIG_MDF_ERR_TO_NAME_LOOKUP
+
+const char *mdf_err_to_name(mdf_err_t code)
+{
+    if (code > 0 && code < 0x100) {
+        return strerror(code);
+    } else if (code < 0x100000 && code != ESP_OK && code != ESP_FAIL) {
+        return esp_err_to_name(code);
+    }
+
+#ifdef CONFIG_MDF_ERR_TO_NAME_LOOKUP
+    int i;
+
+    for (i = 0; i < sizeof(mdf_err_msg_table) / sizeof(mdf_err_msg_table[0]); ++i) {
+        if (mdf_err_msg_table[i].code == code) {
+            return mdf_err_msg_table[i].msg;
+        }
+    }
+#endif //CONFIG_MDF_ERR_TO_NAME_LOOKUP
+
+    return mdf_unknown_msg;
+}

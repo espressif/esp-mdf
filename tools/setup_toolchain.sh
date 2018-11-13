@@ -12,11 +12,11 @@ cd ~/esp
 echo "download toochain fror esp official website"
 sys_bit=$(sudo uname --m)
 if [ "$sys_bit" = "x86_64" ] ; then
-    wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
-    tar -xzf xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
+    wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+    tar -xzf xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
 elif [ "$sys_bit" = "i686" ] ; then
-    wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-73-ge28a011-5.2.0.tar.gz
-    tar -xzf xtensa-esp32-elf-linux32-1.22.0-73-ge28a011-5.2.0.tar.gz
+    wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz
+    tar -xzf xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz
 else
     echo "please checkout you system, it is neither 32bit nor 64bit"
     exit 0

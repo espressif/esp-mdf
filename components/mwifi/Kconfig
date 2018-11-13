@@ -1,0 +1,153 @@
+menu "MDF Mwifi"
+
+menu "Root config"
+config MWIFI_VOTE_PERCENTAGE
+    int "Vote percentage threshold above which the node becoms a root"
+    range 1 100
+    default 90
+    help
+        Vote percentage threshold above which the node becoms a root
+
+config MWIFI_VOTE_MAX_COUNT
+    int "Max vote counts in self-healing"
+    range 1 100
+    default 15
+    help
+        Max multiple voting each device can have for the self-healing of a mesh network
+
+config MWIFI_BACKOFF_RSSI
+    int "RSSI threshold for connecting to the root"
+    range -90 0
+    default -78
+    help
+        RSSI threshold below which connections to the root node are not allowed
+
+config MWIFI_SCAN_MINI_COUNT
+    int "Minimum scan times before being a root"
+    default 10
+    help
+        Minimum scan times before being a root
+
+config MWIFI_ROOT_HEALING_MS
+    int "Delay time before starting root healing"
+    default 6000
+    help
+        Time lag between the moment a root node is disconnected from the network and the moment
+        the devices start electing another root node
+
+config MWIFI_ROOT_CONFLICTS_ENABLE
+    bool "Allow more than one root in one network"
+    default y
+    help
+        Allow more than one root in one network
+
+endmenu
+
+menu "Capacity config"
+config MWIFI_CAPACITY_NUM
+    int "Mesh network capacity"
+    range 1 300
+    default 256
+    help
+        Network capacity, defining max number of devices allowed in the mesh network.
+
+config MWIFI_MAX_LAYER
+    int "Max number of allowed layers"
+    range 1 25
+    default 16
+    help
+        Max number of allowed layers
+
+config MWIFI_MAX_CONNECTION
+    int "Max number of mesh softAP connections"
+    range 1 10
+    default 6
+    help
+        Max number of mesh softAP connections
+endmenu
+
+menu "Stability config"
+config MWIFI_ASSOC_EXPIRE_MS
+    int "Mesh softAP associate expired time"
+    default 30
+    help
+        Period of time after which a mesh softAP breaks its association with inactive leaf nodes
+
+config MWIFI_BEACON_INTERVAL_MS
+    int "Mesh softAP beacon interval"
+    default 100
+    help
+        Mesh softAP beacon interval
+
+config MWIFI_PASSIVE_SCAN_MS
+    int "Mesh station passive scan duration"
+    default 300
+    help
+        Mesh station passive scan duration
+
+config MWIFI_MONITOR_DURATION_MS
+    int "Parent weak RSSI monitor duration"
+    default 60000
+    help
+        Period (ms) for monitoring the parent's RSSI. If the signal stays weak throughout
+        the period, the node will find another parent offering more stable connection
+
+config MWIFI_CNX_RSSI
+    int "RSSI threshold above which the connection with a parent is considered strong"
+    range -120 0
+    default -120
+    help
+        RSSI threshold above which the connection with a parent is considered strong
+
+config MWIFI_SELECT_RSSI
+    int "RSSI threshold for parent selection"
+    range -120 0
+    default -78
+    help
+        RSSI threshold for parent selection. Its value should be greater than switch_rssi
+
+config MWIFI_SWITCH_RSSI
+    int "RSSI threshold below which a node selects a parent with better RSSI"
+    range -120 0
+    default -78
+    help
+        RSSI threshold below which a node selects a parent with better RSSI
+
+config MWIFI_ATTEMPT_COUNT
+    int "The number of retries when the parent node disconnects"
+    default 60
+    help
+        Max fails for a parent node to restore connection to the mesh network
+        before it breaks the connection with its leaf nodes
+
+config MWIFI_MONITOR_IE_COUNT
+    int "Acceptable times of parent ie change before update self ie"
+    default 10
+    help
+        Allowed number of changes a parent node can introduce into its information element (IE),
+        before the leaf nodes must update their own IEs accordingly
+
+endmenu
+
+menu "Transmission config"
+config MWIFI_XON_QSIZE
+    int "The number of mesh buffer queues"
+    default 64
+    help
+        The number of mesh buffer queues.
+
+config MWIFI_RETRANSMIT_ENABLE
+    bool "If retransmission on mesh stack"
+    default y
+    help
+        Enable a source node to retransmit data to the node from which it failed to receive ACK
+
+config MWIFI_DATA_DROP_ENABLE
+    bool "Discard packets when the root changes"
+    default y
+    help
+        If a root is changed, enable the new root to drop the previous packet
+
+endmenu
+
+endmenu

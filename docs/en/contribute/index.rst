@@ -1,0 +1,1 @@
+.. include:: ../../zh_CN/contribute/index.rst
