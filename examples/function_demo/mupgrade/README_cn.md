@@ -1,4 +1,4 @@
-[[EN]](./README_en.md)
+[[EN]](./README.md)
 
 # Mupgrade 示例
 

@@ -1,4 +1,4 @@
-# ESP-MESH 开发框架 [[English]](./README_en.md)
+# ESP-MESH 开发框架 [[English]](./README.md)
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
 
