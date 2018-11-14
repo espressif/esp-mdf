@@ -58,3 +58,10 @@ examples/*/*/*/bin/
 examples/*/*/*/*.sh
 
 examples/test
+
+*.DS_Store
+*/*.DS_Store
+*/*/*.DS_Store
+*/*/*/*.DS_Store
+
+

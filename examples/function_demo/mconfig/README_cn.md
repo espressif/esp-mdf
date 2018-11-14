@@ -1,4 +1,4 @@
-[[EN]](./README_en.md)
+[[EN]](./README.md)
 
 # Mconfig 示例
 

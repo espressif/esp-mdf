@@ -1,10 +1,10 @@
-[[EN]](./README_en.md)
+[[EN]](./README.md)
 
 # get_started 示例
 
 ## 介绍
 
-本示例将介绍如何快速组建一个无路由器 ESP-MESH 网络，其余的组网方案及详细使用方式参见：[examples/function_demo/mwifi](../function_demo/mwifi/README.md)，在运行本示例之前请详细阅读 [README](../../README_cn.md) 和 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 文档。
+本示例将介绍如何快速组建一个无路由器 ESP-MESH 网络，其余的组网方案及详细使用方式参见：[examples/function_demo/mwifi](../function_demo/mwifi/README_cn.md)，在运行本示例之前请详细阅读 [README](../../README_cn.md) 和 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 文档。
 
 ## 配置
 
