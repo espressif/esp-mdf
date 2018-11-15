@@ -78,7 +78,7 @@ Tools
 
 You can use the scripts under the ``tool`` directory to simplify your development process.
 
-You can build and flash with ``gen_misc.sh``, which adds timestamp and log saving functions to ``make monitor``.::
+You can build and flash with ``gen_misc.sh``, which adds timestamp and log saving functions to ``make monitor``::
 
     cp $MDF_PATH/tools/gen_misc.sh .
     ./gen_misc.sh /dev/ttyUSB0
