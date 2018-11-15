@@ -135,12 +135,12 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 * **High transmission speed**: For Wi-Fi transmission, the speed can reach up to 10 Mbps.
     * **Environment Control System**: Directly transfers the raw data collected by sensors and analyzes mass data for calibration of algorithms, thereby improving sensors' accuracy.
     * **Background Music System**: Both audio and video transmissions are supported.
-* **Simultaneously run Wi-Fi and BLE protocol stacks**: ESP32 chips can run both Wi-Fi and BLE protocol stacks side by side and use ESP-MESH as the main network to transmit data, receive BLE probe beacon, send BLE broadcasts and connect BLE devices.
+* **Simultaneously run Wi-Fi and BLE protocol stacks**: ESP32 chips can run both Wi-Fi and BLE protocol stacks side by side and use ESP-MESH as the main network to transmit data, receive BLE probe beacon, send BLE broadcasts and connect BLE devices.
     * **Items tracing**: Monitors the BLE or Wi-Fi data packets from a device at multiple selected spots.
     * **Pedestrian counting**: Through monitoring Wi-Fi probe request frames.
-    * **Indoor positioning**: Each device functions as a Beacon AP, continuously sending Bluetooth signal to the surroundings. The network can analyze a device's signal intensity and calculate its current position.
+    * **Indoor positioning**: Each device functions as a Beacon AP, continuously sending Bluetooth signal to the surroundings. The network can analyze a device's signal intensity and calculate its current position.
     * **Product promotion**: Sends real-time product information and promotions through iBeacon.
-    * **Bluetooth gateway**: With each device serving as a Bluetooth gateway, traditional Bluetooth devices can also be connected to an ESP-MESH network.
+    * **Bluetooth gateway**: With each device serving as a Bluetooth gateway, traditional Bluetooth devices can also be connected to an ESP-MESH network.
 
 ## Related Documentation
 
@@ -148,7 +148,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 * [ESP-IDF Programming Guide](https://esp-idf.readthedocs.io/en/latest/) describes Espressif's IoT development framework.
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
 * To report a bug or request a function, please go to [Issues](https://github.com/espressif/esp-mdf/issues) on GitHub to submit them. Before submitting an issue, please check if it has already been covered.
-* If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](https://gitlab.espressif.cn:6688/application/esp-mdf/feature/mupgrade/docs/en/contribute/contribute_en.md).
+* If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](https://gitlab.espressif.cn:6688/application/esp-mdf/feature/mupgrade/docs/en/contribute/contribute_en.md).
 * To visit ESP32 official forum, please go to [ESP32 BBS](https://esp32.com/).
 * For the hardware documents related to ESP32-MeshKit, please visit [Espressif Website](https://www.espressif.com/en/support/download/documents).
 * ESP32-MeshKit-Light purchase link : [Taobao](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail).
