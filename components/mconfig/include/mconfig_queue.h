@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef __MCONFIG_H__
-#define __MCONFIG_H__
+#ifndef __MCONFIG_QUEUE_H__
+#define __MCONFIG_QUEUE_H__
 
 #include "mdf_common.h"
 #include "mdf_event_loop.h"
@@ -87,4 +87,4 @@ mdf_err_t mconfig_queue_read(mconfig_data_t **mconfig_data, TickType_t wait_tick
 }
 #endif
 
-#endif /**< __MCONFIG_H__ */
+#endif /**< __MCONFIG_QUEUE_H__ */

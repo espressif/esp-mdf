@@ -104,6 +104,10 @@ static bool mconfig_device_verify(mconfig_whitelist_t *whitelist_data, size_t wh
     return true;
 #endif /**< CONFIG_MCONFIG_WHITELIST_ENABLE */
 
+    if (MWIFI_ADDR_IS_ANY(addr)) {
+        return true;
+    }
+
     for (int i = 0; i < whitelist_size / sizeof(mconfig_whitelist_t); ++i) {
         if (!memcmp((whitelist_data + i)->addr, addr, MWIFI_ADDR_LEN)) {
 
@@ -458,6 +462,7 @@ static void mconfig_chain_slave_task(void *arg)
         ret = mconfig_queue_write(&chain_data->mconfig_data, 0);
         MDF_ERROR_CONTINUE(ret != ESP_OK, "mconfig_queue_write failed, ret: %d", ret);
 
+        mdf_event_loop_send(MDF_EVENT_MCONFIG_CHAIN_FINISH, NULL);
         break;
     }
 

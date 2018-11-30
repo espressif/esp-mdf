@@ -43,13 +43,14 @@
 #include "mconfig_blufi.h"
 #include "mconfig_security.h"
 
-#define MCONFIG_BLUFI_VERSION  (0)
+#define MCONFIG_BLUFI_VERSION     (0)
+#define MCONFIG_BLUFI_TIMEROUT_MS (30000)
 
 // #define ESP_BLUFI_STA_CONN_SUCCESS (0)
 // #define ESP_BLUFI_STA_CONN_FAIL    (1)
-#define BLUFI_STA_PASSWORD_ERR (300)
-#define BLUFI_STA_AP_FOUND_ERR (301)
-#define BLUFI_STA_TOOMANY_ERR  (302)
+#define BLUFI_STA_PASSWORD_ERR    (300)
+#define BLUFI_STA_AP_FOUND_ERR    (301)
+#define BLUFI_STA_TOOMANY_ERR     (302)
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
@@ -136,9 +137,10 @@ static mconfig_data_t *g_recv_config      = NULL;
 static mconfig_blufi_config_t g_blufi_cfg = {0};
 static QueueHandle_t g_rsa_decrypt_queue  = NULL;
 static mbedtls_aes_context g_blufi_aes    = {0};
-
-char *g_rsa_privkey = NULL;
-char *g_rsa_pubkey  = NULL;
+static esp_bd_addr_t g_spp_remote_bda     = {0x0};
+static esp_timer_handle_t g_connect_timer = NULL;
+static char *g_rsa_privkey                = NULL;
+static char *g_rsa_pubkey                 = NULL;
 
 static void mconfig_blufi_rsa_decrypt_task(void *arg)
 {
@@ -314,6 +316,8 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
 
     switch (event->event_id) {
         case SYSTEM_EVENT_STA_CONNECTED:
+            mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED, NULL);
+
             MDF_LOGI("BLUFI is success, Wi-Fi sta is connect");
             s_disconnected_unknown_count   = 0;
             s_disconnected_handshake_count = 0;
@@ -324,8 +328,8 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
             mconfig_queue_write(g_recv_config, 0);
             MDF_FREE(g_recv_config);
 
-            mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED, NULL);
             mconfig_chain_slave_channel_switch_enable();
+            mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_FINISH, NULL);
             break;
 
         case SYSTEM_EVENT_STA_DISCONNECTED: {
@@ -410,7 +414,7 @@ static mdf_err_t mconfig_blufi_adv_config()
     mdf_err_t ret = MDF_OK;
 
     blufi_adv_manufacturer_data_t manufacturer_data = {
-        .company_id = MCONFIG_BLUFI_COMPANY_ID,
+        .company_id = g_blufi_cfg.company_id,
         .tid        = g_blufi_cfg.tid,
         .OUI        = {0x4d, 0x44, 0x46},
         .version    = MCONFIG_BLUFI_VERSION,
@@ -454,11 +458,53 @@ static mdf_err_t mconfig_blufi_adv_config()
     return MDF_OK;
 }
 
+static void mconfig_ble_connect_timer_delete(void)
+{
+    if (g_connect_timer) {
+        esp_timer_stop(g_connect_timer);
+        esp_timer_delete(g_connect_timer);
+        g_connect_timer = NULL;
+    }
+}
+
+static void mconfig_ble_connect_timercb(void *timer)
+{
+    if (!g_connect_timer) {
+        MDF_LOGW("Timer has been deleted");
+        return ;
+    }
+
+    mconfig_ble_connect_timer_delete();
+
+    if (esp_ble_gap_disconnect(g_spp_remote_bda) != MDF_OK) {
+        MDF_LOGW("Disconnect the physical connection of the peer device");
+    } else {
+        MDF_LOGI("Disconnect the physical connection of the peer device");
+    }
+}
+
+static mdf_err_t mconfig_ble_connect_timer_create(void)
+{
+    mdf_err_t ret = MDF_OK;
+    esp_timer_create_args_t timer_conf = {
+        .callback = mconfig_ble_connect_timercb,
+        .name     = "mconfig_ble_connect"
+    };
+
+    ret = esp_timer_create(&timer_conf, &g_connect_timer);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Create an esp_timer instance");
+
+    ret = esp_timer_start_once(g_connect_timer, MCONFIG_BLUFI_TIMEROUT_MS * 1000U);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Start one-shot timer");
+
+    return MDF_OK;
+}
+
 static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
 {
+    mdf_err_t ret              = MDF_OK;
     static uint8_t s_server_if = 0;
     static uint16_t s_conn_id  = 0;
-    mdf_err_t ret              = MDF_OK;
 
     switch (event) {
         case ESP_BLUFI_EVENT_INIT_FINISH:
@@ -475,13 +521,21 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                      param->connect.server_if, param->connect.conn_id);
             s_server_if = param->connect.server_if;
             s_conn_id   = param->connect.conn_id;
+            memcpy(&g_spp_remote_bda, &param->connect.remote_bda, sizeof(esp_bd_addr_t));
             ESP_ERROR_CHECK(esp_ble_gap_stop_advertising());
 
-            ret = mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_CONNECTED, NULL);
+            mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_CONNECTED, NULL);
+
+            mconfig_ble_connect_timer_delete();
+            ret = mconfig_ble_connect_timer_create();
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mconfig_ble_connect_timercb", mdf_err_to_name(ret));
             break;
 
         case ESP_BLUFI_EVENT_BLE_DISCONNECT:
             MDF_LOGI("BLUFI ble disconnect");
+
+            mconfig_ble_connect_timer_delete();
+
             mconfig_blufi_adv_start();
             MDF_ERROR_BREAK(ret < 0, "<%s> mdf_event_loop_send", mdf_err_to_name(ret));
 
@@ -494,11 +548,14 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             esp_blufi_close(s_server_if, s_conn_id);
             break;
 
+        case ESP_BLUFI_EVENT_RECV_USERNAME:
         case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA: {
-            MDF_LOGV("param->username.name_len: %d, param->username.name: %s",
-                     param->username.name_len, param->username.name);
-            MDF_ERROR_BREAK(param->username.name_len < 6,
-                            "param->username.name_len: %d", param->username.name_len);
+            MDF_LOGV("param->custom_data.data_len: %d, param->custom_data.data: %s",
+                     param->custom_data.data_len, param->custom_data.data);
+            MDF_ERROR_BREAK(param->custom_data.data_len < 6,
+                            "param->custom_data.data_len: %d", param->custom_data.data_len);
+
+            mconfig_ble_connect_timer_delete();
 
             if (!g_recv_config) {
                 g_recv_config = MDF_CALLOC(1, sizeof(mconfig_data_t));
@@ -507,11 +564,31 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                 memcpy(&g_recv_config->init_config, &init_config, sizeof(mwifi_init_config_t));
             }
 
-            for (int blufi_data_len = 0; blufi_data_len < param->username.name_len;) {
-                blufi_data_element_t *blufi_data = (blufi_data_element_t *)(param->username.name + blufi_data_len);
+            for (int blufi_data_len = 0; blufi_data_len < param->custom_data.data_len;) {
+                blufi_data_element_t *blufi_data = (blufi_data_element_t *)(param->custom_data.data + blufi_data_len);
                 blufi_data_len += blufi_data->len + 2;
                 MDF_LOGV("blufi_data type: %d, len: %d, data: %s",
                          blufi_data->type, blufi_data->len, blufi_data->data);
+
+                /**
+                 * @brief Compatible with previous version
+                 *        enum blufi_data_type {
+                 *            BLUFI_DATA_ROUTER_SSID   = 1,
+                 *            BLUFI_DATA_ROUTER_PASSWD = 2,
+                 *            BLUFI_DATA_MESH_ID       = 3,
+                 *            BLUFI_DATA_RESERVED      = 4,
+                 *            BLUFI_DATA_WHITELIST     = 5,
+                 *        };
+                 */
+                if (event == ESP_BLUFI_EVENT_RECV_USERNAME) {
+                    if (blufi_data->type == 3) {
+                        blufi_data->type += (BLUFI_DATA_MESH_ID - 3);
+                    } else if (blufi_data->type == 4) {
+                        blufi_data->type = 0;
+                    } else if (blufi_data->type == 5) {
+                        blufi_data->type += (BLUFI_DATA_WHITELIST - 5);
+                    }
+                }
 
                 switch (blufi_data->type) {
                     case BLUFI_DATA_ROUTER_SSID:
@@ -661,6 +738,15 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         MDF_LOGD("Whitelist, number: %d", g_recv_config->whitelist_size / 6);
 
                         for (int i = 0; i < g_recv_config->whitelist_size / 6; i++) {
+                            /**
+                            * @brief Compatible with previous version
+                            *        Convert mac address from bt to sta
+                            */
+                            if (event == ESP_BLUFI_EVENT_RECV_USERNAME) {
+                                uint8_t *mac = g_recv_config->whitelist_data[i].addr;
+                                *((int *)(mac + 2)) = htonl(htonl(*((int *)(mac + 2))) - 2);
+                            }
+
                             MDF_LOGD("count: %d, data:" MACSTR,
                                      i, MAC2STR((g_recv_config->whitelist_data + i)->addr));
                         }
@@ -683,15 +769,15 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             memcpy(sta_config.sta.password, g_recv_config->config.router_password, strlen(g_recv_config->config.router_password));
 
             ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_wifi_set_config", mdf_err_to_name(ret));
+            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Set the configuration of the ESP32 STA", mdf_err_to_name(ret));
 
             esp_event_loop_set_cb(blufi_wifi_event_handler, NULL);
 
             ret = esp_wifi_connect();
-            MDF_ERROR_BREAK(ret != ESP_OK, "esp_wifi_connect");
+            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Connect the ESP32 WiFi station to the AP", mdf_err_to_name(ret));
 
             ret = mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED, NULL);
-            MDF_ERROR_BREAK(ret < 0, "<%s> mdf_event_loop_send", mdf_err_to_name(ret));
+            MDF_ERROR_BREAK(ret < 0, "<%s> Send the event to the event handler", mdf_err_to_name(ret));
 
             break;
         }
@@ -725,6 +811,8 @@ mdf_err_t mconfig_blufi_init(const mconfig_blufi_config_t *cfg)
     MDF_PARAM_CHECK(cfg);
     MDF_PARAM_CHECK(cfg->name && strlen(cfg->name) < MCONFIG_BLUFI_NAME_SIZE);
     MDF_PARAM_CHECK(cfg->custom_size <= MCONFIG_BLUFI_CUSTOM_SIZE);
+
+    mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STARTED, NULL);
 
     mdf_err_t ret                     = MDF_OK;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -774,6 +862,8 @@ mdf_err_t mconfig_blufi_deinit()
 {
     mdf_err_t ret = MDF_OK;
 
+    mconfig_ble_connect_timer_delete();
+
     esp_event_loop_set_cb(NULL, NULL);
     esp_wifi_disconnect();
     MDF_FREE(g_recv_config);
@@ -794,6 +884,8 @@ mdf_err_t mconfig_blufi_deinit()
 
     ret = esp_bt_controller_deinit();
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_bt_controller_deinit");
+
+    mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STOPED, NULL);
 
     return MDF_OK;
 }
