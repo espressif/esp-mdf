@@ -205,7 +205,7 @@ typedef struct {
     uint8_t communicate : 2; /**< Mesh data communication method, There are three types:
                                   MWIFI_COMMUNICATE_UNICAST, MWIFI_COMMUNICATE_MULTICAST, MWIFI_COMMUNICATE_BROADCAST*/
     uint8_t reserved    : 4; /**< Bit: 4..7 reserved */
-    uint32_t custom     : 32; /**< Type of transmitted application data */
+    uint32_t custom;         /**< Type of transmitted application data */
 } __attribute__((packed)) mwifi_data_type_t;
 
 /**
@@ -275,11 +275,11 @@ mdf_err_t mwifi_set_init_config(mwifi_init_config_t *init_config);
 mdf_err_t mwifi_get_init_config(mwifi_init_config_t *init_config);
 
 /**
- * @brief  Set the configuration of the router
+ * @brief  Set the configuration of the AP
  *
  * @attention This API shall be called between esp_mesh_init() and esp_mesh_start().
  *
- * @param  config pointer to router configuration
+ * @param  config pointer to AP configuration
  *
  * @return
  *    - MDF_OK
@@ -288,9 +288,9 @@ mdf_err_t mwifi_get_init_config(mwifi_init_config_t *init_config);
 mdf_err_t mwifi_set_config(mwifi_config_t *config);
 
 /**
- * @brief  Get the configuration of the router
+ * @brief  Get the configuration of the AP
  *
- * @param  config pointer to router configuration
+ * @param  config pointer to AP configuration
  *
  * @return
  *    - MDF_OK

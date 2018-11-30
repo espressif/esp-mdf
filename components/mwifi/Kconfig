@@ -69,7 +69,7 @@ endmenu
 menu "Stability config"
 config MWIFI_ASSOC_EXPIRE_MS
     int "Mesh softAP associate expired time"
-    default 30
+    default 30000
     help
         Period of time after which a mesh softAP breaks its association with inactive leaf nodes
 
