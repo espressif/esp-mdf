@@ -4,7 +4,7 @@ Error Handling
 Overview
 ---------
 
-This document introduces the ESP-MDF related error debugging methods, and provides some common error handling patterns.
+This document provides the introduction to the ESP-MDF related error debugging methods and to some common error handling patterns.
 
 Error Debugging
 ----------------
@@ -12,16 +12,16 @@ Error Debugging
 Error Codes
 ^^^^^^^^^^^^
 
-Most of the functions specific to ESP-MDF use :cpp:type:`mdf_err_t` type to return error codes. :cpp:type:`mdf_err_t` is a signed integer type. Success (no error) is indicated with ``MDF_OK`` code, which is defined as zero.
+In most cases, the functions specific to ESP-MDF use the type :cpp:type:`mdf_err_t` to return error codes. This is a signed integer type. Success (no error) is indicated with the code ``MDF_OK``, which is defined as zero.
 
-Various ESP-MDF header files define possible error codes. Usually these definitions start with ``MDF_ERR_``  prefix. Common error codes for generic failures (out of memory, timeout, invalid argument, etc.) are defined in ``mdf_err.h`` file. Various components in ESP-MDF may define additional error codes for specific situations. The macro definition that starts with ``MDF_ERROR_`` prefix can be used to check the return value, and return the file name and the line number in case of errors. Then the value can be converted to an error code name with :cpp:func:`esp_err_to_name`, which makes it easier to understand which error has happened.
+Various ESP-MDF header files define possible error codes. Usually, these definitions have the prefix ``MDF_ERR_``. Common error codes for generic failures (out of memory, timeout, invalid argument, etc.) are defined in the file ``mdf_err.h``. Various components in ESP-MDF can define additional error codes for specific situations. The macro definition that starts with ``MDF_ERROR_`` can be used to check the return value and return the file name and the line number in case of errors. After that, the value can be converted to an error code name with the function :cpp:func:`esp_err_to_name` to help you easier understand which error has happened.
 
-For the complete list of the error codes, please refer to :doc:`Error Codes <../api-reference/error-codes>`.
+For the complete list of error codes, please refer to :doc:`Error Codes <../api-reference/error-codes>`.
 
 Common Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-It is recommended to use this pattern only when ``Debugging``, but not in the production process. Please use the following configuration to identify the issue and refer to: examples/sdkconfig.defaults::
+The pattern given below is recommended for use during debugging and not in the production process. Please use the following configuration to identify the issue and then refer to: examples/sdkconfig.defaults::
 
     #
     # FreeRTOS
@@ -41,40 +41,40 @@ It is recommended to use this pattern only when ``Debugging``, but not in the pr
 Fatal Errors
 ^^^^^^^^^^^^^
 
-In case of CPU exceptions or other fatal errors, panic handler may print CPU registers and the backtrace.
-Backtrace line contains PC:SP pairs, where PC is the Program Counter and SP is Stack Pointer. If a fatal error happens inside an ISR (Interrupt Service Routine), the backtrace may include PC:SP pairs both from the task which was interrupted, and from the ISR.
+In case of CPU exceptions or other fatal errors, the panic handler may print CPU registers and the backtrace.
+A backtrace line contains PC:SP pairs, where PC stands for the program counter and SP is for the stack pointer. If a fatal error occurs inside an ISR (Interrupt Service Routine), the backtrace can include PC:SP pairs from both the ISR and the task that was interrupted.
 
-For instructions on diagnosing unrecoverable errors, please refer to `Fatal Errors <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/fatal-errors.html?highlight=fatal%20error>`_.
+For detailed instructions on diagnostics of unrecoverable errors, please refer to `Fatal Errors <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/fatal-errors.html?highlight=fatal%20error>`_.
 
 Use IDF Monitor
 ^^^^^^^^^^^^^^^^
 
-If ``IDF Monitor`` is used, Program Counter values will be converted to code locations (function name, file name, and line number)::
+If ``IDF Monitor`` is used, Program Counter values are converted into code locations, i.e., function name, file name, and line number::
 
     Guru Meditation Error: Core  0 panic'ed (StoreProhibited). Exception was unhandled.
     Core 0 register dump:
     PC      : 0x400d33ed  PS      : 0x00060f30  A0      : 0x800d1055  A1      : 0x3ffba950
-    0x400d33ed: app_main at /home/zzc/project/esp-mdf-master/examples/get_started/main/get_started.c:200
+    0x400d33ed: app_main at ~/project/esp-mdf-master/examples/get_started/main/get_started.c:200
 
     A2      : 0x00000000  A3      : 0x00000000  A4      : 0x00000000  A5      : 0x3ffbaaf4
     A6      : 0x00000001  A7      : 0x00000000  A8      : 0x800d2306  A9      : 0x3ffbaa10
     A10     : 0x3ffb0834  A11     : 0x3ffb3730  A12     : 0x40082784  A13     : 0x06ff1ff8
-    0x40082784: _calloc_r at /home/zzc/project/esp-mdf-master/esp-idf/components/newlib/syscalls.c:51
+    0x40082784: _calloc_r at ~/project/esp-mdf-master/esp-idf/components/newlib/syscalls.c:51
 
     A14     : 0x3ffafff4  A15     : 0x00060023  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
     EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
 
     Backtrace: 0x400d33ed:0x3ffba950 0x400d1052:0x3ffbaa60
-    0x400d33ed: app_main at /home/zzc/project/esp-mdf-master/examples/get_started/main/get_started.c:200
+    0x400d33ed: app_main at ~/project/esp-mdf-master/examples/get_started/main/get_started.c:200
 
-    0x400d1052: main_task at /home/zzc/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
+    0x400d1052: main_task at ~/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
 
-To find the location where a fatal error has happened, look at the lines which follow the "Backtrace" line. Fatal error location is the top line, and subsequent lines show the call stack.
+To find the location where a fatal error has occurred, look at the lines which follow the ``Backtrace:`` line. The first line after the ``Backtrace:`` line indicates the fatal error location, and the subsequent lines show the call stack.
 
-Don't Use IDF Monitor
+Do Not Use IDF Monitor
 ^^^^^^^^^^^^^^^^^^^^^^
 
-If IDF Monitor is not used, only the backtrace may be acquired, and you need to use ``xtensa-esp32-elf-addr2line`` command to convert it to code location::
+If IDF Monitor is not used, only the backtrace can be acquired. You need to use the command ``xtensa-esp32-elf-addr2line`` to convert it to a code location::
 
     Guru Meditation Error: Core  0 panic'ed (StoreProhibited). Exception was unhandled.
     Core 0 register dump:
@@ -87,20 +87,22 @@ If IDF Monitor is not used, only the backtrace may be acquired, and you need to 
 
     Backtrace: 0x400d33ed:0x3ffba950 0x400d1052:0x3ffbaa60
 
-Navigate to your project, and input the following command in your terminal::
+Open Terminal, navigate to your project directory, and execute the following command::
 
     xtensa-esp32-elf-addr2line -pfia -e build/*.elf Backtrace: 0x400d33ed:0x3ffba950 0x400d1052:0x3ffbaa60
 
-The output would look like this::
+The output would look as follows::
 
     0x00000bac: ?? ??:0
-    0x400d33ed: app_main at /home/zzc/project/esp-mdf-master/examples/get_started/main/get_started.c:200
-    0x400d1052: main_task at /home/zzc/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
+    0x400d33ed: app_main at ~/project/esp-mdf-master/examples/get_started/main/get_started.c:200
+    0x400d1052: main_task at ~/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
 
 Heap Memory Debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-ESP-IDF integrates tools for requesting heap information, detecting heap corruption, and tracing memory leaks. For details, please refer to: `Heap Memory Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/heap_debug.html?highlight=Heap%20Memory%20Debugging>`_, If you use the APIs in ``mdf_mem.h``, you can also use these tools. :cpp:func:`mdf_mem_print_record` may print all the unreleased memory, and help quickly identify the memory leak issue::
+ESP-IDF integrates tools for requesting heap information, detecting heap corruption, and tracing memory leaks. For details, please refer to `Heap Memory Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/heap_debug.html?highlight=Heap%20Memory%20Debugging>`_. 
+
+If you use the APIs from ``mdf_mem.h``, you can also utilize these debugging tools. The function :cpp:func:`mdf_mem_print_record` can print all the unreleased memory and help quickly identify memory leak issues::
 
     I (1448) [mdf_mem, 95]: Memory record, num: 4
     I (1448) [mdf_mem, 100]: <mwifi : 181> ptr: 0x3ffc5f2c, size: 28
@@ -111,14 +113,14 @@ ESP-IDF integrates tools for requesting heap information, detecting heap corrupt
 
 .. Note::
 
-    1. Configuration: enable :envvar:`CONFIG_MDF_MEM_DEBUG` with ``make menuconfig``;
-    2. Only the memory allocated and released with ``MDF_*ALLOC`` and ``MDF_FREE`` respectively will be logged.
+    1. Configuration: use ``make menuconfig`` to enable :envvar:`CONFIG_MDF_MEM_DEBUG`.
+    2. Only the memory allocated and released with ``MDF_*ALLOC`` and ``MDF_FREE`` is logged.
 
 
 Task Schedule
 ^^^^^^^^^^^^^^
 
-:cpp:func:`mdf_mem_print_heap` can be used to acquire the running status, priority and remaining stack space of all the tasks::
+The function :cpp:func:`mdf_mem_print_heap` can be used to acquire the running status, priority, and remaining stack space of all the tasks::
 
     Task Name       Status  Prio    HWM     Task
     main            R       1       1800    3
@@ -144,10 +146,10 @@ Task Schedule
 
 .. Note::
 
-    1. :cpp:func:`mdf_mem_print_heap` can be called to suspend all the tasks, which may take a while. Therefore, it is recommended to use this function only for debugging;
-    2. Configuration: enable :envvar:`CONFIG_FREERTOS_USE_TRACE_FACILITY` and :envvar:`CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS` with ``make menuconfig``;
-    3. Status: R indicates ready status, and B indicates blocked status;
-    4. Remaining space: HWM (High Water Mark) must be no less than 512 bytes, to avoid stack overflow.
+    1. The function :cpp:func:`mdf_mem_print_heap` can be called to suspend all the tasks, but it may take a while. For this reason, this function is recommended for use during debugging only.
+    2. Configuration: use ``make menuconfig`` to enable :envvar:`CONFIG_FREERTOS_USE_TRACE_FACILITY` and :envvar:`CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS`.
+    3. Status: ``R`` indicates the status `ready`, ``B`` indicates the status `blocked`.
+    4. Remaining space: HWM (High Water Mark) must be set to no less than 512 bytes to avoid stack overflow.
 
 Common Errors
 --------------
@@ -155,34 +157,34 @@ Common Errors
 Compilation Errors
 ^^^^^^^^^^^^^^^^^^^^
 
-1. ``MDF_PATH`` **is not set**：
+1. ``MDF_PATH`` **is not set**:
 
-esp-mdf cannot be found if ``MDF_PATH`` environment variables are not set::
+esp-mdf cannot be found if ``MDF_PATH`` environment variable is not set::
 
     Makefile:8: /project.mk: No such file or directory
     make: *** No rule to make target '/project.mk'.  Stop.
 
 
 - Solution:
-    Input the below command to configure::
+    Input the command given to configure::
 
-        $ export MDF_PATH=/home/zzc/project/esp-mdf
+        $ export MDF_PATH=~/project/esp-mdf
 
-    Input the below command to verify::
+    Input the following command to verify::
 
         $ echo $MDF_PATH
-        /home/zzc/project/esp-mdf
+        ~/project/esp-mdf
 
 
-2. **The acquired project is not complete**
+2. **The cloned project is not complete**
 
-``--recursive`` option is missed when getting the project with `git clone`, so the submodules under esp-mdf are not cloned::
+The option ``--recursive`` was missing at the time of getting the project with ``git clone``. For this reason, the submodules of esp-mdf were not cloned::
 
-    /home/zzc/project/esp-mdf/project.mk:9: /home/zzc/project/esp-mdf/esp-idf/make/project.mk: No such file or directory
-    make: *** No rule to make target '/home/zzc/project/esp-mdf/esp-idf/make/project.mk'.  Stop.
+    ~/project/esp-mdf/project.mk:9: ~/project/esp-mdf/esp-idf/make/project.mk: No such file or directory
+    make: *** No rule to make target '~/project/esp-mdf/esp-idf/make/project.mk'.  Stop.
 
 - Solution:
-    Run the command below to re-get the submodules
+    Run the command given below to re-get the submodules
 
     ```shell
     cd $MDF_PAHT
@@ -194,7 +196,7 @@ Flashing Errors
 
 1. **Serial port permission is limited**
 
-In linux, Text telephone devices (TTYs) belong to the dialout group, and ordinary users don't have the access::
+In Linux, text telephone devices (TTYs) belong to the dialout group to which regular users do not have access::
 
     serial.serialutil.SerialException: [Errno 13] could not open port /dev/ttyUSB0: [Errno 13] Permission denied: '/dev/ttyUSB0'
 
@@ -205,7 +207,7 @@ In linux, Text telephone devices (TTYs) belong to the dialout group, and ordinar
 
         sudo chmod 0666 /dev/ttyUSB0
 
-    2. Add the users with limited access to the dialout group, so they may have access to the TTYs and other similar devices::
+    2. Add the users with limited access to the dialout group, so that they may gain access to the TTYs and other similar devices::
 
         sudo gpasswd --add <user> dialout
 
@@ -217,7 +219,7 @@ Incompatibility between python and pyserial::
     AttributeError: 'module' object has no attribute 'serial_for_url'
 
 - Solution:
-    Run the below command. If the issue is still pending, you may go to `esptool issues <https://github.com/espressif/esptool/issues>`_ and search for any related issues::
+    Run the command given below. If the issue persists, you can go to `esptool issues <https://github.com/espressif/esptool/issues>`_ and search for any related issues::
 
         sudo apt-get update
         sudo apt-get upgrade
@@ -230,7 +232,7 @@ ESP-MESH Errors
 
 1. **The device cannot connect to the router**
 
-The router name and password are configured correctly, but still the device cannot connect to the router. In this case, the log would look like this::
+The router name and password have been configured correctly, but the device still cannot connect to the router. In this case, the log would look as follows::
 
     I (2917) mesh: [SCAN][ch:1]AP:1, otherID:0, MAP:0, idle:0, candidate:0, root:0, topMAP:0[c:0,i:0]<>
     I (2917) mesh: [FAIL][1]root:0, fail:1, normal:0, <pre>backoff:0
@@ -249,10 +251,10 @@ The router name and password are configured correctly, but still the device cann
 
 
 - Possible Reasons:
-    1. The ESP-MESH channel is not configured: For a quick network configuration, ESP-MESH scans only on a fixed channel, and this channel must be configured;
-    2. Connect to a hidden router: The router's BSSID must be configured when ESP-MESH connects with a hidden router;
-    3. The router's channel is usually not fixed, and it will switch channels accordingly if the network condition changes.
+    1. The ESP-MESH channel is not configured: For a quick network configuration, ESP-MESH scans only a fixed channel, and this channel must be configured.
+    2. Connect to a hidden router: The router's BSSID must be configured when ESP-MESH connects to the hidden router.
+    3. The router's channel is usually not fixed, so it switches channels in accordance with the changes in the network condition.
 
 - Solution:
     1. Fixate the router's channel, and set the channel and the router's BSSID;
-    2. Allow the device automatically get the router information with :cpp:func:`mwifi_scan`, but it will increase the network configuration time.
+    2. Allow the device to automatically get the router information with :cpp:func:`mwifi_scan`. Although, it increases the network configuration time.

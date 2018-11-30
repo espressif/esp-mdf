@@ -1,105 +1,125 @@
-Basics and Common Questions About ESP-MESH
+ESP-MESH Basic Information and FAQ
 ===============================================
 
-This document is intended to facilitate new users get started with ESP-MESH.
+This document provides reference links to some basic information on ESP-MESH, followed by the FAQ section.
 
-Get Started
-------------
+Reference links
+---------------------
 
-1. About ESP32 Chips:
+ESP-MESH is specifically designed for ESP32 chips. These chips use the modified version of dual-core based FreeRTOS and have an official development framework, which is called ESP-IDF.
+
+1. About the ESP-MESH protocol:
+    * `ESP-MESH <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html>`_
+
+2. About ESP32 Chips:
     * `ESP32 Technical Reference Manual <https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_
     * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_
-2. About `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/>`_
-3. About FreeRTOS: ESP32 uses the modified version of dual-core based `FreeRTOS <https://www.freertos.org/>`_
+
+3. About ESP-IDF:
+    * `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/>`_
+
+4. About FreeRTOS:
+    * `FreeRTOS <https://www.freertos.org/>`_
 
 Frequently Asked Questions
 ----------------------------
 
 Root Node
 ^^^^^^^^^^^^^^^^^^^^
-1. What is a root node? How is it generated?
+1. What is a root node? How is it established?
 
-    The root node is a top node that serves as the only interface between the ESP-MESH network and an external IP network (by connecting to a router or a server). There are two ways to generate a root node:
+    The root node is the top node. It gets connected to a server or a router and serves as the only interface between the ESP-MESH network in which it is included and an external IP network.
 
-    - Automatic root node election via the physical layer protocol. For details, please refer to ESP-MESH `General Process of Building a Network <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-building-a-network>`_. For this method, the mobile phone or the server needs to inform the devices about the router information that will be used as a reference for them to elect a root node.
-    - User designated root node on the application layer: you may designate a specific device or a certain type of device as a fixed root node, and other devices nearby can automatically connect with it without any assistance from the router or the mobile phone. Please note that two or more devices becoming fixed root nodes will lead to the building of multiple networks, and any two of them cannot be built into one network.   
+    There are two methods to establish a root node:
 
-2. Will the network crash when the root node breaks down?
+    - **Automatic root node election via the physical layer protocol**. This method implies that a mobile phone or a server transmits the router information to devices. They use this information as a reference to elect a root node. For details, please refer to ESP-MESH `General Process of Building a Network <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-building-a-network>`_.
+    - **Manual root node selection on the application layer**. You may designate a specific device or a certain type of devices as a fixed root node. Other devices nearby will automatically connect to the designated root node and build a network without any assistance from the router or the mobile phone. Please note that if more than one device is designated as a fixed root node, it will lead to creation of multiple networks.
 
-    - In case of the network without a fixed root node: the devices within the network will re-elect a new root node after they confirm the old one is broken. For details, please refer to `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-managing-a-network>`_.
-    - In case of the network with a fixed root node: the network will get back to normal after users re-designate a new fixed root node. 
+2. Will the root node failure lead to the network crash?
+
+    - **In case of automatic root node election**: When devices in the network detect that a root node is broken, they will elect a new one. For details, please refer to `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-managing-a-network>`_.
+    - **In case of manual root node selection**: Network will be down until a new fixed root node is designated. 
 
 Network Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Do we need a router for network configuration? 
+1. Is a router necessary for network configuration? 
 
-    ESP-MESH network configuration is independent of routers if there already is a root node.
+    As soon as a root node is established, ESP-MESH network configuration process becomes independent of routers.
 
-2. How long will the network configuration take?
+2. How much time does the configuration process take?
 
-    It depends on many factors, such as the number of the devices to be configured, the distance between the devices (i.e. Wi-Fi signal strength), device layout, etc. To be specific, the fewer the devices are, or the stronger the Wi-Fi signal is, or the more evenly scattered the devices are, the less configuration time it will take.
+    It depends on, but not limited to, the following factors:
 
-3. Is only one MESH network allowed for one router?
+    - **Number of devices**: The fewer the number of devices to be configured, the shorter the configuration time.
+    - **Arrangement of devices**: The more even the distribution of devices, the shorter the configuration time.
+    - **Wi-Fi signal strength of devices**: The stronger the Wi-Fi signal from devices, the shorter the configuration time.
 
-    It depends on the following scenarios.
+3. Is one router allowed to have only one ESP-MESH network?
 
-    - The devices within the router range can communicate with each other (directly or indirectly) 
-        - In case of the different MESH ID, different MESH network will be built accordingly.
-        - In case of an identical MESH ID
-            - If the root node conflict is allowed, a new root node generated as a result of unstable network will co-exist with the old one. In this case, multiple MESH networks will be built with the same ID, and each network has its own root node.
-            - If the root node conflict is not allowed, a new root node generated as a result of unstable network will make the old one a non-root node. In this case, there will always be only one MESH network with the same ID, and it has only one root node.
-    - The devices within the router range cannot communicate with each other (directly or indirectly). In this case, each device will build its own network as they cannot detect any other network within this range.
+    The number depends on the following scenarios:
 
-4. Is there only one root node within an ESP-MESH network?
+    - The devices within the router range can communicate either directly or indirectly
+        - In case of different MESH IDs, different MESH networks will be built.
+        - In case of an identical MESH ID:
+            - **If a root node conflict is allowed**: Devices experiencing unstable connection with the existing root node can elect their own root node which will co-exist with the old one. In this case, the network will be split into multiple MESH networks sharing the same ID, but having different root nodes.
+            - **If a root node conflict is not allowed**: Devices experiencing unstable connection with the existing root node initiate the election of a new root node, making the old one a non-root node. In this case, there will always be only one MESH network with the same ID and with one root node.
+    - The devices within the router range cannot communicate either directly or indirectly. In this case, not being able to detect any existing networks within their range, each device will build its own network.
 
-    Yes. There is and should only be one root node within an ESP-MESH network.
+4. Is an ESP-MESH network allowed to have only one root node?
+
+    Yes. An ESP-MESH network must have only one root node.
 
 
-5. If two MESH network have the same MESH ID, which network will a new device connect to?
+5. If two MESH networks have the same MESH ID, to which of the two networks will a new device connect?
 
-    If there isn't a designated parent node for this new device, it will automatically associate with the node which has the strongest signal.
+    If the new device is not assigned a parent node, it will automatically connect to the node with the strongest signal.
 
 ESP-MESH Performance
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-1. Will the surroundings affect ESP-MESH performance?
+1. Does the surrounding environment affect ESP-MESH performance?
 
-    As ESP-MESH is a solution based on Wi-Fi communication protocol, its performance will be affected by any factors that interfere with Wi-Fi signal strength. It is recommended to use an idle channel and an antenna with better performance that can increase Wi-Fi signal strength.
+    ESP-MESH is a solution based on the Wi-Fi communication protocol, so its performance can be affected in the same manner as Wi-Fi's performance. In order to overcome any interferences and boost signal strength, please use a less-crowded channel and a high-performance antenna.
 
-2. How far is the distance supported for the communication between two devices? 
+2. How far apart can two devices be from each other to maintain a stable connection on an ESP-MESH network?
 
-    The communication distance depends on Wi-Fi signal strength and bandwidth demand. With stronger signal strength and less demand, the communication distance will be much farther.
+    The communication distance depends on the Wi-Fi signal strength and the bandwidth demands. The higher the signal strength and the less the bandwidth demands, the greater the communication distance can be.
 
 Miscellaneous
 ^^^^^^^^^^^^^^^^
 
-1. What is ESP-MDF? What's its relation with ESP-MESH and how is it different from ESP-MESH?
+1. What is ESP-MDF? How is it related to ESP-MESH? How is it different from ESP-MESH?
 
-    MDF, or Mesh Development Framework, is a development framework built around the ESP-MESH protocol in IDF. In addition to the basic functions of ESP-MESH network configuration and data transmission, it provides the modules and application examples related to network configuration, OTA, Cloud connect, local control, device driver, etc. It's very convenient for users to develop based on IDF or MDF as they desire.
+    ESP-MDF (Espressif's Mesh Development Framework) is a development framework built on ESP-MESH - a communication protocol module for MESH networks in ESP-IDF. In addition to its basic functionality of ESP-MESH network configuration and data transmission, ESP-MDF provides the modules and application examples related to network configuration, Over-the-air (OTA) feature, Cloud connect, local control, device driver, etc. All these features provide convenience for developers using the ESP-IDF or ESP-MDF development frameworks.
 
-2. Since an ESP32 chip can read various Mac addresses, which one should be used for ESP-MESH communication?
+2. Since an ESP32 chip has various MAC addresses, which one should be used for ESP-MESH communication?
 
-    An ESP32 chip has four Mac addresses for STA, AP, BLE and LAN respectively. Their address values are incremented by one, i.e. LAN Mac = BLE Mac+1 = AP Mac+2 = STA Mac+3. For example:
-    Given that `xx:xx:xx:xx:xx:00` is STA Mac,
-    then `xx:xx:xx:xx:xx:01` is AP Mac, 
-    `xx:xx:xx:xx:xx:02` is BLE Mac, and
-    `xx:xx:xx:xx:xx:03` is LAN Mac.
+    Each ESP32 chip has MAC addresses for Station (STA), access point (AP), Bluetooth low energy (BLE) and local area network (LAN).
+
+    Their address values are incremented by one, i.e. LAN Mac = BLE Mac + 1 = AP Mac + 2 = STA Mac + 3.
+
+    For example:
+    - MAC for STA: `xx:xx:xx:xx:xx:00`
+    - MAC for AP: `xx:xx:xx:xx:xx:01`
+    - MAC for BLE: `xx:xx:xx:xx:xx:02`
+    - MAC for LAN: `xx:xx:xx:xx:xx:03`
+
     The device's STA address is used For ESP-MESH communication. 
 
-3. Will ESP-MESH work as usual without a router?
+3. Can an ESP-MESH network function without a router?
 
-    Once ESP-MESH network is formed, the network will work as usual because the communication within the network is independent of routers.
+    Once an ESP-MESH network is formed, it can operate on its own, meaning that the communication within the network is independent of any routers.
 
 Feedback
 ---------
 
-1. You may offer feedback on the following platforms:
+1. You can provide your feedback on the following platforms:
     * Espressif `ESP-MDF Forum <https://www.esp32.com/viewforum.php?f=21>`_
     * Github ESP-MDF `Issues <https://github.com/espressif/esp-mdf/issues>`_
 
-2. When offering the feedback, please provide the following information:
-    * Hardware: development board type 
-    * Error description: the steps and conditions to reproduce the issue, as well as the issue's probabilities 
-    * Version: use ``git commit`` in ESP-MDF to acquire the version information
-    * Log: the completed log files about the devices and the elf files under ``build`` folder
+2. When providing your feedback, please list the following information:
+    * **Hardware:** Type of your development board
+    * **Error description**: Steps and conditions to reproduce the issue, as well as the issue occurrence probabilities 
+    * **ESP-MDF Version**: Use ``git commit`` to acquire the version details of ESP-MDF installed on your computer
+    * **Logs**: Complete log files for your devices and the ``.elf`` files from the ``build`` folder
