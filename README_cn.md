@@ -35,10 +35,10 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
         - Error Check: ESP-MDF 的错误码管理
 
 - **Components**：
-    - [Mconfig](docs/zh_CN/api-guides/mconfig.md)：配网模块
-    - [Mupgrade](docs/zh_CN/api-guides/mupgrade.md)：升级模块
-    - [Mdebug](docs/zh_CN/api-guides/mdebug.md)：调试模块
-    - [Mlink](docs/zh_CN/api-guides/mlink)：局域网控制模块
+    - [Mconfig](docs/zh_CN/api-guides/mconfig.rst)：配网模块
+    - [Mupgrade](docs/zh_CN/api-guides/mupgrade.rst)：升级模块
+    - Mdebug：调试模块
+    - Mlink：局域网控制模块
 
 - **Examples**：
     - Function demo：各个功能块的使用示例
@@ -58,7 +58,7 @@ ESP32-MeshKit 包含一整套完整的 [ESP-MESH 的照明解决方案](https://
     </table>
 
 * 产品：
-    * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：RGBW 智能灯，直观反应控制结果，可用于测试组网时间、响应速度、距离测试、稳定性测试等。
+    * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：RGBCW 智能灯，直观反应控制结果，可用于测试组网时间、响应速度、距离测试、稳定性测试等。
     * [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md)：带有光强传感器和温湿度传感器，可用于功耗测量和低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和 Debug。
     * ESP32-MeshKit-Button：作为开关控制，用于低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和 Debug（即将上线，敬请期待）。
 
@@ -138,7 +138,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 * [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html) 是乐鑫物联网开发框架的说明文档。
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
 * 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 Issues 中是否已经有您的问题。
-* 如果您想在 ESP-MDF 上贡献代码，请点击[贡献代码指南](docs/zh_CN/contribute/contribute_cn.md)。
+* 如果您想在 ESP-MDF 上贡献代码，请点击[贡献代码指南](docs/zh_CN/contribute/index.rst)。
 * 访问 ESP32 官方论坛请点击 [ESP32 BBS](https://esp32.com/) 。
 * 关于 ESP32-MeshKit 硬件文档，请至[乐鑫官网](https://www.espressif.com/zh-hans/support/download/documents?keys=&field_technology_tid%5B%5D=18)查看。
 * ESP32-MeshKit-Light 购买链接：[淘宝](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail)。

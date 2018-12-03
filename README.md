@@ -37,10 +37,10 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
         - Error Check: manages ESP-MDF's code errors
 
 - **Components**:
-    - [Mconfig](docs/en/api-guides/mconfig.md): network configuration module
-    - [Mupgrade](docs/en/api-guides/mupgrade.md): upgrade module
-    - [Mdebug](docs/en/api-guides/mdebug.md): debugging module
-    - [Mlink](docs/en/api-guides/mlink): LAN control module
+    - [Mconfig](docs/en/api-guides/mconfig.rst): network configuration module
+    - [Mupgrade](docs/en/api-guides/mupgrade.rst): upgrade module
+    - Mdebug: debugging module
+    - Mlink: LAN control module
 
 - **Examples**:
     - Function demo: demonstrates how functions can be used
@@ -60,7 +60,7 @@ ESP32-MeshKit offers a complete [ESP-MESH Lighting Solution](https://www.espress
     </table>
 
 * Products:
-    * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): The RGBW smart lights that show control results visually. They can be used to test network configuration time, response speed, stability performance, and measure distance, etc.
+    * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): The RGBCW smart lights that show control results visually. They can be used to test network configuration time, response speed, stability performance, and measure distance, etc.
     
     * [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md): This kit is equipped with a light sensor as well as a temperature & humidity sensor. It can measure power consumption and develop low power applications. The kit may also be used with ESP-Prog for firmware downloading and debugging.
     
@@ -148,7 +148,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 * [ESP-IDF Programming Guide](https://esp-idf.readthedocs.io/en/latest/) describes Espressif's IoT development framework.
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
 * To report a bug or request a function, please go to [Issues](https://github.com/espressif/esp-mdf/issues) on GitHub to submit them. Before submitting an issue, please check if it has already been covered.
-* If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](https://gitlab.espressif.cn:6688/application/esp-mdf/feature/mupgrade/docs/en/contribute/contribute_en.md).
+* If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](docs/en/contribute/index.rst).
 * To visit ESP32 official forum, please go to [ESP32 BBS](https://esp32.com/).
 * For the hardware documents related to ESP32-MeshKit, please visit [Espressif Website](https://www.espressif.com/en/support/download/documents).
 * ESP32-MeshKit-Light purchase link : [Taobao](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail).
