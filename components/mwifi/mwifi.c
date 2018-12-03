@@ -255,7 +255,7 @@ void mwifi_print_config()
     MDF_LOGI("capacity_num          : %d", esp_mesh_get_capacity_num());
 
     MDF_LOGI("****************  Stability  ****************");
-    MDF_LOGI("assoc_expire_ms       : %d", esp_mesh_get_ap_assoc_expire());
+    MDF_LOGI("assoc_expire_ms       : %d", esp_mesh_get_ap_assoc_expire() * 1000);
     ESP_ERROR_CHECK(esp_mesh_get_beacon_interval(&beacon_interval));
     MDF_LOGI("beacon_interval_ms    : %d", beacon_interval);
     MDF_LOGI("passive_scan_ms       : %d", esp_mesh_get_passive_scan_time());
@@ -303,6 +303,10 @@ mdf_err_t mwifi_start()
             ESP_ERROR_CHECK(esp_mesh_fix_root(true));
             break;
 
+        case MESH_LEAF:
+            ESP_ERROR_CHECK(esp_mesh_fix_root(MESH_LEAF));
+            break;
+
         case MESH_IDLE:
             break;
 
@@ -340,7 +344,7 @@ mdf_err_t mwifi_start()
     switch_parent.select_rssi  = init_config->select_rssi;
     switch_parent.switch_rssi  = init_config->switch_rssi;
     ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_parent));
-    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(init_config->assoc_expire_ms));
+    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(init_config->assoc_expire_ms * 1000));
     ESP_ERROR_CHECK(esp_mesh_set_beacon_interval(init_config->beacon_interval_ms));
     ESP_ERROR_CHECK(esp_mesh_set_passive_scan_time(init_config->passive_scan_ms));
 
@@ -631,6 +635,9 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
                       const void *data, size_t size, bool block)
 {
     MDF_PARAM_CHECK(data_type);
+    MDF_PARAM_CHECK(data);
+    MDF_PARAM_CHECK(size > 0);
+    MDF_PARAM_CHECK(!dest_addrs || !MWIFI_ADDR_IS_EMPTY(dest_addrs));
     MDF_ERROR_CHECK(!mwifi_is_started(), MDF_ERR_MWIFI_NOT_START, "Mwifi isn't started");
 
     mdf_err_t ret          = MDF_OK;
@@ -668,7 +675,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
         compress_size = compressBound(size);
         compress_data = MDF_MALLOC(compress_size);
 
-        ret = compress(compress_data, &compress_size, (uint8_t *)data, size);
+        ret = compress(compress_data, &compress_size, mesh_data.data, mesh_data.size);
         MDF_ERROR_GOTO(ret != MZ_OK, EXIT, "Compressed whitelist failed, ret: 0x%x", -ret);
         MDF_LOGD("compress, size: %d, compress_size: %d, rate: %d%%",
                  size, (int)compress_size, (int)compress_size * 100 / size);
@@ -787,8 +794,8 @@ mdf_err_t mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
                 mesh_data.size = recv_size - data_head.transmit_num * MWIFI_ADDR_LEN;
             }
 
-            MDF_LOGV("Data forwarding, size: %d, recv_size: %d, transmit_num: %d, data: %s",
-                     mesh_data.size, recv_size, data_head.transmit_num, mesh_data.data);
+            MDF_LOGV("Data forwarding, size: %d, recv_size: %d, transmit_num: %d, data: %.*s",
+                     mesh_data.size, recv_size, data_head.transmit_num, mesh_data.size, mesh_data.data);
 
             ret = mwifi_transmit_write(transmit_addr, transmit_num, &mesh_data,
                                        data_flag, &mesh_opt);
@@ -804,7 +811,7 @@ mdf_err_t mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     memcpy(data_type, &data_head.type, sizeof(mwifi_data_type_t));
 
     if (data_type->compression) {
-        int mz_ret = uncompress((uint8_t *)data, (mz_ulong *)size, recv_data, recv_size);
+        int mz_ret = uncompress((uint8_t *)data, (mz_ulong *)&mesh_data.size, mesh_data.data, recv_size);
         ret = (mz_ret == MZ_BUF_ERROR) ? MDF_ERR_BUF : MDF_FAIL;
         MDF_ERROR_GOTO(mz_ret != MZ_OK, EXIT, "Uncompress, ret: %0x", -mz_ret);
     } else {
@@ -812,8 +819,8 @@ mdf_err_t mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         MDF_ERROR_GOTO(*size < recv_size, EXIT,
                        "Buffer is too small, size: %d, the expected size is: %d", *size, recv_size);
 
-        *size = recv_size;
-        memcpy(data, recv_data, recv_size);
+        *size = mesh_data.size;
+        memcpy(data, mesh_data.data, mesh_data.size);
     }
 
     ret = MDF_OK;
@@ -831,6 +838,7 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
     MDF_PARAM_CHECK(addrs_num > 0);
     MDF_PARAM_CHECK(data_type);
     MDF_PARAM_CHECK(data);
+    MDF_PARAM_CHECK(!MWIFI_ADDR_IS_EMPTY(addrs_list));
     MDF_PARAM_CHECK(size > 0 && size <= MWIFI_PAYLOAD_LEN);
     MDF_ERROR_CHECK(!mwifi_is_started(), MDF_ERR_MWIFI_NOT_START, "Mwifi isn't started");
 
@@ -894,8 +902,8 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
         }
 
         for (int i = 0; i < addrs_num; ++i) {
-            MDF_LOGD("count: %d, dest_addr: " MACSTR" mesh_data.size: %d, data: %s",
-                     i, MAC2STR(addrs_list + 6 * i), mesh_data.size, mesh_data.data);
+            MDF_LOGD("count: %d, dest_addr: " MACSTR" mesh_data.size: %d, data: %.*s",
+                     i, MAC2STR(addrs_list + 6 * i), mesh_data.size, mesh_data.size, mesh_data.data);
             ret = mwifi_subcontract_write((mesh_addr_t *)addrs_list + i, &mesh_data, data_flag, &mesh_opt);
             MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
                             mdf_err_to_name(ret), MAC2STR(addrs_list));
@@ -903,8 +911,8 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
     } else if (data_type->communicate == MWIFI_COMMUNICATE_MULTICAST) {
         tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
         memcpy(tmp_addrs, addrs_list, addrs_num * sizeof(mesh_addr_t));
-        MDF_LOGD("mesh_data.size: %d, transmit_num: %d, child_addr: " MACSTR ", data: %s",
-                 mesh_data.size, data_head.transmit_num, MAC2STR(tmp_addrs), mesh_data.data);
+        MDF_LOGD("addrs_num: %d, addrs_list: " MACSTR ",mesh_data.size: %d, data: %.*s",
+                 addrs_num, MAC2STR(tmp_addrs), mesh_data.size, mesh_data.size, mesh_data.data);
         ret = mwifi_transmit_write((mesh_addr_t *)tmp_addrs, addrs_num, &mesh_data,
                                    data_flag, &mesh_opt);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "Mwifi_transmit_write");
