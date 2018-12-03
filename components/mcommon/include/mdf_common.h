@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include "errno.h"
 
+#include "rom/rtc.h"
 #include "rom/crc.h"
 
 #include "freertos/FreeRTOS.h"

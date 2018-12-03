@@ -58,19 +58,40 @@ esp_err_t mdf_info_init(void);
 esp_err_t mdf_info_save(const char *key, const void *value, size_t length);
 
 /**
- * @brief  Load the information
+ * @brief  Load the information,
+ *         esp_err_t mdf_info_load(const char *key, void *value, size_t *length);
+ *         esp_err_t mdf_info_load(const char *key, void *value, size_t length);
+ *
+ * @attention  The interface of this api supports size_t and size_t * types.
+ *             When the length parameter of the pass is size_t, it is only the
+ *             length of the value. When the length parameter of the pass is size_t *,
+ *             the length of the saved information can be obtained.
  *
  * @param  key    The corresponding key of the information that want to load
  * @param  value  The corresponding value of key
- * @param  length The length of the value
+ * @param  length The length of the value, Pointer type will return length
  *
  * @return
  *     - ESP_FAIL
  *     - ESP_OK
  */
-esp_err_t mdf_info_load(const char *key, void *value, size_t *length);
 
-/**
+#define LENGTH_TYPE_NUMBER  1
+#define LENGTH_TYPE_POINTER 2
+esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t type);
+
+#define mdf_info_load(key, value, len) \
+    __mdf_info_load(key, value, (size_t)(len), \
+                    + __builtin_types_compatible_p(typeof(len), int8_t) * LENGTH_TYPE_NUMBER \
+                    + __builtin_types_compatible_p(typeof(len), uint8_t) * LENGTH_TYPE_NUMBER \
+                    + __builtin_types_compatible_p(typeof(len), int16_t) * LENGTH_TYPE_NUMBER \
+                    + __builtin_types_compatible_p(typeof(len), uint16_t) * LENGTH_TYPE_NUMBER \
+                    + __builtin_types_compatible_p(typeof(len), int) * LENGTH_TYPE_NUMBER \
+                    + __builtin_types_compatible_p(typeof(len), uint32_t) * LENGTH_TYPE_NUMBER \
+                    + __builtin_types_compatible_p(typeof(len), int *) * LENGTH_TYPE_POINTER \
+                    + __builtin_types_compatible_p(typeof(len), uint32_t *) * LENGTH_TYPE_POINTER)
+
+/*
  * @brief  Erase the information with given key
  *
  * @param  key The corresponding key of the information that want to erase

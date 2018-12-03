@@ -99,15 +99,27 @@ esp_err_t mdf_info_save(const char *key, const void *value, size_t length)
     return ESP_OK;
 }
 
-esp_err_t mdf_info_load(const char *key, void *value, size_t *length)
+esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t type)
 {
     MDF_PARAM_CHECK(key);
     MDF_PARAM_CHECK(value);
-    MDF_PARAM_CHECK(length);
-    MDF_PARAM_CHECK(*length > 0);
+    MDF_PARAM_CHECK(len);
 
     esp_err_t ret     = ESP_OK;
     nvs_handle handle = 0;
+    size_t *length = NULL;
+
+    if (type == LENGTH_TYPE_NUMBER) {
+        length  = &type;
+        *length = len;
+    } else if (type == LENGTH_TYPE_POINTER) {
+        length = (size_t *)len;
+    } else {
+        MDF_LOGW("The type of parameter lenght is incorrect");
+        return MDF_ERR_INVALID_ARG;
+    }
+
+    MDF_PARAM_CHECK(*length > 0);
 
     mdf_info_init();
 
