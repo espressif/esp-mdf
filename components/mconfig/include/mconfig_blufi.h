@@ -22,8 +22,10 @@
  *
  */
 
-#ifndef __MDF_BLUFI_NETWORK_CONFIG_H__
-#define __MDF_BLUFI_NETWORK_CONFIG_H__
+#ifndef __MCONFIG_BLUFI_H__
+#define __MCONFIG_BLUFI_H__
+
+#include "esp_bt.h"
 
 #include "mdf_common.h"
 #include "mconfig_queue.h"
@@ -34,11 +36,6 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_MCONFIG_BLUFI_COMPANY_ID
-#define CONFIG_MCONFIG_BLUFI_COMPANY_ID (0x02E5)    /**< Espressif Incorporated */
-#endif /**< CONFIG_MCONFIG_BLUFI_COMPANY_ID */
-#define MCONFIG_BLUFI_COMPANY_ID CONFIG_MCONFIG_BLUFI_COMPANY_ID
-
 #define MCONFIG_BLUFI_NAME_SIZE                  (11) /**< Contains the ending character */
 #define MCONFIG_BLUFI_CUSTOM_SIZE                (31) /**< BLE broadcast data packets have a valid length of up to 31 bytes */
 
@@ -48,12 +45,14 @@ extern "C" {
 #define MDF_EVENT_MCONFIG_BLUFI_DISCONNECTED     (MDF_EVENT_MCONFIG_BASE + 0x203)
 #define MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED    (MDF_EVENT_MCONFIG_BASE + 0x204)
 #define MDF_EVENT_MCONFIG_BLUFI_STA_DISCONNECTED (MDF_EVENT_MCONFIG_BASE + 0x205)
+#define MDF_EVENT_MCONFIG_BLUFI_FINISH           (MDF_EVENT_MCONFIG_BASE + 0x206)
 
 /**
  * @brief Bluetooth configuration network related configuration
  */
 typedef struct {
-    char name[MCONFIG_BLUFI_NAME_SIZE];             /**< local device & peripheral name */
+    char name[MCONFIG_BLUFI_NAME_SIZE];             /**< Local device & peripheral name */
+    uint16_t company_id;                            /**< Company Identifiers (https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers) */
     uint16_t tid;                                   /**< Type of device */
     uint8_t custom_size;                            /**< Custom data size */
     uint8_t custom_data[MCONFIG_BLUFI_CUSTOM_SIZE]; /**< Placed in a Bluetooth broadcast package */
@@ -84,4 +83,4 @@ mdf_err_t mconfig_blufi_deinit(void);
 }
 #endif
 
-#endif /**< __MDF_BLUFI_NETWORK_CONFIG_H__ */
+#endif /**< __MCONFIG_BLUFI_H__ */
