@@ -52,22 +52,22 @@ Backtrace 包含 PC:SP 对。其中 PC 是程序计数器，SP 是堆栈指针�
     Guru Meditation Error: Core  0 panic'ed (StoreProhibited). Exception was unhandled.
     Core 0 register dump:
     PC      : 0x400d33ed  PS      : 0x00060f30  A0      : 0x800d1055  A1      : 0x3ffba950
-    0x400d33ed: app_main at /home/zzc/project/esp-mdf-master/examples/get_started/main/get_started.c:200
+    0x400d33ed: app_main at ~/project/esp-mdf-master/examples/get_started/main/get_started.c:200
 
     A2      : 0x00000000  A3      : 0x00000000  A4      : 0x00000000  A5      : 0x3ffbaaf4
     A6      : 0x00000001  A7      : 0x00000000  A8      : 0x800d2306  A9      : 0x3ffbaa10
     A10     : 0x3ffb0834  A11     : 0x3ffb3730  A12     : 0x40082784  A13     : 0x06ff1ff8
-    0x40082784: _calloc_r at /home/zzc/project/esp-mdf-master/esp-idf/components/newlib/syscalls.c:51
+    0x40082784: _calloc_r at ~/project/esp-mdf-master/esp-idf/components/newlib/syscalls.c:51
 
     A14     : 0x3ffafff4  A15     : 0x00060023  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
     EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
 
     Backtrace: 0x400d33ed:0x3ffba950 0x400d1052:0x3ffbaa60
-    0x400d33ed: app_main at /home/zzc/project/esp-mdf-master/examples/get_started/main/get_started.c:200
+    0x400d33ed: app_main at ~/project/esp-mdf-master/examples/get_started/main/get_started.c:200
 
-    0x400d1052: main_task at /home/zzc/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
+    0x400d1052: main_task at ~/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
 
-要查找发生致命错误的位置，请查看“Backtrace”行后面的行。致命错误位置是顶行，后续行显示调用堆栈。
+要查找发生致命错误的位置，请查看“Backtrace”行后面的行。致命错误位置是紧跟“Backtrace”行的后一行，后续行则显示调用堆栈。
 
 未使用 IDF Monitor
 ^^^^^^^^^^^^^^^^^^
@@ -92,8 +92,8 @@ Backtrace 包含 PC:SP 对。其中 PC 是程序计数器，SP 是堆栈指针�
 转换结果如下::
 
     0x00000bac: ?? ??:0
-    0x400d33ed: app_main at /home/zzc/project/esp-mdf-master/examples/get_started/main/get_started.c:200
-    0x400d1052: main_task at /home/zzc/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
+    0x400d33ed: app_main at ~/project/esp-mdf-master/examples/get_started/main/get_started.c:200
+    0x400d1052: main_task at ~/project/esp-mdf-master/esp-idf/components/esp32/cpu_start.c:476
 
 内存调试
 ^^^^^^^^^
@@ -164,20 +164,20 @@ ESP-IDF 集成了用于请求堆信息，检测堆损坏和跟踪内存泄漏的
 - 解决方法：
     输入如下命令进行配置::
 
-        $ export MDF_PATH=/home/zzc/project/esp-mdf
+        $ export MDF_PATH=~/project/esp-mdf
 
     输入如下命令进行验证::
 
         $ echo $MDF_PATH
-        /home/zzc/project/esp-mdf
+        ~/project/esp-mdf
 
 
 2. **获取工程不完整**
 
 通过 `git clone` 获取工程时，没有带有 ``--recursive`` 标志，以至于 esp-mdf 的子工程没有被获取::
 
-    /home/zzc/project/esp-mdf/project.mk:9: /home/zzc/project/esp-mdf/esp-idf/make/project.mk: No such file or directory
-    make: *** No rule to make target '/home/zzc/project/esp-mdf/esp-idf/make/project.mk'.  Stop.
+    ~/project/esp-mdf/project.mk:9: ~/project/esp-mdf/esp-idf/make/project.mk: No such file or directory
+    make: *** No rule to make target '~/project/esp-mdf/esp-idf/make/project.mk'.  Stop.
 
 - 解决方法：
     运行如下命令重新获取子工程
