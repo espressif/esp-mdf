@@ -111,14 +111,14 @@ typedef struct {
  * @brief List of devices' status during the upgrade process
  */
 typedef struct {
-    size_t unfinished_num;    /**< The number of devices to be upgraded. */
-    uint8_t *unfinished_addr; /**< MAC address of devices to be upgraded. */
+    size_t unfinished_num;    /**< The number of devices to be upgraded */
+    uint8_t *unfinished_addr; /**< MAC address of devices to be upgraded */
 
-    size_t failed_num;        /**< The number of devices that failed to upgrade. */
-    uint8_t *failed_addr;     /**< MAC address of devices that failed to upgrade. */
+    size_t successed_num;     /**< The number of devices that succeeded to upgrade */
+    uint8_t *successed_addr;  /**< MAC address of devices that succeeded to upgrade */
 
-    size_t successed_num;     /**< The number of devices that succeeded to upgrade. */
-    uint8_t *successed_addr;  /**< MAC address of devices that succeeded to upgrade. */
+    size_t requested_num;     /**< The number of devices to be upgraded */
+    uint8_t *requested_addr;  /**< This address is used to buffer the result of the request during the upgrade process */
 } mupgrade_result_t;
 
 /**
@@ -185,7 +185,7 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *dest_addrs, size_t dest_addrs_nu
  * @param  result Pointer to device upgrade status
  *
  * @return
-*    - MDF_OK
+ *    - MDF_OK
  *    - MDF_ERR_INVALID_ARG
  */
 mdf_err_t mupgrade_result_free(mupgrade_result_t *result);
@@ -220,6 +220,18 @@ mdf_err_t mupgrade_handle(const uint8_t *addr, const void *data, size_t size);
  *    - MDF_ERR_TIMEOUT
  */
 mdf_err_t mupgrade_root_handle(const uint8_t *addr, const void *data, size_t size);
+
+/**
+ * @brief Get the status of the upgrade
+ *
+ * @param status The status of the upgrade
+ *
+ * @return
+*    - MDF_OK
+ *   - MDF_ERR_INVALID_ARG
+ *   - MDF_ERR_NOT_SUPPORTED
+ */
+mdf_err_t mupgrade_get_status(mupgrade_status_t *status);
 
 #ifdef __cplusplus
 }

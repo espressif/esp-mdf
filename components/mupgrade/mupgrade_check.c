@@ -45,7 +45,7 @@ static void restart_count_erase_timercb(void *timer)
     }
 
     mdf_info_erase(MUPGRADE_STORE_RESTART_COUNT_KEY);
-    MDF_LOGD("erase restart count");
+    MDF_LOGV("erase restart count");
 }
 
 static bool restart_trigger()
