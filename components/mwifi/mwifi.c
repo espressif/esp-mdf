@@ -666,6 +666,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     data_flag = (data_type->communicate == MWIFI_COMMUNICATE_BROADCAST) ? data_flag | MESH_DATA_GROUP : data_flag;
     data_flag = (g_init_config->data_drop_enable) ? data_flag | MESH_DATA_DROP : data_flag;
     data_flag = (!block) ? data_flag | MESH_DATA_NONBLOCK : data_flag;
+    data_head.transmit_self = true;
     memcpy(&data_head.type, data_type, sizeof(mwifi_data_type_t));
 
     /**
