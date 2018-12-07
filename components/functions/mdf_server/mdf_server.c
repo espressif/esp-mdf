@@ -128,20 +128,28 @@ esp_err_t mdf_server_init()
     return ESP_OK;
 }
 
+static void mdf_server_deinit_task(void *arg)
+{
+    MDF_LOGD("mdf server connect delete");
+    vTaskDelay(1000 / portTICK_RATE_MS);
+
+    ESP_ERROR_CHECK(mdf_http_server_deinit());
+
+#ifdef CONFIG_MDF_USE_MDNS_SERVICE
+    ESP_ERROR_CHECK(mdf_notice_mdns_deinit());
+#endif
+
+    ESP_ERROR_CHECK(mdf_notice_udp_deinit());
+
+    vTaskDelete(NULL);
+}
+
 esp_err_t mdf_server_deinit()
 {
     if (g_server_conn_flag) {
-        MDF_LOGD("mdf server connect delete");
+        xTaskCreate(mdf_server_deinit_task, "mdf_server_deinit_task", 4096, NULL,
+                    MDF_TASK_DEFAULT_PRIOTY, NULL);
         g_server_conn_flag = false;
-        vTaskDelay(1000 / portTICK_RATE_MS);
-
-        ESP_ERROR_CHECK(mdf_http_server_deinit());
-
-#ifdef CONFIG_MDF_USE_MDNS_SERVICE
-        ESP_ERROR_CHECK(mdf_notice_mdns_deinit());
-#endif
-
-        ESP_ERROR_CHECK(mdf_notice_udp_deinit());
     }
 
     return ESP_OK;

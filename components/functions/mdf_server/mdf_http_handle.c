@@ -80,14 +80,17 @@ void mdf_server_conn_delete(server_http_connect_t *conn)
 
 server_http_connect_t *mdf_server_conn_find_ota()
 {
-    MDF_ASSERT(g_conn_list);
+    MDF_ERROR_CHECK(!g_conn_list, NULL, "g_conn_list is null");
+    mdf_server_conn_list_lock();
 
     for (server_http_connect_t *conn = g_conn_list->next; conn; conn = conn->next) {
         if (conn->type.ota) {
+            mdf_server_conn_list_unlock();
             return conn;
         }
     }
 
+    mdf_server_conn_list_unlock();
     MDF_LOGD("no find ota_conn");
     return NULL;
 }
@@ -95,7 +98,7 @@ server_http_connect_t *mdf_server_conn_find_ota()
 server_http_connect_t *mdf_server_conn_find(const wifi_mesh_addr_t *sockaddr)
 {
     MDF_ASSERT(sockaddr);
-    MDF_ASSERT(g_conn_list);
+    MDF_ERROR_CHECK(!g_conn_list, NULL, "g_conn_list is null");
 
     for (server_http_connect_t *conn = g_conn_list->next; conn; conn = conn->next) {
         if (!memcmp(&conn->src_addr, sockaddr, sizeof(wifi_mesh_addr_t))) {
@@ -109,7 +112,7 @@ server_http_connect_t *mdf_server_conn_find(const wifi_mesh_addr_t *sockaddr)
 
 static esp_err_t mdf_server_conn_insert(int sockfd, const wifi_mesh_addr_t *sockaddr)
 {
-    MDF_ASSERT(g_conn_list);
+    MDF_ERROR_CHECK(!g_conn_list, NULL, "g_conn_list is null");
     MDF_PARAM_CHECK(sockfd != MDF_SOCKET_INVALID_FD);
     MDF_PARAM_CHECK(sockaddr);
 
@@ -132,8 +135,11 @@ static esp_err_t mdf_server_conn_insert(int sockfd, const wifi_mesh_addr_t *sock
         while (g_conn_list->next) {
             mdf_server_conn_delete(g_conn_list->next);
         }
+
+        memset(g_conn_list, 0, sizeof(server_http_connect_t));
     }
 
+    mdf_server_conn_list_lock();
     new_conn                = mdf_calloc(1, sizeof(server_http_connect_t));
     new_conn->sockfd        = sockfd;
     memcpy(&new_conn->src_addr, sockaddr, sizeof(wifi_mesh_addr_t));
@@ -145,6 +151,7 @@ static esp_err_t mdf_server_conn_insert(int sockfd, const wifi_mesh_addr_t *sock
     new_conn->next  = g_conn_list->next;
     new_conn->prior = g_conn_list;
     g_conn_list->next = new_conn;
+    mdf_server_conn_list_unlock();
 
     return ESP_OK;
 }
@@ -354,7 +361,13 @@ esp_err_t mdf_http_server_request()
                     return ESP_OK;
                 }
 
-                ret = mdf_server_request_parser(conn);
+                if (mdf_server_request_parser(conn) == -ESP_ERR_NOT_FOUND) {
+                    MDF_LOGE("mdf_server_request_parser");
+                    server_http_connect_t *conn_prior = conn->prior;
+                    mdf_server_conn_delete(conn);
+                    conn = conn_prior;
+                    continue;
+                }
 
                 conn->http_size -= pkt_size;
 
@@ -364,7 +377,6 @@ esp_err_t mdf_http_server_request()
                     memcpy(conn->http_head, conn->http_head + pkt_size, conn->http_size);
                 }
             }
-
 
             if (ret < 0) {
                 MDF_LOGD("mdf_server_request_parser, ret: %d sockfd: %d, conn->size: %d, errno_str: %s",
@@ -409,16 +421,10 @@ esp_err_t mdf_http_server_response()
 
         /**< dealing with multiple devices while upgrading duplicate packages */
         if (notice_type == NOTICE_OTAFINISH) {
-            mdf_server_conn_list_lock();
-
             server_http_connect_t *ota_conn = mdf_server_conn_find_ota();
+            MDF_ERROR_GOTO(!ota_conn, EXIT, "mdf_server_conn_find_ota, ota_conn NULL");
 
-            if (!ota_conn) {
-                mdf_server_conn_list_unlock();
-                MDF_LOGW("mdf_server_conn_find, ota_conn: %p", ota_conn);
-                goto EXIT;
-            }
-
+            mdf_server_conn_list_lock();
             /**< the device address that will complete the upgrade data is deleted */
             for (int i = 0; i < ota_conn->dest_addrs_num; ++i) {
                 if (!memcmp(ota_conn->dest_addrs + i, &src_addr, 6)) {
@@ -428,8 +434,8 @@ esp_err_t mdf_http_server_response()
                     break;
                 }
             }
-
             mdf_server_conn_list_unlock();
+
         } else {
             ret = mdf_notice_udp_send(notice_type, src_addr.mac);
             MDF_ERROR_GOTO(ret < 0, EXIT, "mdf_notice_udp_send, notice type: %d, ret: %d",
@@ -471,7 +477,7 @@ esp_err_t mdf_http_server_response()
             MDF_ERROR_BREAK(ret <= 0, "mdf_server_conn_send, sockfd: %d", conn->sockfd);
 
             conn->chunk_num--;
-            MDF_LOGD("conn->chunk_num: %d", conn->chunk_num);
+            MDF_LOGD("conn->sockfd: %d, conn->ssl: %p, conn->chunk_num: %d", conn->sockfd, conn->ssl, conn->chunk_num);
 
             http_response_data[http_response_size++] = '\r';
             http_response_data[http_response_size++] = '\n';
@@ -492,7 +498,6 @@ esp_err_t mdf_http_server_response()
             MDF_ERROR_BREAK(ret <= 0, "mdf_server_conn_send, sockfd: %d", conn->sockfd);
         }
     } while (0);
-
     mdf_server_conn_list_unlock();
 
 EXIT:
