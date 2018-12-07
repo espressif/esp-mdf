@@ -177,7 +177,7 @@ static esp_err_t mdf_channel_get(const char *ssid, uint8_t *channel)
         .ssid = (uint8_t *)ssid,
     };
 
-    ESP_ERROR_CHECK(esp_wifi_scan_stop());
+    esp_wifi_scan_stop();
 
     for (int i = 0; wifi_ap_num == 0 && i < 3; ++i) {
         ret = esp_wifi_scan_start(&scan_config, true);
@@ -472,8 +472,7 @@ static void mdf_auto_network_task(void *arg)
     mdf_espnow_write(MDF_ESPNOW_RESERVED, WIFI_MESH_BROADCAST_ADDR,
                      MDF_AUTO_NETWORK_OUI, sizeof(MDF_AUTO_NETWORK_OUI), 100 / portTICK_RATE_MS);
 
-    while (g_mdf_network_enable_auto_flag
-            && (xTaskGetTickCount() - auto_network_start_time) * portTICK_RATE_MS / 1000  < auto_network_window_timeout) {
+    while ((xTaskGetTickCount() - auto_network_start_time) * portTICK_RATE_MS / 1000  < auto_network_window_timeout) {
 
         ret = mdf_espnow_read(MDF_ESPNOW_NETCONFIG, source_addr, request_data,
                               ESP_NOW_MAX_DATA_LEN, 100 / portTICK_RATE_MS);

@@ -119,26 +119,32 @@ esp_err_t mdf_reconfig_network(network_config_t *network_config)
     esp_err_t ret                    = ESP_OK;
     size_t addr_size                 = 0;
     wifi_mesh_addr_t *dest_addrs     = NULL;
+    wifi_mesh_addr_t src_addrs       = {0};
     int dest_addrs_num               = 0;
     char *reconfig_network_data      = mdf_calloc(1, WIFI_MESH_PACKET_MAX_SIZE);
     const char *reconfig_network_fmt = "{\"request\":\"set_network\",\"require_resp\":0,"
                                        "\"delay\":5000,\"ssid\":\"%s\",\"password\":\"%s\","
-                                       "\"channel\":%d,\"mesh_id\":\"%02x%02x%02x%02x%02x%02x\"}";
+                                       "\"channel\":%d, \"bssid\":\"%02x%02x%02x%02x%02x%02x\","
+                                       "\"mesh_id\":\"%02x%02x%02x%02x%02x%02x\"}";
+
     wifi_mesh_data_type_t data_type  = {
         .no_response = true,
         .proto       = MDF_PROTO_JSON,
         .to_server   = true,
     };
 
-    sprintf(reconfig_network_data, reconfig_network_fmt, network_config->ssid,
-            network_config->password, network_config->channel, MAC2STR(network_config->mesh_id));
+    snprintf(reconfig_network_data, WIFI_MESH_PACKET_MAX_SIZE, reconfig_network_fmt,
+             network_config->ssid, network_config->password, network_config->channel,
+             MAC2STR(network_config->bssid), MAC2STR(network_config->mesh_id));
 
+    ESP_ERROR_CHECK(esp_efuse_mac_get_default(src_addrs.mac));
     addr_size = esp_mesh_get_routing_table_size() * 6;
     dest_addrs = mdf_calloc(1, addr_size);
     ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)dest_addrs, addr_size, &dest_addrs_num));
 
-    for (int i = 0; i < dest_addrs_num; ++i) {
-        ret = mdf_wifi_mesh_root_send(dest_addrs, dest_addrs + i, &data_type,
+    /**< add retry for reconfig */
+    for (int i = 0; i < dest_addrs_num * 3; ++i) {
+        ret = mdf_wifi_mesh_root_send(&src_addrs, dest_addrs + (i % dest_addrs_num), &data_type,
                                       reconfig_network_data, strlen(reconfig_network_data));
         MDF_ERROR_CONTINUE(ret <= 0, "mdf_wifi_mesh_root_send, ret: %d", ret);
     }
@@ -299,6 +305,10 @@ static esp_err_t mdf_device_set_network(device_data_t *device_data)
 
     ret = mdf_json_parse(device_data->request, "channel", &network_config.channel);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse, %d", ret);
+
+    ret = mdf_json_parse(device_data->request, "bssid", mac_str);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse, %d", ret);
+    str2mac(mac_str, network_config.bssid);
 
     ret = mdf_json_parse(device_data->request, "mesh_id", mac_str);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse, %d", ret);
