@@ -35,6 +35,7 @@ enum mdf_espnow_debug_type {
     MDF_ESPNOW_DEBUG_COREDUMP, /**< coredump data */
     MDF_ESPNOW_DEBUG_CONFIG,   /**< config data */
     MDF_ESPNOW_DEBUG_ACK,      /**< ack data*/
+    MDF_ESPNOW_DEBUG_MANUAL,   /**< manual */
 };
 
 enum mdf_espnow_coredump_operator {
@@ -70,6 +71,13 @@ enum mdf_espnow_config_log_param {
 enum mdf_espnow_ack_params {
     MDF_ESPNOW_RECV_OK = 0, /**< espnow package received is correct */
     MDF_ESPNOW_RECV_FAIL,   /**< espnow package received is error */
+};
+
+enum mdf_espnow_manual {
+    MDF_ESPNOW_MANUAL_REBOOT = 0, /**< reboot device */
+    MDF_ESPNOW_MANUAL_RESET,      /**< reset device */
+    MDF_ESPNOW_MANUAL_CONFIG,     /**< config network mode */
+    MDF_ESPNOW_MANUAL_ERASE,      /**< erase nvs key */
 };
 
 typedef struct {
