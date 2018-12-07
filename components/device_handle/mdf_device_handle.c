@@ -351,6 +351,7 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     ssize_t ota_bin_len          = 0;
     ssize_t ota_package_len      = 0;
     char ota_bin_version[64]     = {0};
+    char ota_bin_md5[64]         = {0};
     uint8_t *ota_progress_array  = NULL;
     ssize_t ota_package_num      = 0;
     ssize_t ota_write_num        = 0;
@@ -360,13 +361,16 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     ret = mdf_json_parse(device_data->request, "ota_bin_version", ota_bin_version);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse ota_bin_version, ret: %d", ret);
 
+    ret = mdf_json_parse(device_data->request, "ota_bin_md5", ota_bin_md5);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse ota_bin_md5, ret: %d", ret);
+
     ret = mdf_json_parse(device_data->request, "ota_bin_len", &ota_bin_len);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse ota_bin_len, ret: %d", ret);
 
     ret = mdf_json_parse(device_data->request, "package_length", &ota_package_len);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_parse package_length, ret: %d", ret);
 
-    ret = mdf_upgrade_init(ota_bin_len, ota_package_len, ota_bin_version);
+    ret = mdf_upgrade_init(ota_bin_len, ota_package_len, ota_bin_version, ota_bin_md5);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_upgrade_init, ret: %d", ret);
 
     ret = mdf_upgrade_status(&ota_progress_array, &ota_write_num, &ota_package_num, &ota_package_len);
@@ -375,14 +379,14 @@ static esp_err_t mdf_device_ota_status(device_data_t *device_data)
     MDF_LOGD("ota_progress_array: %p, ota_package_num: %d, ota_bin_version: %s, ota_write_num: %d",
              ota_progress_array, ota_package_num, ota_bin_version, ota_write_num);
 
-    ota_progress_array_str = mdf_malloc(OTA_PROGRESS_ARRAY_LEN);
+    ota_progress_array_str = mdf_calloc(1, OTA_PROGRESS_ARRAY_LEN);
 
     if (!ota_write_num) {
         loss_package_flag = true;
         strcpy(ota_progress_array_str, "[0, -1]");
     } else {
         for (int i = 0; i < ota_package_num; ++i) {
-            if (ota_progress_array[i] == true) {
+            if (MDF_UPGRADE_GET_BITS(ota_progress_array, i)) {
                 continue;
             }
 

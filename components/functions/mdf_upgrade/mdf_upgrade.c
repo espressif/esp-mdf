@@ -29,6 +29,7 @@
 #include "mdf_info_store.h"
 #include "mdf_event_loop.h"
 #include "mdf_wifi_mesh.h"
+#include "mdf_upgrade.h"
 
 typedef struct {
     uint8_t  tag[4];
@@ -39,6 +40,7 @@ typedef struct {
 
 typedef struct {
     char     version[64];
+    char     bin_md5[64];
     uint16_t packet_num;
     uint16_t packet_size;
     uint16_t packet_write_num;
@@ -48,24 +50,25 @@ typedef struct {
 #define MDF_OTA_STORE_KEY          "ota_status"
 #define MDF_OTA_PACKET_MAX_NUM     1560
 #define MDF_OTA_PACKET_HEAD_SIZE   sizeof(mdf_ota_packet_head_t)
-#define MDF_OTA_STATUS_SIZE        (sizeof(mdf_ota_status_t) + MDF_OTA_PACKET_MAX_NUM)
+#define MDF_OTA_STATUS_SIZE        (sizeof(mdf_ota_status_t) + (MDF_OTA_PACKET_MAX_NUM / 8) + 1)
 #define MDF_UPGRADE_STATE_SAVE_CNT 50
 
 static const char *TAG                = "mdf_ota_upgrade";
 static mdf_ota_status_t *g_ota_status = NULL;
 
 esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
-                           const char *ota_bin_verson)
+                           const char *ota_bin_verson, const char *ota_bin_md5)
 {
     MDF_PARAM_CHECK(ota_bin_len);
     MDF_PARAM_CHECK(ota_package_len);
     MDF_PARAM_CHECK(ota_bin_verson);
+    MDF_PARAM_CHECK(ota_bin_md5);
 
     esp_err_t ret = ESP_OK;
     uint16_t packet_body_size = ota_package_len - MDF_OTA_PACKET_HEAD_SIZE;
 
-    MDF_LOGD("ota_bin_len: %d, ota_package_len: %d, ota_bin_verson: %s",
-             ota_bin_len, ota_package_len, ota_bin_verson);
+    MDF_LOGD("ota_bin_len: %d, ota_package_len: %d, ota_bin_verson: %s, ota_bin_md5: %s",
+             ota_bin_len, ota_package_len, ota_bin_verson, ota_bin_md5);
 
     if (!g_ota_status) {
         g_ota_status = mdf_calloc(1, MDF_OTA_STATUS_SIZE);
@@ -77,15 +80,16 @@ esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
 
     /**< if g_ota_status has been created and
          once again upgrade the same version bin, just return ESP_OK */
-    if (!strncmp(g_ota_status->version, ota_bin_verson, strlen(ota_bin_verson))) {
+    if (!strncmp(g_ota_status->bin_md5, ota_bin_md5, strlen(ota_bin_md5))) {
         return ESP_OK;
     }
 
     strncpy(g_ota_status->version, ota_bin_verson, sizeof(g_ota_status->version));
+    strncpy(g_ota_status->bin_md5, ota_bin_md5, sizeof(g_ota_status->bin_md5));
     g_ota_status->packet_size      = ota_package_len;
     g_ota_status->packet_num       = (ota_bin_len + packet_body_size - 1) / packet_body_size;
     g_ota_status->packet_write_num = 0;
-    memset(g_ota_status->progress_array, false, MDF_OTA_PACKET_MAX_NUM);
+    memset(g_ota_status->progress_array, 0, (MDF_OTA_PACKET_MAX_NUM / 8) + 1);
 
     /**< in some case, the time-cost of flash erase in esp_ota_begin (called by
          mdf_ota_start) can be too long to expire the mdf connection */
@@ -94,8 +98,7 @@ esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(WIFI_MESH_AP_ASSOC_EXPIRE));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_ota_start, ret: %d", ret);
 
-    ret = mdf_info_save(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
+    mdf_info_save(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
 
     return ESP_OK;
 }
@@ -153,40 +156,33 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
 {
     MDF_PARAM_CHECK(ota_data);
     MDF_PARAM_CHECK(ota_data_size);
+    esp_err_t ret = ESP_OK;
 
     if (!g_ota_status) {
         g_ota_status = mdf_calloc(1, MDF_OTA_STATUS_SIZE);
-        esp_err_t ret  = mdf_info_load(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
-
-        if (ret < 0) {
-            MDF_LOGW("mdf_upgrade_write, ret: %d", ret);
-            mdf_free(g_ota_status);
-            g_ota_status = NULL;
-            return ESP_FAIL;
-        }
+        mdf_info_load(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
 
         ret = mdf_event_loop_send(MDF_EVENT_UPGRADE_START, NULL);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_event_loop_send, ret: %d", ret);
     }
 
-    esp_err_t ret                  = ESP_OK;
     mdf_ota_packet_head_t *ota_bin = (mdf_ota_packet_head_t *)ota_data;
-    uint16_t packet_body_size       = g_ota_status->packet_size - MDF_OTA_PACKET_HEAD_SIZE;
+    uint16_t packet_body_size      = g_ota_status->packet_size - MDF_OTA_PACKET_HEAD_SIZE;
 
     MDF_ERROR_CHECK(ota_bin->seq >= g_ota_status->packet_num, ESP_FAIL,
                     "seq overflow, seq: %d, packet_num: %d", ota_bin->seq, g_ota_status->packet_num);
 
-    MDF_LOGI("send_seq: %d, recved_num: %d, pkt_len: %d, progress: %03d%%",
-             ota_bin->seq, g_ota_status->packet_write_num, ota_bin->size,
+    MDF_LOGI("all: %d, send_seq: %d, recved_num: %d, pkt_len: %d, progress: %03d%%",
+             g_ota_status->packet_num, ota_bin->seq, g_ota_status->packet_write_num, ota_bin->size,
              g_ota_status->packet_write_num * 100 / g_ota_status->packet_num);
 
     /**< received a duplicate packet */
-    if (g_ota_status->progress_array[ota_bin->seq] == true) {
+    if (MDF_UPGRADE_GET_BITS(g_ota_status->progress_array, ota_bin->seq)) {
         MDF_LOGD("received a duplicate packet");
 
         /**< check whether the upgrade data is received */
         for (int i = 0; i < g_ota_status->packet_num; ++i) {
-            if (g_ota_status->progress_array[i] == false) {
+            if (!MDF_UPGRADE_GET_BITS(g_ota_status->progress_array, i)) {
                 return ESP_OK;
             }
         }
@@ -202,7 +198,7 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
                     ret, ota_bin->seq);
 
     /**< update g_ota_status */
-    g_ota_status->progress_array[ota_bin->seq] = true;
+    MDF_UPGRADE_SET_BITS(g_ota_status->progress_array, ota_bin->seq);
     g_ota_status->packet_write_num++;
 
     /**< save OTA status periodically, it can be used to
@@ -212,9 +208,10 @@ esp_err_t mdf_upgrade_write(const void *ota_data, ssize_t ota_data_size)
     if (g_ota_status->packet_write_num == s_packet_write_num
             || g_ota_status->packet_write_num == g_ota_status->packet_num) {
         s_packet_write_num += MDF_UPGRADE_STATE_SAVE_CNT;
-        ret = mdf_info_save(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE);
-        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
-        MDF_LOGD("save the data of ota status to flash");
+
+        if (mdf_info_save(MDF_OTA_STORE_KEY, g_ota_status, MDF_OTA_STATUS_SIZE) > 0) {
+            MDF_LOGD("save the data of ota status to flash");
+        }
     }
 
     return ESP_OK;
