@@ -6,7 +6,7 @@ variables:
 # System environment
 
   # Common parameters for the 'make' during CI tests
-  MAKEFLAGS: "-j5 --no-keep-going"
+  MAKEFLAGS: "--no-keep-going"
 
 # GitLab-CI environment
 
@@ -63,7 +63,7 @@ before_script:
   script:
     - cd $EXAMPLE_PATH
     - make defconfig
-    - make -j5
+    - make
     - make print_flash_cmd | tail -n 1 > build/download.config
 
 build_example_light_bulb:
@@ -77,6 +77,24 @@ build_example_factory:
   variables:
     ARTIFACTS_NAME: "factory"
     EXAMPLE_PATH: "examples/factory"
+
+build_example_espnow_debug:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "espnow_debug"
+    EXAMPLE_PATH: "examples/espnow_debug"
+
+build_example_meshkit_sense:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "meshkit_sense"
+    EXAMPLE_PATH: "examples/meshkit_sense"
+
+build_example_touchpad:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "touchpad"
+    EXAMPLE_PATH: "examples/touchpad"
 
 push_master_to_github:
   stage: deploy
