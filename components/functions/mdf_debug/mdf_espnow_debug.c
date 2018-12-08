@@ -38,9 +38,9 @@
 #undef MDF_LOGD
 #undef MDF_LOGV
 
-#define MDF_LOGE( format, ... ) ets_printf("\033[31m" "mdf_espnow_debug(E)[%s, %d]:" format "\033[0m\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define MDF_LOGW( format, ... ) ets_printf("\033[33m" "mdf_espnow_debug(W)[%s, %d]:" format "\033[0m\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define MDF_LOGI( format, ... ) ets_printf("\033[32m" "mdf_espnow_debug(I)[%s, %d]:" format "\033[0m\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define MDF_LOGE( format, ... ) ets_printf("\033[31m" "mdf_espnow_debug(E)[%d]:" format "\033[0m\n", __LINE__, ##__VA_ARGS__)
+#define MDF_LOGW( format, ... ) ets_printf("\033[33m" "mdf_espnow_debug(W)[%d]:" format "\033[0m\n", __LINE__, ##__VA_ARGS__)
+#define MDF_LOGI( format, ... ) ets_printf("\033[32m" "mdf_espnow_debug(I)[%d]:" format "\033[0m\n", __LINE__, ##__VA_ARGS__)
 #define MDF_LOGD( format, ... ) /**< no debug log in mdf_espnow module */
 #define MDF_LOGV( format, ... ) /**< no verbose log in mdf_espnow module */
 
