@@ -154,7 +154,7 @@ void app_main()
     touchpad_init();
     MDF_LOGI("touchpad_init success.");
 
-    if (mdf_get_running_mode() & POWER_ACTIVE) {
+    if (mdf_get_running_mode() & MODE_ESPNOW) {
         rgb_led_set(COLOR_LED_B, 100);
     } else {
         rgb_led_set(COLOR_LED_G, 100);

@@ -361,7 +361,7 @@ static esp_err_t mdf_trigger_handle(trigger_device_t *event)
     for (int i = 0; i < execute_addr_num; ++i) {
         str2mac(execute_mac_json[i], execute_addr.mac);
 
-        if (mdf_get_running_mode() & TRANS_ESPNOW) {
+        if (mdf_get_running_mode() & MODE_ESPNOW) {
             ret = mdf_low_power_send(&execute_addr, event->execute_content, strlen(event->execute_content));
             MDF_ERROR_GOTO(ret < 0, EXIT, "espnow_control_send, ret: %d", ret);
         } else {

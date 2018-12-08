@@ -217,10 +217,10 @@ static void sense_mode_switch_task(void *arg)
     esp_err_t ret = ESP_OK;
 
     do {
-        ret = mdf_set_running_mode((mdf_running_mode_t)(POWER_DEEP_SLEEP | TRANS_ESPNOW));
-        MDF_ERROR_BREAK(ret < 0, "mdf_set_running_mode: %d, ret: %d", (POWER_DEEP_SLEEP | TRANS_ESPNOW), ret);
+        ret = mdf_set_running_mode(MODE_ESPNOW);
+        MDF_ERROR_BREAK(ret < 0, "mdf_set_running_mode: %d, ret: %d", MODE_ESPNOW, ret);
 
-        MDF_LOGI("mdf_set_running_mode, mode: %d", POWER_DEEP_SLEEP | TRANS_ESPNOW);
+        MDF_LOGI("mdf_set_running_mode, mode: %d", MODE_ESPNOW);
         MDF_LOGI("esp deep sleep start");
 
         sense_deepsleep_set();
@@ -304,9 +304,8 @@ static void sense_wakeup_handle()
 
         case ESP_SLEEP_WAKEUP_EXT1:
             MDF_LOGI("ESP_SLEEP_WAKEUP_EXT1: %d, Switch to mesh & active mode", GPIO_WAKE_UP_IO);
-            ret = mdf_set_running_mode((mdf_running_mode_t)(POWER_ACTIVE | TRANS_WIFI_MESH));
-            MDF_ERROR_CHECK(ret < 0, ; , "mdf_set_running_mode mode: %d, ret: %d",
-                            (POWER_ACTIVE | TRANS_WIFI_MESH), ret);
+            ret = mdf_set_running_mode(MODE_WIFI_MESH);
+            MDF_ERROR_CHECK(ret < 0, ; , "mdf_set_running_mode mode: %d, ret: %d", MODE_WIFI_MESH, ret);
             break;
 
         case ESP_SLEEP_WAKEUP_TIMER:
@@ -336,7 +335,7 @@ void app_main()
     mode = mdf_get_running_mode();
     MDF_LOGI("mdf_get_running_mode: %d", mode);
 
-    if (mode & POWER_DEEP_SLEEP) {
+    if (mode & MODE_ESPNOW) {
 #ifdef CONFIG_USE_EPAPER_DISPLAY
         epaper_show_deepsleep();
 #endif
