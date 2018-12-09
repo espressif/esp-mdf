@@ -114,6 +114,8 @@ void app_main()
      * @brief Set the log level for serial port printing.
      */
     esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("mconfig_blufi", ESP_LOG_DEBUG);
+    esp_log_level_set("mconfig_chain", ESP_LOG_DEBUG);
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));

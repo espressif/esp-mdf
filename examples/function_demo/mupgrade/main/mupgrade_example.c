@@ -295,6 +295,8 @@ void app_main()
      * @brief Set the log level for serial port printing.
      */
     esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("mupgrade_node", ESP_LOG_INFO);
+    esp_log_level_set("mupgrade_root", ESP_LOG_INFO);
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
     MDF_LOGI("Starting OTA example ...");

@@ -25,6 +25,8 @@
 #include "mdf_common.h"
 #include "mwifi.h"
 
+// #define MEMORY_DEBUG
+
 static int g_sockfd    = -1;
 static const char *TAG = "mwifi_examples";
 
@@ -264,33 +266,38 @@ static void node_write_task(void *arg)
 /**
  * @brief Timed printing system information
  */
-static void show_sysinfo_timercb(void *timer)
+static void print_system_info_timercb(void *timer)
 {
     uint8_t primary                 = 0;
     wifi_second_chan_t second       = 0;
     mesh_addr_t parent_bssid        = {0};
     uint8_t sta_mac[MWIFI_ADDR_LEN] = {0};
-    mesh_assoc_t *mesh_assoc        = MDF_MALLOC(sizeof(mesh_assoc_t));
-    wifi_sta_list_t *wifi_sta_list  = MDF_MALLOC(sizeof(wifi_sta_list_t));
+    mesh_assoc_t mesh_assoc         = {0x0};
+    wifi_sta_list_t wifi_sta_list   = {0x0};
 
-    MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
-    MDF_ERROR_ASSERT(esp_wifi_ap_get_sta_list(wifi_sta_list));
-    MDF_ERROR_ASSERT(esp_wifi_vnd_mesh_get(mesh_assoc));
-    MDF_ERROR_ASSERT(esp_wifi_get_channel(&primary, &second));
+    esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
+    esp_wifi_ap_get_sta_list(&wifi_sta_list);
+    esp_wifi_get_channel(&primary, &second);
+    esp_wifi_vnd_mesh_get(&mesh_assoc);
     esp_mesh_get_parent_bssid(&parent_bssid);
-
 
     MDF_LOGI("System information, channel: %d, layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR
              ", parent rssi: %d, node num: %d, free heap: %u", primary,
              esp_mesh_get_layer(), MAC2STR(sta_mac), MAC2STR(parent_bssid.addr),
-             mesh_assoc->rssi, esp_mesh_get_total_node_num(), esp_get_free_heap_size());
+             mesh_assoc.rssi, esp_mesh_get_total_node_num(), esp_get_free_heap_size());
 
-    for (int i = 0; i < wifi_sta_list->num; i++) {
-        MDF_LOGI("Child mac: " MACSTR, MAC2STR(wifi_sta_list->sta[i].mac));
+    for (int i = 0; i < wifi_sta_list.num; i++) {
+        MDF_LOGI("Child mac: " MACSTR, MAC2STR(wifi_sta_list.sta[i].mac));
     }
 
-    MDF_FREE(mesh_assoc);
-    MDF_FREE(wifi_sta_list);
+#ifdef MEMORY_DEBUG
+    if (!heap_caps_check_integrity_all(true)) {
+        MDF_LOGE("At least one heap is corrupt");
+    }
+
+    mdf_mem_print_heap();
+    mdf_mem_print_record();
+#endif /**< MEMORY_DEBUG */
 }
 
 static mdf_err_t wifi_init()
@@ -440,12 +447,12 @@ void app_main()
     /**
      * @breif Create handler
      */
-    TimerHandle_t timer = xTimerCreate("show_sysinfo_timercb", 10000 / portTICK_RATE_MS,
-                                       true, NULL, show_sysinfo_timercb);
-    xTimerStart(timer, 0);
-
     xTaskCreate(node_write_task, "node_write_task", 4 * 1024,
                 NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
     xTaskCreate(node_read_task, "node_read_task", 4 * 1024,
                 NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
+
+    TimerHandle_t timer = xTimerCreate("print_system_info", 10000 / portTICK_RATE_MS,
+                                       true, NULL, print_system_info_timercb);
+    xTimerStart(timer, 0);
 }
