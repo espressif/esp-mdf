@@ -86,13 +86,18 @@ static void memory_test()
      */
 
 #ifndef CONFIG_SPIRAM_SUPPORT
-    data = heap_caps_malloc(10, MALLOC_CAP_8BIT | MALLOC_CAP_INVALID);
-    heap_caps_check_integrity_all(true);
-    data[11] = 0;
-    heap_caps_check_integrity_all(true);
+    if (!heap_caps_check_integrity_all(true)) {
+        MDF_LOGE("At least one heap is corrupt");
+    }
+
+    data[10] = 0;
+
+    if (!heap_caps_check_integrity_all(true)) {
+        MDF_LOGE("At least one heap is corrupt");
+    }
 #endif
 
-    MDF_FREE(data);
+    // MDF_FREE(data);
 }
 
 /**
@@ -139,12 +144,12 @@ void app_main()
     info_store_test();
 
     MDF_LOGI("***************************************************");
-    MDF_LOGI("                   memory debug                    ");
-    MDF_LOGI("***************************************************");
-    memory_test();
-
-    MDF_LOGI("***************************************************");
     MDF_LOGI("                   event loop                      ");
     MDF_LOGI("***************************************************");
     event_loop_test();
+
+    MDF_LOGI("***************************************************");
+    MDF_LOGI("                   memory debug                    ");
+    MDF_LOGI("***************************************************");
+    memory_test();
 }
