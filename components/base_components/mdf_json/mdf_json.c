@@ -38,7 +38,7 @@ esp_err_t __mdf_json_parse(char *json_str, const char *key,
     MDF_LOGV("value_type: %d", value_type);
 
     cJSON *pJson = cJSON_Parse(json_str);
-    MDF_ERROR_CHECK(!pJson, ESP_FAIL, "cJSON_Parse");
+    MDF_ERROR_CHECK(!pJson, ESP_FAIL, "cJSON_Parse, json_str: %s", json_str);
 
     cJSON *pSub = cJSON_GetObjectItem(pJson, key);
 

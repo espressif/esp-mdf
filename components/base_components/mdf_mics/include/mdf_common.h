@@ -73,11 +73,11 @@ extern "C" {
 #undef LOG_LOCAL_LEVEL
 #define LOG_LOCAL_LEVEL CONFIG_MDF_LOG_LEVEL
 
-#define MDF_LOGE( format, ... ) ESP_LOGE(TAG, "[%s, %d]:" format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define MDF_LOGW( format, ... ) ESP_LOGW(TAG, "[%s, %d]:" format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define MDF_LOGI( format, ... ) ESP_LOGI(TAG, "[%s, %d]:" format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define MDF_LOGD( format, ... ) ESP_LOGD(TAG, "[%s, %d]:" format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define MDF_LOGV( format, ... ) ESP_LOGV(TAG, "[%s, %d]:" format, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define MDF_LOGE( format, ... ) ESP_LOGE(TAG, "[%d]:" format, __LINE__, ##__VA_ARGS__)
+#define MDF_LOGW( format, ... ) ESP_LOGW(TAG, "[%d]:" format, __LINE__, ##__VA_ARGS__)
+#define MDF_LOGI( format, ... ) ESP_LOGI(TAG, "[%d]:" format, __LINE__, ##__VA_ARGS__)
+#define MDF_LOGD( format, ... ) ESP_LOGD(TAG, "[%d]:" format, __LINE__, ##__VA_ARGS__)
+#define MDF_LOGV( format, ... ) ESP_LOGV(TAG, "[%d]:" format, __LINE__, ##__VA_ARGS__)
 
 /**
  * @brief count the number of function parameters
@@ -135,12 +135,21 @@ extern "C" {
         if (!(con)) { MDF_LOGE("assert errno:%d, errno_str: !(%s)", errno, strerror(errno)); assert(0 && #con); } \
     } while (0)
 
-
 #define mdf_malloc(size) ({void *ptr = malloc(size); \
+        for (int i = 0; i < 5 && !ptr; ++i) { \
+            MDF_LOGE("malloc fail delay 200ms, [%d], size: %d, ptr: %p, heap free: %d", i, size, ptr, esp_get_free_heap_size()); \
+            vTaskDelay(200 / portTICK_RATE_MS); \
+            ptr = malloc(size); \
+        } \
         if(!ptr){MDF_LOGE("malloc size: %d, ptr: %p, heap free: %d", size, ptr, esp_get_free_heap_size());assert(ptr);} \
         MDF_LOGV("malloc size: %d, ptr: %p, heap free: %d", size, ptr, esp_get_free_heap_size()); ptr;})
 
 #define mdf_calloc(n, size) ({void *ptr = calloc(n, size); \
+        for (int i = 0; i < 5 && !ptr; ++i) { \
+            MDF_LOGE("calloc fail delay 200ms, [%d], size: %d, ptr: %p, heap free: %d", i, (n*size), ptr, esp_get_free_heap_size()); \
+            vTaskDelay(200 / portTICK_RATE_MS); \
+            ptr = calloc(n, size); \
+        } \
         if(!ptr){MDF_LOGE("calloc size: %d, ptr: %p, heap free: %d", (n) * (size), ptr, esp_get_free_heap_size());assert(ptr);} \
         MDF_LOGV("calloc size: %d, ptr: %p, heap free: %d", (n) * (size), ptr, esp_get_free_heap_size()); ptr;})
 

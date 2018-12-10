@@ -102,7 +102,9 @@ esp_err_t mdf_event_loop_delay_send(mdf_event_loop_t event, void *ctx, uint32_t 
 
     TimerHandle_t timer = xTimerCreate("event_timer",  delay_ms / portTICK_RATE_MS,
                                        false, event_data, event_send_timeout_cb);
-    xTimerStart(timer, 0);
+    MDF_ERROR_CHECK(!timer, ESP_FAIL, "xTimerCreate fail");
+
+    xTimerStart(timer, portMAX_DELAY);
 
     return ESP_OK;
 }

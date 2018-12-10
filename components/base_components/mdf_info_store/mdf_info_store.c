@@ -30,24 +30,22 @@
 
 static const char *TAG = "mdf_info_store";
 
-esp_err_t mdf_info_init()
+void mdf_info_init()
 {
     static bool init_flag = false;
 
     if (!init_flag) {
         esp_err_t ret = nvs_flash_init();
 
-        if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+        if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+            MDF_LOGE("nvs_flash_init ret: %x", ret);
             ESP_ERROR_CHECK(nvs_flash_erase());
             ret = nvs_flash_init();
         }
 
         ESP_ERROR_CHECK(ret);
-
         init_flag = true;
     }
-
-    return ESP_OK;
 }
 
 esp_err_t mdf_info_erase(const char *key)
@@ -69,12 +67,17 @@ esp_err_t mdf_info_erase(const char *key)
         ret = nvs_erase_key(handle, key);
     }
 
-    nvs_commit(handle);
+    MDF_ERROR_GOTO(ret != ESP_OK, ERR_EXIT, "nvs_erase key: %s, ret: %x", key, ret);
+
+    ret = nvs_commit(handle);
+    MDF_ERROR_GOTO(ret != ESP_OK, ERR_EXIT, "nvs_commit key: %s, ret: %x", key, ret);
+
     nvs_close(handle);
-
-    MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "nvs_erase_key key:%s, ret:%x", key, ret);
-
     return ESP_OK;
+
+ERR_EXIT:
+    nvs_close(handle);
+    return ESP_FAIL;
 }
 
 ssize_t mdf_info_save(const char *key,  const void *value, size_t length)
@@ -91,25 +94,19 @@ ssize_t mdf_info_save(const char *key,  const void *value, size_t length)
     ret = nvs_open(MDF_SPACE_NAME, NVS_READWRITE, &handle);
     MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "nvs_open ret:%x", ret);
 
-    /**< Reduce the number of flash write */
-    char *tmp = (char *)mdf_malloc(length);
-    ret = nvs_get_blob(handle, key, tmp, &length);
-
-    /**< if the value is exist and not changed */
-    if ((ret == ESP_OK) && !memcmp(tmp, value, length)) {
-        mdf_free(tmp);
-        nvs_close(handle);
-        return length;
-    }
-
-    mdf_free(tmp);
 
     ret = nvs_set_blob(handle, key, value, length);
-    nvs_commit(handle);
-    nvs_close(handle);
-    MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "nvs_set_blob key:%s, ret:%x", key, ret);
+    MDF_ERROR_GOTO(ret != ESP_OK, ERR_EXIT, "nvs_set_blob key: %s, length: %d, ret: %x", key, length, ret);
 
+    ret = nvs_commit(handle);
+    MDF_ERROR_GOTO(ret != ESP_OK, ERR_EXIT, "nvs_commit key: %s, length: %d, ret: %x", key, length, ret);
+
+    nvs_close(handle);
     return length;
+
+ERR_EXIT:
+    nvs_close(handle);
+    return ESP_FAIL;
 }
 
 ssize_t mdf_info_load(const char *key, void *value, size_t length)
@@ -130,7 +127,7 @@ ssize_t mdf_info_load(const char *key, void *value, size_t length)
     nvs_close(handle);
 
     if (ret == ESP_ERR_NVS_NOT_FOUND) {
-        MDF_LOGV("not found, ret: %d, key: %s", ret, key);
+        MDF_LOGV("not found, ret: %x, key: %s", ret, key);
         return ESP_FAIL;
     }
 
