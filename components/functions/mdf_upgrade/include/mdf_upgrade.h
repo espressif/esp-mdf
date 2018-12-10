@@ -31,6 +31,9 @@
 extern "C" {
 #endif /**< _cplusplus */
 
+#define MDF_UPGRADE_GET_BITS(data, bits) ( ((data)[(bits) >> 0x3]) & ( 1 << ((bits) & 0x7)) )
+#define MDF_UPGRADE_SET_BITS(data, bits) do { ((data)[(bits) >> 0x3]) |= ( 1 << ((bits) & 0x7)); } while(0);
+
 /**
  * @brief  init mdf ota upgrade.
  *
@@ -43,7 +46,7 @@ extern "C" {
  *     - ESP_FAIL
  */
 esp_err_t mdf_upgrade_init(ssize_t ota_bin_len, ssize_t ota_package_len,
-                           char *ota_bin_verson);
+                           const char *ota_bin_verson, const char *ota_bin_md5);
 
 /**
  * @brief  init mdf ota upgrade.
