@@ -979,7 +979,7 @@ esp_err_t mdf_device_init_handle(mdf_event_loop_cb_t event_cb,
     ret = mdf_low_power_init();
     MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_espnow_debug_init, ret: %d", ret);
 
-    if (mdf_get_running_mode() & TRANS_WIFI_MESH) {
+    if (mdf_get_running_mode() & MODE_WIFI_MESH) {
         ret = mdf_network_get_config(&network_config);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_get_network_config, ret: %d", ret);
         MDF_LOGD("ssid: %s, password: %s, bssid: "MACSTR,
@@ -1002,7 +1002,7 @@ esp_err_t mdf_device_init_handle(mdf_event_loop_cb_t event_cb,
 
     timer = xTimerCreate("mdf_show_sysinfo_timercb", 5000 / portTICK_RATE_MS,
                          true, NULL, mdf_show_sysinfo_timercb);
-    xTimerStart(timer, 0);
+    xTimerStart(timer, portMAX_DELAY);
 
     return ESP_OK;
 }

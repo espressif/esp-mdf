@@ -32,10 +32,8 @@ extern "C" {
 #endif /**< _cplusplus */
 
 typedef enum {
-    POWER_ACTIVE     = 1 << 0,  /**< normal mode */
-    POWER_DEEP_SLEEP = 1 << 1,  /**< deep sleep mode */
-    TRANS_WIFI_MESH  = 1 << 4,  /**< data transmitted through mesh */
-    TRANS_ESPNOW     = 1 << 5,  /**< data transmitted through espnow */
+    MODE_WIFI_MESH = 1 << 1,  /**< data transmitted through mesh */
+    MODE_ESPNOW    = 1 << 2,  /**< data transmitted through espnow */
 } mdf_running_mode_t;
 
 /**

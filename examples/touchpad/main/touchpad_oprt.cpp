@@ -241,17 +241,12 @@ static esp_err_t touchpad_switch_mode()
     mdf_running_mode_t mode = mdf_get_running_mode();
     MDF_LOGI("mdf_get_running_mode %d", mode);
 
-    if (mode == (mdf_running_mode_t)(POWER_ACTIVE | TRANS_WIFI_MESH)) {
-        mode = (mdf_running_mode_t)(POWER_DEEP_SLEEP | TRANS_ESPNOW);
-    } else {
-        mode = (mdf_running_mode_t)(POWER_ACTIVE | TRANS_WIFI_MESH);
-    }
-
+    mode = (mode == MODE_WIFI_MESH) ? MODE_ESPNOW : MODE_WIFI_MESH;
     ret = mdf_set_running_mode(mode);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_set_running_mode, ret: %d", ret);
     MDF_LOGD("mdf_set_running_mode: %d", mode);
 
-    if (mode == (mdf_running_mode_t)(POWER_DEEP_SLEEP | TRANS_ESPNOW)) {
+    if (mode == MODE_ESPNOW) {
         MDF_LOGI("esp deep sleep start");
         ch450_clear();
         touchpad_calibrate();
@@ -272,7 +267,7 @@ static void touch_button_handle(void *arg)
         if (is_all_button_pushed()) {
             g_switching_mode = true;
 
-            if (mdf_get_running_mode() == (mdf_running_mode_t)(POWER_DEEP_SLEEP | TRANS_ESPNOW)) {
+            if (mdf_get_running_mode() == MODE_ESPNOW) {
                 rgb_led_set(COLOR_LED_B, 100);
             } else {
                 rgb_led_set(COLOR_LED_G, 100);

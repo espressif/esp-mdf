@@ -58,27 +58,49 @@ static esp_err_t low_power_erase_parent()
     return ESP_OK;
 }
 
-esp_err_t mdf_low_power_get_parent(wifi_mesh_addr_t *parent_addr)
+static esp_err_t mdf_low_power_add_parent(const wifi_mesh_addr_t *dest_addr, const wifi_mesh_addr_t *src_addr)
 {
-    esp_err_t ret              = ESP_OK;
-    char request[64]           = {0};
-    char mac_str[16]           = {0};
-    uint8_t sta_mac[6]         = {0};
+    esp_err_t ret    = ESP_OK;
+    char mac_str[16] = {0};
+    char request[64] = {0};
     wifi_mesh_data_type_t type = {
         .no_response = true,
         .proto       = MDF_PROTO_JSON,
     };
 
+    ret = mdf_json_pack(request, "request", "add_low_power_device");
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    mac2str(src_addr->mac, mac_str);
+    ret = mdf_json_pack(request, "addr", mac_str);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
+
+    MDF_LOGD("request: %s", request);
+
+    ret = mdf_wifi_mesh_send(dest_addr, &type, request, strlen(request));
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "_mdf_wifi_mesh_send, ret: %d", ret);
+
+    return ESP_OK;
+}
+
+esp_err_t mdf_low_power_get_parent(wifi_mesh_addr_t *parent_addr)
+{
+    esp_err_t ret = ESP_OK;
+
     if (mdf_info_load("parent_addr", parent_addr, sizeof(wifi_mesh_addr_t)) > 0) {
         return ESP_OK;
     }
 
-    if (mdf_get_running_mode() & TRANS_ESPNOW) {
+    if (mdf_get_running_mode() & MODE_ESPNOW) {
         network_config_t network_config = {0};
         wifi_mesh_config_t mesh_config  = {0};
 
-        ret = mdf_network_get_config(&network_config);
-        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_get_network_config, ret: %d", ret);
+        if (mdf_network_get_config(&network_config) < 0) {
+            MDF_LOGE("mdf_network_get_config fail, clear network_config and set to wifi_mesh mode");
+            mdf_network_clear_config();
+            mdf_set_running_mode(MODE_WIFI_MESH);
+            return ESP_FAIL;
+        }
 
         mesh_config.channel = network_config.channel;
         strncpy(mesh_config.ssid, network_config.ssid, sizeof(mesh_config.ssid));
@@ -91,6 +113,9 @@ esp_err_t mdf_low_power_get_parent(wifi_mesh_addr_t *parent_addr)
         while (!mdf_wifi_mesh_is_connect()) {
             vTaskDelay(500 / portTICK_RATE_MS);
         }
+
+        ret = mdf_wifi_mesh_deinit();
+        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_mesh_init, ret: %d", ret);
     }
 
     if (esp_mesh_is_root()) {
@@ -103,27 +128,14 @@ esp_err_t mdf_low_power_get_parent(wifi_mesh_addr_t *parent_addr)
         ADDR_AP2STA(parent_addr->mac);
     }
 
-    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
-    mac2str(sta_mac, mac_str);
+    wifi_mesh_addr_t src_addr = {0};
+    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, src_addr.mac));
 
-    ret = mdf_json_pack(request, "request", "add_low_power_device");
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
-
-    ret = mdf_json_pack(request, "addr", mac_str);
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_json_pack, ret: %d", ret);
-
-    MDF_LOGD("request: %s", request);
-
-    ret = mdf_wifi_mesh_send(parent_addr, &type, request, strlen(request));
-    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "_mdf_wifi_mesh_send, ret: %d", ret);
+    ret = mdf_low_power_add_parent(parent_addr, &src_addr);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_low_power_add_parent, ret: %d", ret);
 
     ret = mdf_info_save("parent_addr", parent_addr, 6);
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
-
-    if (mdf_get_running_mode() & TRANS_ESPNOW) {
-        ret = mdf_wifi_mesh_deinit();
-        MDF_ERROR_CHECK(ret != ESP_OK, ESP_FAIL, "mdf_wifi_mesh_init, ret: %d", ret);
-    }
 
     return ESP_OK;
 }
@@ -160,11 +172,6 @@ static esp_err_t mdf_low_power_add_device(device_data_t *device_data)
     memcpy(device_addr.addr + device_addr.num, addr, 6);
     device_addr.num++;
 
-    for (int i = 0; i < device_addr.num; ++i) {
-        MDF_LOGI("addr espnow device: "MACSTR, MAC2STR((uint8_t *)(device_addr.addr + i)));
-        mdf_espnow_add_peer_default_encrypt((uint8_t *)(device_addr.addr + i));
-    }
-
     ret = mdf_info_save("child_addr", &device_addr, sizeof(low_power_addr_t));
     MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_info_save, ret: %d", ret);
 
@@ -175,46 +182,40 @@ esp_err_t mdf_low_power_send(wifi_mesh_addr_t *dest_addr,
                              const void *data, size_t size)
 {
     esp_err_t ret                 = ESP_OK;
-    wifi_mesh_addr_t parent_addr  = {0};
+    int retry_count               = 0;
     size_t espnow_size            = size + sizeof(low_power_data_t);
-    low_power_data_t *espnow_data = mdf_calloc(1, espnow_size);
-    espnow_data->type             = ESPNOW_CONTROL_REQUEST;
-    espnow_data->size             = size;
+    wifi_mesh_addr_t parent_addr  = {0};
+    low_power_data_t *espnow_data = NULL;
 
+    ret = mdf_low_power_get_parent(&parent_addr);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "low_power_get_parent, ret: %d", ret);
+
+    espnow_data       = mdf_calloc(1, espnow_size);
+    espnow_data->type = ESPNOW_CONTROL_REQUEST;
+    espnow_data->size = size;
     memcpy(espnow_data->data, data, size);
     memcpy(&espnow_data->dest_addr, dest_addr, sizeof(wifi_mesh_addr_t));
 
-    for (;;) {
-        ret = mdf_low_power_get_parent(&parent_addr);
-        MDF_ERROR_GOTO(ret < 0, EXIT, "low_power_get_parent, ret: %d", ret);
+    ESP_ERROR_CHECK(mdf_espnow_enable(MDF_ESPNOW_CONTROL));
+    mdf_espnow_add_peer_default_encrypt(parent_addr.mac);
 
-        MDF_LOGV("parent_addr:" MACSTR ", espnow_data, size: %d, data: %s, ret: %d",
-                 MAC2STR(parent_addr.mac), espnow_data->size, espnow_data->data, ret);
+    MDF_LOGV("parent_addr:" MACSTR ", espnow_data, size: %d, data: %s, ret: %d",
+             MAC2STR(parent_addr.mac), espnow_data->size, espnow_data->data, ret);
 
-        int retry_count = 0;
+    do {
+        vTaskDelay(retry_count * 10 / portTICK_RATE_MS);
 
-        do {
-            retry_count++;
+        if (mdf_espnow_write(MDF_ESPNOW_CONTROL, parent_addr.mac, espnow_data, espnow_size, portMAX_DELAY) > 0) {
+            goto EXIT;
+        }
+    } while (retry_count++ < 5);
 
-            vTaskDelay(retry_count * 10 / portTICK_RATE_MS);
-
-            ESP_ERROR_CHECK(mdf_espnow_enable(MDF_ESPNOW_CONTROL));
-            mdf_espnow_add_peer_default_encrypt(parent_addr.mac);
-            ret = mdf_espnow_write(MDF_ESPNOW_CONTROL, parent_addr.mac,
-                                   espnow_data, espnow_size, portMAX_DELAY);
-            ESP_ERROR_CHECK(mdf_espnow_del_peer(parent_addr.mac));
-            ESP_ERROR_CHECK(mdf_espnow_disable(MDF_ESPNOW_CONTROL));
-
-            if (ret > 0) {
-                goto EXIT;
-            }
-        } while (ret < 0 && retry_count < 5);
-
-        ret = low_power_erase_parent();
-        MDF_ERROR_GOTO(ret < 0, EXIT, "low_power_erase_parent, ret: %d", ret);
-    }
+    ret = low_power_erase_parent();
+    MDF_ERROR_GOTO(ret < 0, EXIT, "low_power_erase_parent, ret: %d", ret);
 
 EXIT:
+    ESP_ERROR_CHECK(mdf_espnow_del_peer(parent_addr.mac));
+    ESP_ERROR_CHECK(mdf_espnow_disable(MDF_ESPNOW_CONTROL));
     mdf_free(espnow_data);
     return ret;
 }
@@ -224,7 +225,7 @@ mdf_running_mode_t mdf_get_running_mode()
     mdf_running_mode_t mode = 0;
 
     if (mdf_info_load(MDF_RUNNING_MODE_KEY, &mode, sizeof(mdf_running_mode_t)) < 0) {
-        mode = POWER_ACTIVE | TRANS_WIFI_MESH;
+        mode = MODE_WIFI_MESH;
     }
 
     return mode;
@@ -234,7 +235,7 @@ esp_err_t mdf_set_running_mode(mdf_running_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
 
-    if (mode & TRANS_ESPNOW) {
+    if (mode & MODE_ESPNOW) {
         wifi_mesh_addr_t parent_addr = {0};
 
         ret = mdf_low_power_get_parent(&parent_addr);
@@ -249,19 +250,29 @@ esp_err_t mdf_set_running_mode(mdf_running_mode_t mode)
     return ESP_OK;
 }
 
-static void mdf_low_power_task(void *arg)
+static void mdf_low_power_relay_task(void *arg)
 {
     esp_err_t ret                 = ESP_OK;
-    low_power_data_t *espnow_data = mdf_malloc(ESP_NOW_MAX_DATA_LEN);
+    low_power_data_t *espnow_data = mdf_calloc(1, ESP_NOW_MAX_DATA_LEN);
     uint8_t source_addr[6]        = {0};
     wifi_mesh_data_type_t type    = {
         .no_response = true,
         .proto       = MDF_PROTO_JSON,
     };
 
+    low_power_addr_t device_addr = {0};
+    mdf_info_load("child_addr", &device_addr, sizeof(low_power_addr_t));
+
+    for (int i = 0; i < device_addr.num; ++i) {
+        MDF_LOGI("addr espnow device: "MACSTR, MAC2STR((uint8_t *)(device_addr.addr + i)));
+        mdf_espnow_add_peer_default_encrypt((uint8_t *)(device_addr.addr + i));
+    }
+
     ESP_ERROR_CHECK(mdf_espnow_enable(MDF_ESPNOW_CONTROL));
 
     for (;;) {
+        memset(espnow_data, 0, ESP_NOW_MAX_DATA_LEN);
+
         ret = mdf_espnow_read(MDF_ESPNOW_CONTROL, source_addr, espnow_data,
                               WIFI_MESH_PACKET_MAX_SIZE, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret < 0, "receive, size: %d, data:\n%s", ret, espnow_data->data);
@@ -278,36 +289,23 @@ static void mdf_low_power_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static esp_err_t mdf_low_power_recv()
-{
-    low_power_addr_t device_addr = {0};
-
-    mdf_info_load("child_addr", &device_addr, sizeof(low_power_addr_t));
-
-    for (int i = 0; i < device_addr.num; ++i) {
-        MDF_LOGI("addr espnow device: "MACSTR, MAC2STR((uint8_t *)(device_addr.addr + i)));
-        mdf_espnow_add_peer_default_encrypt((uint8_t *)(device_addr.addr + i));
-    }
-
-    xTaskCreate(mdf_low_power_task, "mdf_low_power_task", 1024 * 3,
-                NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
-
-    return ESP_OK;
-}
-
 esp_err_t mdf_low_power_init()
 {
-    esp_err_t ret = ESP_OK;
-
-    if (mdf_get_running_mode() & TRANS_ESPNOW) {
+    if (mdf_get_running_mode() & MODE_ESPNOW) {
         /* espnow need to set the channel */
         network_config_t network_config = {0};
-        ret = mdf_network_get_config(&network_config);
-        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mdf_get_network_config, ret: %d", ret);
+
+        if (mdf_network_get_config(&network_config) < 0) {
+            MDF_LOGE("mdf_network_get_config fail, clear network_config and set to wifi_mesh mode");
+            mdf_network_clear_config();
+            mdf_set_running_mode(MODE_WIFI_MESH);
+            return ESP_FAIL;
+        }
+
         ESP_ERROR_CHECK(esp_wifi_set_channel(network_config.channel, 0));
     } else {
         ESP_ERROR_CHECK(mdf_device_add_handle("add_low_power_device", mdf_low_power_add_device));
-        ESP_ERROR_CHECK(mdf_low_power_recv());
+        xTaskCreate(mdf_low_power_relay_task, "mdf_low_power_relay_task", 1024 * 3, NULL, MDF_TASK_DEFAULT_PRIOTY, NULL);
     }
 
     return ESP_OK;

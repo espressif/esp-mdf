@@ -412,6 +412,7 @@ esp_err_t mdf_network_get_config(network_config_t *network_config)
     memcpy(network_config->mesh_id, MDF_DEFAULT_ID, NETWORK_NETWORK_ADDR_MAX_SIZE);
 
     if (mdf_channel_get(network_config->ssid, &network_config->channel) == ESP_OK) {
+        mdf_info_save(MDF_NETWORK_CONFIG_KEY, network_config, sizeof(network_config_t));
         mdf_blufi_mem_release();
         return ESP_OK;
     }
