@@ -211,7 +211,7 @@ static esp_err_t mdf_root_ota_init(server_http_connect_t *conn)
 
     ota_conn = mdf_server_conn_find_ota();
 
-    if (ota_conn) {
+    if (ota_conn && (conn != ota_conn)) {
         MDF_LOGW("close old ota connect");
         mdf_server_conn_delete(ota_conn);
     }
@@ -263,7 +263,7 @@ ERR_EXIT:
         MDF_ERROR_BREAK(ret < 0, "mdf_server_conn_send, ret: %d", ret);
 
         if (response_status != 200) {
-            mdf_server_conn_delete(conn);
+            ret = -ESP_ERR_NOT_FOUND;
         }
 
     } while (0);
@@ -322,7 +322,7 @@ esp_err_t mdf_server_request_parser(server_http_connect_t *conn)
             }
 
             ret = g_reqest_handle_list[i].func(conn);
-            MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "g_reqest_handle_list, url: %s ret: %d",
+            MDF_ERROR_CHECK(ret < 0, ret, "g_reqest_handle_list, url: %s ret: %d",
                             g_reqest_handle_list[i].url, ret);
             break;
         }
