@@ -31,7 +31,7 @@ Process
 The detailed description of the process given in the figure can be found below.
 
 1. :ref:`Mconfig-BluFi`: App implements network configuration for a single device through Bluetooth.
-    a. App scans the Bluetooth packet of each device and generates a whitelist, which, for example, includes Devices *A*, *B*, *C*, and *D*. Since the signal of Device *A* is the strongest, App establishes connection and sends to this device the configuration information as well as the whitelist. 
+    a. App scans the Bluetooth packet of each device and generates a whitelist, which, for example, includes Devices *A*, *B*, *C*, and *D*. Since the signal of Device *A* is the strongest, App establishes connection and sends to this device the configuration information as well as the whitelist.
     b. Device *A* uses the configuration information to connect to the access point (AP), Router in this case.
     c. Device *A* checks if the configuration information is correct, according to the status returned by AP.
     d. Device *A* returns the network configuration status to App and does the following:
@@ -43,7 +43,7 @@ The detailed description of the process given in the figure can be found below.
     b. Device *A* checks the requesting devices against the whitelist:
         - If Device *B* is on the list, it will receive the network configuration information from Device *A*.
         - If Device *E* is not whitelisted, its request will be ignored.
-    c. As soon as Device *B* obtains the network configuration information, it becomes a master for Devices *C* and *D* and starts the same process. 
+    c. As soon as Device *B* obtains the network configuration information, it becomes a master for Devices *C* and *D* and starts the same process.
 
 3. `Building a network <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-guides/mesh.html#building-a-network>`_
     a. Root node selection: Devices *A*, *B*, *C* and *D* elect Device *A* as a root node, because of its optimal relay position for passing signal between each node and Router.
@@ -78,8 +78,6 @@ Notice
 If you want to customize network configuration, please be sure to:
 
 - **Verify password**: The nodes in ESP-MESH, except for the root node, do not check the router information. They only check if the configuration within their ESP-MESH network is correct. For this reason, if you accidentally provide a wrong router password to a non-root node, it will not be able to connect to the router after becoming a root node, even if their configuration within the network is correct. To avoid this potential problem, please verify the router password for non-root nodes.
-- **Configure channels**: iOS cannot acquire the information about the router to which it is connected, so the channel information can be obtained directly from any other device connected to the MESH network.
-- **Configure BSSID**: If ESP-MESH connects to a hidden router, the BSSID of this router must be configured.
 
 .. ---------------------- Mconfig-BluFi --------------------------
 

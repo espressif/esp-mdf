@@ -166,10 +166,7 @@ typedef struct {
      */
     char router_ssid[32];     /**< SSID of the router */
     char router_password[64]; /**< Password of router */
-    uint8_t router_bssid[6];  /**< BSSID is equal to the router's MAC address.
-                                   This field must be configured if more than one router shares the same SSID.
-                                   You can avoid using BSSIDs by setting up a unique SSID for each router.
-                                   This field must also be configured if the router is hidden . */
+    uint8_t router_bssid[6];  /**< BSSID, if this value is specified, users should also specify "router_switch_disable" */
 
     /**
      * @brief  Information about the mesh internal connected.
@@ -184,6 +181,13 @@ typedef struct {
                                  MESH_LEAF: The device is a leaf node, closes the softap, and is used in a low-power solutions.*/
 
     uint8_t channel;        /**< Channel, mesh and router will be on the same channel */
+    uint8_t channel_switch_disable; /**< If this value is not set, when "attempt" (mwifi_init_config_t) times is reached, device will change to
+                                         a full channel scan for a network that could join. */
+    uint8_t router_switch_disable;  /**< If the BSSID is specified and this value is not also set, when the router of this specified BSSID
+                                         fails to be found after "attempt" (mwifi_init_config_t) times, the whole network is allowed to switch
+                                         to another router with the same SSID. The new router might also be on a different channel.
+                                         There is a risk that if the password is different between the new switched router and the previous
+                                         one, the mesh network could be established but the root will never connect to the new switched router. */
 } mwifi_config_t;
 
 /**
@@ -204,7 +208,8 @@ typedef struct {
     bool upgrade        : 1; /**< Upgrade packet flag */
     uint8_t communicate : 2; /**< Mesh data communication method, There are three types:
                                   MWIFI_COMMUNICATE_UNICAST, MWIFI_COMMUNICATE_MULTICAST, MWIFI_COMMUNICATE_BROADCAST*/
-    uint8_t reserved    : 4; /**< Bit: 4..7 reserved */
+    uint8_t reserved    : 2; /**< Bit: 4..5 reserved */
+    uint8_t protocol    : 2; /**< Type of transmitted application protocol */
     uint32_t custom;         /**< Type of transmitted application data */
 } __attribute__((packed)) mwifi_data_type_t;
 
@@ -344,17 +349,6 @@ bool mwifi_is_started(void);
  *    - flase
  */
 bool mwifi_is_connected(void);
-
-/**
- * @brief  Scan the channel and bssid of the router or mesh device
- *
- * @param  config    pointer to router configuration
- * @param  ap_record ap_records  wifi_ap_record_t array to hold the found APs
- * @return
- *    - MDF_OK
- *    - MDF_ERR_MWIFI_NOT_START
- */
-mdf_err_t mwifi_scan(const mwifi_config_t *config, wifi_ap_record_t *ap_record);
 
 /**
  * @brief  Send a packet to any node in the mesh network.

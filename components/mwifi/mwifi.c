@@ -54,92 +54,6 @@ bool mwifi_is_connected()
     return mwifi_connected_flag;
 }
 
-mdf_err_t mwifi_scan(const mwifi_config_t *config, wifi_ap_record_t *ap)
-{
-    MDF_PARAM_CHECK(config);
-    MDF_PARAM_CHECK(ap);
-
-    int ie_len         = 0;
-    int8_t rssi_best   = -120;
-    mesh_assoc_t assoc = {0x0};
-    bool parent_found  = false;
-    uint16_t ap_number = 0;
-    wifi_ap_record_t ap_record     = {0x0};
-    wifi_scan_config_t scan_config = {
-        .show_hidden = true,
-        .scan_type   = WIFI_SCAN_TYPE_PASSIVE,
-        .scan_time.passive = 300,
-    };
-
-    ESP_ERROR_CHECK(esp_mesh_set_self_organized(false, false));
-
-    for (int i = 0; !parent_found && i < 2; ++i) {
-        esp_wifi_scan_stop();
-        esp_wifi_scan_start(&scan_config, true);
-        esp_wifi_scan_get_ap_num(&ap_number);
-        MDF_ERROR_CHECK(ap_number <= 0, ESP_FAIL, "esp_wifi_scan_get_ap_num");
-
-        MDF_LOGD("Get number of APs found, number: %d", ap_number);
-
-        for (int i = 0; i < ap_number; i++) {
-            ie_len = 0;
-            memset(&ap_record, 0, sizeof(wifi_ap_record_t));
-            memset(&assoc, 0, sizeof(mesh_assoc_t));
-
-            esp_mesh_scan_get_ap_ie_len(&ie_len);
-            esp_mesh_scan_get_ap_record(&ap_record, &assoc);
-
-            if (ie_len == sizeof(assoc)) {
-                if (assoc.mesh_type != MESH_IDLE && assoc.layer_cap
-                        && assoc.assoc < assoc.assoc_cap && ap_record.rssi > -85
-                        && !memcmp(config->mesh_id, assoc.mesh_id, sizeof(config->mesh_id))
-                        && !(assoc.flag & MESH_ASSOC_FLAG_NETWORK_FREE)) {
-                    parent_found = true;
-                    memcpy(ap, &ap_record, sizeof(wifi_ap_record_t));
-
-                    MDF_LOGD("Mesh, ssid: %s, layer: %d/%d, assoc: %d/%d, %d, " MACSTR
-                             ", channel: %u, rssi: %d, ID: " MACSTR ", IE: %s",
-                             ap_record.ssid, assoc.layer, assoc.layer_cap, assoc.assoc,
-                             assoc.assoc_cap, assoc.layer2_cap, MAC2STR(ap_record.bssid),
-                             ap_record.primary, ap_record.rssi, MAC2STR(assoc.mesh_id),
-                             assoc.encrypted ? "Encrypted" : "Unencrypted");
-                }
-            } else if ((strlen((char *)ap_record.ssid) && !strcmp(config->router_ssid, (char *)ap_record.ssid))
-                       && ap_record.rssi > rssi_best) {
-                MDF_LOGV("Router, ssid: %s, bssid: " MACSTR ", channel: %u, rssi: %d",
-                         ap_record.ssid, MAC2STR(ap_record.bssid),
-                         ap_record.primary, ap_record.rssi);
-
-                parent_found = true;
-                rssi_best    = ap_record.rssi;
-                memcpy(ap, &ap_record, sizeof(wifi_ap_record_t));
-            } else {
-                MDF_LOGV("(%d : %s), " MACSTR ", channel: %u, rssi: %d", i,
-                         ap_record.ssid, MAC2STR(ap_record.bssid), ap_record.primary,
-                         ap_record.rssi);
-            }
-        }
-
-        /**
-         * @brief Get hidden router
-         */
-        if (!parent_found && strlen(config->router_ssid) > 0) {
-            scan_config.ssid      = (uint8_t *)config->router_ssid;
-            scan_config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-        }
-    }
-
-    if (config->mesh_type == MESH_ROOT) {
-        ESP_ERROR_CHECK(esp_mesh_set_type(MESH_ROOT));
-    } else {
-        ESP_ERROR_CHECK(esp_mesh_set_self_organized(true, true));
-    }
-
-    MDF_ERROR_CHECK(!parent_found, MDF_FAIL, "Router and devices not found");
-
-    return ESP_OK;
-}
-
 static void esp_mesh_event_cb(mesh_event_t event)
 {
     MDF_LOGD("esp_mesh_event_cb event.id: %d", event.id);
@@ -216,6 +130,8 @@ mdf_err_t mwifi_init(mwifi_init_config_t *config)
 {
     MDF_PARAM_CHECK(config);
     MDF_ERROR_CHECK(g_mwifi_inited_flag, MDF_ERR_MWIFI_INITED, "Mwifi has been initialized");
+
+    MDF_LOGI("esp-mdf version: %s", mdf_get_version());
 
     g_init_config = MDF_CALLOC(1, sizeof(mwifi_init_config_t));
 
@@ -344,7 +260,7 @@ mdf_err_t mwifi_start()
     switch_parent.select_rssi  = init_config->select_rssi;
     switch_parent.switch_rssi  = init_config->switch_rssi;
     ESP_ERROR_CHECK(esp_mesh_set_switch_parent_paras(&switch_parent));
-    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(init_config->assoc_expire_ms * 1000));
+    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(init_config->assoc_expire_ms / 1000));
     ESP_ERROR_CHECK(esp_mesh_set_beacon_interval(init_config->beacon_interval_ms));
     ESP_ERROR_CHECK(esp_mesh_set_passive_scan_time(init_config->passive_scan_ms));
 
@@ -356,8 +272,10 @@ mdf_err_t mwifi_start()
     /**
      * @brief mwifi AP configuration
      */
-    mesh_config.channel         = !ap_config->channel ? 1 : ap_config->channel;
+    mesh_config.channel              = ap_config->channel;
+    mesh_config.allow_channel_switch = !ap_config->channel_switch_disable;
     mesh_config.router.ssid_len = strlen(ap_config->router_ssid);
+    mesh_config.router.allow_router_switch = !ap_config->router_switch_disable;
     memcpy(mesh_config.router.ssid, ap_config->router_ssid, mesh_config.router.ssid_len);
     memcpy(mesh_config.router.bssid, ap_config->router_bssid, MWIFI_ADDR_LEN);
     memcpy(mesh_config.router.password, ap_config->router_password,
@@ -374,10 +292,6 @@ mdf_err_t mwifi_start()
 
     ESP_ERROR_CHECK(esp_mesh_set_config(&mesh_config));
     ESP_ERROR_CHECK(esp_mesh_start());
-
-    if (!ap_config->channel) {
-        mdf_event_loop_send(MDF_EVENT_MWIFI_CHANNEL_NO_FOUND, NULL);
-    }
 
     return MDF_OK;
 }
@@ -623,6 +537,7 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
     }
 
     for (int i = 0; i < addrs_num && !data_head->transmit_all; ++i) {
+        data_head->transmit_self = true;
         ret = mwifi_subcontract_write(addrs_list + i, mesh_data, data_flag, mesh_opt);
         MDF_ERROR_CONTINUE(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
                            mdf_err_to_name(ret), MAC2STR((addrs_list + i)->addr));
@@ -782,15 +697,15 @@ mdf_err_t mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         }
 
         if (data_head.transmit_num || data_head.transmit_all) {
-            mesh_addr_t *transmit_addr = NULL;
-            size_t transmit_num        = data_head.transmit_num;
-            uint8_t addr_any[] = MWIFI_ADDR_ANY;
+            mesh_addr_t *transmit_addr       = NULL;
+            size_t transmit_num              = data_head.transmit_num;
+            uint8_t addr_any[MWIFI_ADDR_LEN] = MWIFI_ADDR_ANY;
 
             if (data_head.transmit_all) {
                 transmit_num  = 1;
                 transmit_addr = (mesh_addr_t *)addr_any;
             } else {
-                transmit_addr = (mesh_addr_t *)recv_data;
+                transmit_addr  = (mesh_addr_t *)recv_data;
                 mesh_data.data = recv_data + data_head.transmit_num * MWIFI_ADDR_LEN;
                 mesh_data.size = recv_size - data_head.transmit_num * MWIFI_ADDR_LEN;
             }
@@ -812,7 +727,7 @@ mdf_err_t mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     memcpy(data_type, &data_head.type, sizeof(mwifi_data_type_t));
 
     if (data_type->compression) {
-        int mz_ret = uncompress((uint8_t *)data, (mz_ulong *)&mesh_data.size, mesh_data.data, recv_size);
+        int mz_ret = uncompress((uint8_t *)data, (mz_ulong *)size, mesh_data.data, mesh_data.size);
         ret = (mz_ret == MZ_BUF_ERROR) ? MDF_ERR_BUF : MDF_FAIL;
         MDF_ERROR_GOTO(mz_ret != MZ_OK, EXIT, "Uncompress, ret: %0x", -mz_ret);
     } else {
@@ -889,7 +804,7 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
         if (MWIFI_ADDR_IS_ANY(addrs_list) || MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
             if (data_type->communicate == MWIFI_COMMUNICATE_UNICAST) {
                 addrs_num  = esp_mesh_get_routing_table_size();
-                addrs_list = tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
+                addrs_list = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
                 ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)addrs_list,
                                 addrs_num * sizeof(mesh_addr_t), (int *)&addrs_num));
 
@@ -912,8 +827,8 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
     } else if (data_type->communicate == MWIFI_COMMUNICATE_MULTICAST) {
         tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
         memcpy(tmp_addrs, addrs_list, addrs_num * sizeof(mesh_addr_t));
-        MDF_LOGD("addrs_num: %d, addrs_list: " MACSTR ",mesh_data.size: %d, data: %.*s",
-                 addrs_num, MAC2STR(tmp_addrs), mesh_data.size, mesh_data.size, mesh_data.data);
+        MDF_LOGD("addrs_num: %d, addrs_list: " MACSTR ", mesh_data.size: %d",
+                 addrs_num, MAC2STR(tmp_addrs), mesh_data.size);
         ret = mwifi_transmit_write((mesh_addr_t *)tmp_addrs, addrs_num, &mesh_data,
                                    data_flag, &mesh_opt);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "Mwifi_transmit_write");

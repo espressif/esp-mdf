@@ -49,9 +49,7 @@ typedef struct {
  * @brief Network configuration information
  */
 typedef struct {
-    mwifi_config_t config;                 /**< Mwifi AP configuration, 28 Byte*/
-    uint8_t config_reserved[2];            /**< Reserve 2 bytes to prevent version incompatibility
-                                                caused by mwifi_config_t changes */
+    mwifi_config_t config;                 /**< Mwifi AP configuration */
     mwifi_init_config_t init_config;       /**< Mwifi initialization configuration, 174 Byte */
     uint8_t init_config_reserved[4];       /**< Reserve 4 bytes to prevent version incompatibility
                                                 caused by mwifi_init_config_t changes */

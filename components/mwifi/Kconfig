@@ -70,6 +70,7 @@ menu "Stability config"
 config MWIFI_ASSOC_EXPIRE_MS
     int "Mesh softAP associate expired time"
     default 30000
+    range 1000 60000
     help
         Period of time after which a mesh softAP breaks its association with inactive leaf nodes
 
@@ -88,6 +89,7 @@ config MWIFI_PASSIVE_SCAN_MS
 config MWIFI_MONITOR_DURATION_MS
     int "Parent weak RSSI monitor duration"
     default 60000
+    range 1000 60000
     help
         Period (ms) for monitoring the parent's RSSI. If the signal stays weak throughout
         the period, the node will find another parent offering more stable connection
