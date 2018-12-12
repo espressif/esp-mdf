@@ -12,14 +12,6 @@ config ROUTER_PASSWORD
         help
             Router password.
 
-config ROUTER_CHANNEL
-    int "Router channel"
-    range 0 14
-    default 0
-    help
-        When the channel is set to 0, it is automatically acquired by the device.
-        Mesh and router will be on the same channel.
-
 config MESH_ID
     string "Mesh ID"
         default "123456"

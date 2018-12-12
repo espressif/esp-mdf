@@ -854,6 +854,11 @@ mdf_err_t mconfig_blufi_init(const mconfig_blufi_config_t *cfg)
     ret = esp_blufi_profile_init();
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Init BLUFI profile");
 
+    ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);
+    MDF_ERROR_CHECK(ret != ESP_OK, ret, "Set BLE advertising TX power");
+
+    ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_CONN_HDL0, ESP_PWR_LVL_P7);
+    MDF_ERROR_CHECK(ret != ESP_OK, ret, "Set BLE connection TX power");
 
     return MDF_OK;
 }

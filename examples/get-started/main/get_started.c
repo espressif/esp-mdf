@@ -173,7 +173,7 @@ static mdf_err_t wifi_init()
     tcpip_adapter_init();
     MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
-    MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
     MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
     MDF_ERROR_ASSERT(esp_mesh_set_6m_rate(false));
@@ -216,32 +216,12 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
 void app_main()
 {
-    esp_chip_info_t chip_info = {0};
-    mwifi_init_config_t cfg   = MWIFI_INIT_CONFIG_DEFAULT();
-    mwifi_config_t config = {
+    mwifi_init_config_t cfg = MWIFI_INIT_CONFIG_DEFAULT();
+    mwifi_config_t config   = {
         .channel   = CONFIG_MESH_CHANNEL,
         .mesh_id   = CONFIG_MESH_ID,
         .mesh_type = CONFIG_DEVICE_TYPE,
     };
-
-    /**
-     * @brief Print system information.
-     */
-    esp_chip_info(&chip_info);
-    MDF_LOGI("******************* SYSTEM INFO *******************");
-    MDF_LOGI("idf version      : %s", esp_get_idf_version());
-    MDF_LOGI("mdf version      : %s", mdf_get_version());
-    MDF_LOGI("device type      : %s", (config.mesh_type == MESH_ROOT) ? "Root" : "Non-Root");
-    MDF_LOGI("compile time     : %s %s", __DATE__, __TIME__);
-    MDF_LOGI("free heap        : %d Byte", esp_get_free_heap_size());
-    MDF_LOGI("CPU cores        : %d", chip_info.cores);
-    MDF_LOGI("function         : WiFi%s%s",
-             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-    MDF_LOGI("silicon revision : %d", chip_info.revision);
-    MDF_LOGI("flash            : %d MB %s", spi_flash_get_chip_size() / (1024 * 1024),
-             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-    MDF_LOGI("***************************************************");
 
     /**
      * @brief Set the log level for serial port printing.

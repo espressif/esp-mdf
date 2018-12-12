@@ -200,32 +200,6 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
                         NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
             break;
 
-        case MDF_EVENT_MWIFI_CHANNEL_NO_FOUND:
-        case MDF_EVENT_MWIFI_NO_PARENT_FOUND:
-            MDF_LOGI("No parent found, event: %d", event);
-            mwifi_config_t config      = {0x0};
-            wifi_ap_record_t ap_record = {0};
-
-            MDF_LOGW("Scan the channel and bssid of the router or mesh device");
-
-            MDF_ERROR_ASSERT(mwifi_get_config(&config));
-
-            for (int i = 0; i < 3; ++i) {
-                mdf_err_t ret = mwifi_scan(&config, &ap_record);
-                MDF_ERROR_CONTINUE(ret != MDF_OK, "Scanning the channel and bssid of the router or mesh device failed");
-
-                MDF_LOGI("AP, ssid: %s, bssid: " MACSTR ", channel: %u, rssi: %d",
-                         ap_record.ssid, MAC2STR(ap_record.bssid), ap_record.primary, ap_record.rssi);
-
-                config.channel = ap_record.primary;
-                memcpy(config.router_bssid, ap_record.bssid, sizeof(config.router_bssid));
-                MDF_ERROR_ASSERT(mwifi_set_config(&config));
-                MDF_ERROR_ASSERT(mwifi_restart());
-                break;
-            }
-
-            break;
-
         case MDF_EVENT_MUPGRADE_STATUS:
             MDF_LOGI("Upgrade progress: %d%%", (int)ctx);
             break;
@@ -252,7 +226,7 @@ static mdf_err_t wifi_init()
     tcpip_adapter_init();
     MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
-    MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
     MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
     MDF_ERROR_ASSERT(esp_mesh_set_6m_rate(false));
@@ -263,33 +237,12 @@ static mdf_err_t wifi_init()
 
 void app_main()
 {
-    esp_chip_info_t chip_info = {0};
     mwifi_init_config_t cfg   = MWIFI_INIT_CONFIG_DEFAULT();
     mwifi_config_t config     = {
         .router_ssid     = CONFIG_ROUTER_SSID,
         .router_password = CONFIG_ROUTER_PASSWORD,
-        .channel         = CONFIG_ROUTER_CHANNEL,
         .mesh_id         = CONFIG_MESH_ID,
     };
-
-    /**
-     * @brief Print system information.
-     */
-    esp_chip_info(&chip_info);
-    MDF_LOGI("******************* SYSTEM INFO *******************");
-    MDF_LOGI("idf version      : %s", esp_get_idf_version());
-    MDF_LOGI("mdf version      : %s", mdf_get_version());
-    MDF_LOGI("device version   : %s", CONFIG_DEVICE_VERSION);
-    MDF_LOGI("compile time     : %s %s", __DATE__, __TIME__);
-    MDF_LOGI("free heap        : %d Byte", esp_get_free_heap_size());
-    MDF_LOGI("CPU cores        : %d", chip_info.cores);
-    MDF_LOGI("function         : WiFi%s%s",
-             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-    MDF_LOGI("silicon revision : %d", chip_info.revision);
-    MDF_LOGI("flash            : %d MB %s", spi_flash_get_chip_size() / (1024 * 1024),
-             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-    MDF_LOGI("***************************************************");
 
     /**
      * @brief Set the log level for serial port printing.
