@@ -111,7 +111,7 @@ EXIT:
 
     g_upgrade_config->status.type       = MUPGRADE_TYPE_DATA;
     g_upgrade_config->status.error_code = ret;
-    MDF_LOGD("Reponse mupgrade status, written_size: %d, response_size: %d",
+    MDF_LOGD("Response mupgrade status, written_size: %d, response_size: %d",
              g_upgrade_config->status.written_size, response_size);
     ret = mwifi_write(NULL, &data_type, &g_upgrade_config->status, response_size, true);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mwifi_write");
@@ -130,7 +130,7 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
         size_t config_size = sizeof(mupgrade_config_t) + MUPGRADE_PACKET_MAX_NUM / 8;
         g_upgrade_config   = MDF_CALLOC(1, config_size);
         g_upgrade_config->start_time = xTaskGetTickCount();
-        g_upgrade_config->partition  = esp_ota_get_next_update_partition(NULL);;
+        g_upgrade_config->partition  = esp_ota_get_next_update_partition(NULL);
 
         ret = mdf_info_load(MUPGRADE_STORE_CONFIG_KEY, g_upgrade_config, &config_size);
 
@@ -143,7 +143,7 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
 
     /**< Received a duplicate packet */
     if (MUPGRADE_GET_BITS(g_upgrade_config->status.progress_array, packet->seq)) {
-        MDF_LOGD("received a duplicate packet, packet_seq: %d", packet->seq);
+        MDF_LOGD("Received a duplicate packet, packet_seq: %d", packet->seq);
         return MDF_OK;
     }
 
@@ -231,7 +231,7 @@ mdf_err_t mupgrade_handle(const uint8_t *addr, const void *data, size_t size)
 mdf_err_t mupgrade_get_status(mupgrade_status_t *status)
 {
     MDF_PARAM_CHECK(status);
-    MDF_ERROR_CHECK(g_upgrade_config, MDF_ERR_NOT_SUPPORTED, "mupgrade firmware is not initialized");
+    MDF_ERROR_CHECK(!g_upgrade_config, MDF_ERR_NOT_SUPPORTED, "Mupgrade firmware is not initialized");
 
     memcpy(status, &g_upgrade_config->status, sizeof(mupgrade_status_t));
 

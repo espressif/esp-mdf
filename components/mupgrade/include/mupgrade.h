@@ -54,6 +54,7 @@ extern "C" {
 #define MDF_EVENT_MUPGRADE_STARTED           (MDF_EVENT_MUPGRADE_BASE + 1) /**< The device starts to upgrade */
 #define MDF_EVENT_MUPGRADE_STATUS            (MDF_EVENT_MUPGRADE_BASE + 2) /**< Proactively report progress */
 #define MDF_EVENT_MUPGRADE_FINISH            (MDF_EVENT_MUPGRADE_BASE + 3) /**< The upgrade is complete and the new firmware will run after the reboot */
+#define MDF_EVENT_MUPGRADE_STOPED            (MDF_EVENT_MUPGRADE_BASE + 4) /**< The device stop to upgrade */
 
 /**
  * @brief Firmware subcontract upgrade
@@ -180,6 +181,15 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *dest_addrs, size_t dest_addrs_nu
                                  mupgrade_result_t *result);
 
 /**
+ * @brief Stop Root to send firmware to other nodes
+ *
+ * @return
+ *    - MDF_OK
+ *   - MDF_ERR_NOT_SUPPORTED
+ */
+mdf_err_t mupgrade_firmware_stop();
+
+/**
  * @brief  Free memory in the results list
  *
  * @param  result Pointer to device upgrade status
@@ -232,6 +242,15 @@ mdf_err_t mupgrade_root_handle(const uint8_t *addr, const void *data, size_t siz
  *   - MDF_ERR_NOT_SUPPORTED
  */
 mdf_err_t mupgrade_get_status(mupgrade_status_t *status);
+
+/**
+ * @brief Upgrade error back to previous version
+ *
+ * @return
+ *    - MDF_OK
+ *    - MDF_FAIL
+ */
+mdf_err_t mupgrade_version_fallback();
 
 #ifdef __cplusplus
 }
