@@ -102,7 +102,7 @@ mdf_err_t mupgrade_version_fallback()
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mupgrade_firmware_check failed!");
 
     ret = esp_ota_set_boot_partition(partition);
-    MDF_ERROR_CHECK(ret != MDF_OK, ESP_FAIL, "esp_ota_set_boot_partition failed! ret: %x", ret);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ota_set_boot_partition failed!");
 
     MDF_LOGI("The next reboot will fall back to the previous version");
 
@@ -139,7 +139,7 @@ __attribute((constructor)) mdf_err_t mupgrade_partition_switch()
 
     if (restart_trigger()) {
         ret = mupgrade_version_fallback();
-        MDF_ERROR_CHECK(ret != MDF_OK, ESP_FAIL, "esp_ota_set_boot_partition failed! ret: %x", ret);
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ota_set_boot_partition failed!");
 
         esp_restart();
     }

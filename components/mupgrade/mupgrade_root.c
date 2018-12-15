@@ -32,11 +32,10 @@ typedef struct {
     uint8_t data[0];
 } mupgrade_queue_t;
 
-#define MUPGRADE_REQUEST_RETRY_COUNT (3)
-
 static const char *TAG = "mupgrade_root";
 static mupgrade_config_t *g_upgrade_config = NULL;
 static bool g_mupgrade_send_running_flag   = false;
+static SemaphoreHandle_t g_mupgrade_send_exit_sem = NULL;
 
 mdf_err_t mupgrade_firmware_init(const char *name, size_t size)
 {
@@ -183,6 +182,10 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
         }
 
         MDF_FREE(q_data);
+
+        if (result->unfinished_num == 0) {
+            return MDF_OK;
+        }
     }
 
     request_num   = result->unfinished_num;
@@ -250,6 +253,8 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
             MDF_FREE(q_data);
         }
     }
+
+    ret = MDF_OK;
 
     if (request_num > 0) {
         MDF_LOGD("MDF_ERR_MUPGRADE_SEND_PACKET_LOSS");
@@ -331,7 +336,7 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
     g_upgrade_config->status.written_size = 0;
     MDF_LOGD("packet_num: %d, total_size: %d", packet_num, g_upgrade_config->status.total_size);
 
-    for (int i = 0; i < CONFIG_MUPGRADE_RETRY_COUNT && result->unfinished_num > 0; ++i) {
+    for (int i = 0; i < CONFIG_MUPGRADE_RETRY_COUNT && result->unfinished_num > 0 && g_mupgrade_send_running_flag; ++i) {
         if ((ret = mupgrade_request_status(progress_array, result)) == ESP_OK) {
             break;
         }
@@ -342,13 +347,12 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
             MDF_LOGD("Count: %d, addr: " MACSTR, i, MAC2STR(result->unfinished_addr + i * MWIFI_ADDR_LEN));
         }
 
-        for (packet->seq = 0; result->requested_num > 0 && packet->seq < packet_num; ++packet->seq) {
+        for (packet->seq = 0; result->requested_num > 0 && packet->seq < packet_num && g_mupgrade_send_running_flag; ++packet->seq) {
             if (!MUPGRADE_GET_BITS(progress_array, packet->seq)) {
                 packet->size = (packet->seq == packet_num - 1) ? last_packet_size : MUPGRADE_PACKET_MAX_SIZE;
                 ret = esp_partition_read(g_upgrade_config->partition, packet->seq * MUPGRADE_PACKET_MAX_SIZE,
                                          packet->data, packet->size);
                 MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Read data from Flash", mdf_err_to_name(ret));
-
 
                 for (mupgrade_queue_t *q_data = NULL; xQueueReceive(g_upgrade_config->queue, &q_data, 0);) {
                     if (((mupgrade_status_t *)q_data->data)->written_size == ((mupgrade_status_t *)q_data->data)->total_size) {
@@ -365,6 +369,10 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
                     }
 
                     MDF_FREE(q_data);
+
+                    if (!result->unfinished_num) {
+                        goto EXIT;
+                    }
                 }
 
                 if ((MWIFI_ADDR_IS_ANY(addrs_list) || MWIFI_ADDR_IS_BROADCAST(addrs_list))
@@ -385,12 +393,15 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
                                            packet, sizeof(mupgrade_packet_t), true);
                 }
 
-                MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Mwifi root write", mdf_err_to_name(ret));
+                MDF_ERROR_CONTINUE(ret != ESP_OK, "<%s> Mwifi root write", mdf_err_to_name(ret));
             }
         }
     }
 
 EXIT:
+
+    ret = (result->unfinished_num > 0) ? MDF_ERR_MUPGRADE_FIRMWARE_INCOMPLETE : MDF_OK;
+    g_mupgrade_send_running_flag = false;
 
     if (res) {
         memcpy(res, result, sizeof(mupgrade_result_t));
@@ -398,9 +409,36 @@ EXIT:
         mupgrade_result_free(result);
     }
 
+    for (mupgrade_queue_t *q_data = NULL; xQueueReceive(g_upgrade_config->queue, &q_data, 0);) {
+        MDF_FREE(q_data);
+    }
+
     MDF_FREE(packet);
     MDF_FREE(progress_array);
     MDF_FREE(result);
-    g_mupgrade_send_running_flag = false;
+
+    if (g_mupgrade_send_exit_sem) {
+        xSemaphoreGive(g_mupgrade_send_exit_sem);
+    }
+
     return ret;
+}
+
+mdf_err_t mupgrade_firmware_stop()
+{
+    if (!g_mupgrade_send_running_flag) {
+        return MDF_OK;
+    }
+
+    if (!g_mupgrade_send_exit_sem) {
+        g_mupgrade_send_exit_sem = xSemaphoreCreateBinary();
+    }
+
+    g_mupgrade_send_running_flag = false;
+
+    xSemaphoreTake(g_mupgrade_send_exit_sem, portMAX_DELAY);
+    vQueueDelete(g_mupgrade_send_exit_sem);
+    g_mupgrade_send_exit_sem = NULL;
+
+    return MDF_OK;
 }
