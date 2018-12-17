@@ -32,8 +32,8 @@ APIs 文档生成
 在编写代码注释时，请遵循 `Doxygen 格式 <https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_，您可以通过 ``Doxygen`` 按如下步骤自动生成 API 文档::
 
     sudo apt-get install doxygen
-    export MDF_PATH=~/esp/esp-idf
-    cd ~/esp/esp-idf/docs
+    export MDF_PATH=~/esp/esp-mdf
+    cd ~/esp/esp-mdf/docs
     pip install -r requirements.txt
-    cd ~/esp/esp-idf/docs/en
+    cd ~/esp/esp-mdf/docs/en
     make html

@@ -38,7 +38,7 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
     - [Mconfig](docs/zh_CN/api-guides/mconfig.rst)：配网模块
     - [Mupgrade](docs/zh_CN/api-guides/mupgrade.rst)：升级模块
     - Mdebug：调试模块
-    - Mlink：局域网控制模块
+    - [Mlink](docs/zh_CN/api-guides/mlink.rst)：局域网控制模块
 
 - **Examples**：
     - Function demo：各个功能块的使用示例
