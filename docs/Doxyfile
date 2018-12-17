@@ -32,7 +32,13 @@ INPUT = \
     ../../components/mconfig/include/mconfig_blufi.h \
     ../../components/mconfig/include/mconfig_chain.h \
     ../../components/mconfig/include/mconfig_security.h \
-    ../../components/mupgrade/include/mupgrade.h
+    ../../components/mupgrade/include/mupgrade.h \
+    ../../components/mlink/include/mlink.h \
+    ../../components/mlink/include/mlink_json.h \
+    ../../components/mlink/include/mlink_utils.h \
+    ../../components/mlink/include/mlink_notice.h \
+    ../../components/mlink/include/mlink_httpd.h \
+    ../../components/mlink/include/mlink_handle.h
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value

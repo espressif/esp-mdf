@@ -95,6 +95,12 @@ build_example_mcommon:
     ARTIFACTS_NAME: "mcommon"
     EXAMPLE_PATH: "examples/function_demo/mcommon"
 
+build_example_light:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "light"
+    EXAMPLE_PATH: "examples/development_kit/light"
+
 push_master_to_github:
   stage: deploy
   only:

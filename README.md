@@ -40,7 +40,7 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
     - [Mconfig](docs/en/api-guides/mconfig.rst): network configuration module
     - [Mupgrade](docs/en/api-guides/mupgrade.rst): upgrade module
     - Mdebug: debugging module
-    - Mlink: LAN control module
+    - [Mlink](docs/en/api-guides/mlink.rst): LAN control module
 
 - **Examples**:
     - Function demo: demonstrates how functions can be used
@@ -61,9 +61,9 @@ ESP32-MeshKit offers a complete [ESP-MESH Lighting Solution](https://www.espress
 
 * Products:
     * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): The RGBCW smart lights that show control results visually. They can be used to test network configuration time, response speed, stability performance, and measure distance, etc.
-    
+
     * [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md): This kit is equipped with a light sensor as well as a temperature & humidity sensor. It can measure power consumption and develop low power applications. The kit may also be used with ESP-Prog for firmware downloading and debugging.
-    
+
     * ESP32-MeshKit-Button: Serves as an on/off controller, ready for the development of low power applications. It can be used with ESP-Prog for firmware downloading and debugging (Coming soon).
 
 #### ESP32-Buddy
