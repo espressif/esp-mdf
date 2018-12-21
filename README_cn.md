@@ -35,10 +35,10 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
         - Error Check: ESP-MDF 的错误码管理
 
 - **Components**：
-    - [Mconfig](docs/zh_CN/api-guides/mconfig.rst)：配网模块
-    - [Mupgrade](docs/zh_CN/api-guides/mupgrade.rst)：升级模块
+    - [Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html)：配网模块
+    - [Mupgrade](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mupgrade.html)：升级模块
     - Mdebug：调试模块
-    - [Mlink](docs/zh_CN/api-guides/mlink.rst)：局域网控制模块
+    - [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html)：局域网控制模块
 
 - **Examples**：
     - Function demo：各个功能块的使用示例
@@ -134,7 +134,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 
 ## 相关资源
 
-* 查看 ESP-MDF 项目文档请点击 [docs](docs)。
+* 查看 ESP-MDF 项目文档请点击 [ESP-MDF 编程指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)。
 * [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html) 是乐鑫物联网开发框架的说明文档。
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
 * 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 Issues 中是否已经有您的问题。
