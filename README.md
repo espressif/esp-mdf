@@ -37,10 +37,10 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
         - Error Check: manages ESP-MDF's code errors
 
 - **Components**:
-    - [Mconfig](docs/en/api-guides/mconfig.rst): network configuration module
-    - [Mupgrade](docs/en/api-guides/mupgrade.rst): upgrade module
+    - [Mconfig](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html): network configuration module
+    - [Mupgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html): upgrade module
     - Mdebug: debugging module
-    - [Mlink](docs/en/api-guides/mlink.rst): LAN control module
+    - [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html): LAN control module
 
 - **Examples**:
     - Function demo: demonstrates how functions can be used
@@ -144,7 +144,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 
 ## Related Documentation
 
-* For ESP-MDF related documents, please go to [docs](docs).
+* For ESP-MDF related documents, please go to [ESP-MDF Programming Guide](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest).
 * [ESP-IDF Programming Guide](https://esp-idf.readthedocs.io/en/latest/) describes Espressif's IoT development framework.
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
 * To report a bug or request a function, please go to [Issues](https://github.com/espressif/esp-mdf/issues) on GitHub to submit them. Before submitting an issue, please check if it has already been covered.
