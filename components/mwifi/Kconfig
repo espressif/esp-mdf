@@ -37,7 +37,7 @@ config MWIFI_ROOT_HEALING_MS
 
 config MWIFI_ROOT_CONFLICTS_ENABLE
     bool "Allow more than one root in one network"
-    default y
+    default n
     help
         Allow more than one root in one network
 
