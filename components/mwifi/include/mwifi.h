@@ -80,6 +80,16 @@ extern "C" {
 #define MDF_EVENT_MWIFI_ROOT_GOT_IP             (MESH_EVENT_ROOT_GOT_IP)        /**< Root obtains the IP address. It is posted by LwIP stack automatically */
 #define MDF_EVENT_MWIFI_ROOT_LOST_IP            (MESH_EVENT_ROOT_LOST_IP)       /**< Root loses the IP address. It is posted by LwIP stack automatically */
 #define MDF_EVENT_MWIFI_ROOT_ASKED_YIELD        (MESH_EVENT_ROOT_ASKED_YIELD)   /**< Root is asked yield by a more powerful existing root. */
+
+#define MDF_EVENT_MWIFI_SCAN_DONE               (MESH_EVENT_SCAN_DONE)          /**< if self-organized networking is disabled */
+#define MDF_EVENT_MWIFI_NETWORK_STATE           (MESH_EVENT_NETWORK_STATE)      /**< network state, such as whether current mesh network has a root. */
+#define MDF_EVENT_MWIFI_STOP_RECONNECTION       (MESH_EVENT_STOP_RECONNECTION)  /**< the root stops reconnecting to the router and non-root devices stop reconnecting to their parents. */
+#define MDF_EVENT_MWIFI_FIND_NETWORK            (MESH_EVENT_FIND_NETWORK)       /**< when the channel field in mesh configuration is set to zero, mesh stack will perform a
+                                                                                     full channel scan to find a mesh network that can join, and return the channel value
+                                                                                     after finding it. */
+#define MDF_EVENT_MWIFI_ROUTER_SWITCH           (MESH_EVENT_ROUTER_SWITCH)      /**< if users specify BSSID of the router in mesh configuration, when the root connects to another
+                                                                                     router with the same SSID, this event will be posted and the new router information is attached. */
+
 #define MDF_EVENT_MWIFI_CHANNEL_NO_FOUND        (64)                            /**< The router's channel is not set. */
 
 /**
@@ -127,6 +137,14 @@ typedef struct {
     bool retransmit_enable;     /**< Enable a source node to retransmit data to the node from which it failed to receive ACK */
     bool data_drop_enable;      /**< If a root is changed, enable the new root to drop the previous packet */
 } mwifi_init_config_t;
+
+#ifndef CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE
+#define CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE false
+#endif /**< CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE */
+
+#ifndef CONFIG_MWIFI_RETRANSMIT_ENABLE
+#define CONFIG_MWIFI_RETRANSMIT_ENABLE false
+#endif /**< CONFIG_MWIFI_RETRANSMIT_ENABLE */
 
 #define MWIFI_INIT_CONFIG_DEFAULT() { \
         /**< root */ \
@@ -212,6 +230,14 @@ typedef struct {
     uint8_t protocol    : 2; /**< Type of transmitted application protocol */
     uint32_t custom;         /**< Type of transmitted application data */
 } __attribute__((packed)) mwifi_data_type_t;
+
+/**
+ * @brief Buffer space when reading data
+ */
+typedef enum {
+    MLINK_DATA_MEMORY_MALLOC_INTERNAL = 1,  /**< Buffer space is requested by internal when reading data */
+    MLINK_DATA_MEMORY_MALLOC_EXTERNAL = 2,  /**< Buffer space is requested by external when reading data */
+} mlink_data_memory_t;
 
 /**
  * @brief  Get mesh networking IE.
@@ -379,11 +405,14 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
  * @brief  Receive a packet targeted to self over the mesh network
  *
  * @param  src_addr    The address of the original source of the packet
- * @param  data_type   the type of the data
- * @param  data        pointer to the received mesh packet
+ * @param  data_type   The type of the data
+ * @param  data        Pointer to the received mesh packet
+ *                     To apply for buffer space externally, set the type of the data parameter to be (char *) or (uint8_t *)
+ *                     To apply for buffer space internally, set the type of the data parameter to be (char **) or (uint8_t **)
  * @param  size        A non-zero pointer to the variable holding the length of out_value.
  *                     In case out_value is not zero, will be set to the actual length of the value written.
- * @param  wait_ticks  wait time if a packet isn't immediately available
+ * @param  wait_ticks  Wait time if a packet isn't immediately available
+ * @param  type        Buffer space when reading data
  *
  * @return
  *    - MDF_OK
@@ -393,8 +422,14 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
  *    - ESP_ERR_MESH_TIMEOUT
  *    - ESP_ERR_MESH_DISCARD
  */
-mdf_err_t mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
-                     void *data, size_t *size, TickType_t wait_ticks);
+mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
+                       void *data, size_t *size, TickType_t wait_ticks, mlink_data_memory_t type);
+#define mwifi_read(src_addr, data_type, data, size, wait_ticks) \
+    __mwifi_read(src_addr, data_type, (void *)data, size, wait_ticks, \
+                 __builtin_types_compatible_p(typeof(data), char *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
+                 + __builtin_types_compatible_p(typeof(data), uint8_t *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
+                 + __builtin_types_compatible_p(typeof(data), char **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL \
+                 + __builtin_types_compatible_p(typeof(data), uint8_t **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL)
 
 /**
  * @brief  The root sends a packet to the device in the mesh.
@@ -440,9 +475,12 @@ mdf_err_t mwifi_root_write(const uint8_t *dest_addrs, size_t dest_addrs_num,
  *
  * @param  src_addr    the address of the original source of the packet
  * @param  data_type   the type of the data
- * @param  data        data  pointer to the received mesh packet
+ * @param  data        Pointer to the received mesh packet
+ *                     To apply for buffer space externally, set the type of the data parameter to be (char *) or (uint8_t *)
+ *                     To apply for buffer space internally, set the type of the data parameter to be (char **) or (uint8_t **)
  * @param  size        The length of the data
  * @param  wait_ticks  wait time if a packet isn't immediately available(0:no wait, portMAX_DELAY:wait forever)
+ * @param  type        Buffer space when reading data
  *
  * @return
  *    - MDF_OK
@@ -452,8 +490,14 @@ mdf_err_t mwifi_root_write(const uint8_t *dest_addrs, size_t dest_addrs_num,
  *    - ESP_ERR_MESH_TIMEOUT
  *    - ESP_ERR_MESH_DISCARD
  */
-mdf_err_t mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
-                          void *data, size_t *size, TickType_t wait_ticks);
+mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
+                            void *data, size_t *size, TickType_t wait_ticks, mlink_data_memory_t type);
+#define mwifi_root_read(src_addr, data_type, data, size, wait_ticks) \
+    __mwifi_root_read(src_addr, data_type, (void *)data, size, wait_ticks, \
+                      __builtin_types_compatible_p(typeof(data), char *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
+                      + __builtin_types_compatible_p(typeof(data), uint8_t *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
+                      + __builtin_types_compatible_p(typeof(data), char **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL \
+                      + __builtin_types_compatible_p(typeof(data), uint8_t **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL)
 
 #ifdef __cplusplus
 }
