@@ -16,5 +16,5 @@ This is a smart light example that you can run on ESP SMART LIGHT or [ESP32-DevK
 
 ## Related Links
 * Compiling: [ESP-MDF Get Started](https://docs.espressif.com/projects/esp-mdf/en/latest/get-started/index.html)
-* App: [ESP-Mesh App for Android](hrttps://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)
+* App: [ESP-Mesh App for Android](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)
 * Protocol: [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html)
