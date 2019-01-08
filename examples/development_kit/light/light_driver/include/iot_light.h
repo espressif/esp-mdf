@@ -31,60 +31,56 @@ extern "C" {
 
 #include "driver/ledc.h"
 
-typedef void* light_handle_t;
+/********************************** NOTE *********************************/
+/* When we create a light object, a hardware timer will be enabled, this */
+/* timer is used to realize fade and blink operation. The default timer  */
+/* occupied is timer 0 of timer group 0, user can change this config in  */
+/* menuconfig.                                                           */
+/*************************************************************************/
 
-#define LIGHT_MAX_CHANNEL_NUM   (5)
+typedef void *light_handle_t;
 
-typedef enum {
-    LIGHT_SET_DUTY_DIRECTLY = 0,    /*!< set duty directly */
-    LIGHT_DUTY_FADE_1S,             /*!< set duty with fade in 1 second */
-    LIGHT_DUTY_FADE_2S,             /*!< set duty with fade in 2 second */
-    LIGHT_DUTY_FADE_3S,             /*!< set duty with fade in 3 second */
-    LIGHT_DUTY_FADE_MAX,            /*!< user shouldn't use this */
-} light_duty_mode_t;
+#define HW_TIMER_GROUP         (0)   /**< Hardware timer group */
+#define HW_TIMER_ID            (0)   /**< Hardware timer number */
+#define HW_TIMER_DIVIDER       (16)  /**< Hardware timer clock divider */
+#define HW_TIMER_SCALE         (TIMER_BASE_CLK / HW_TIMER_DIVIDER)  /**< Convert counter value to seconds */
 
-typedef enum {
-    LIGHT_CH_NUM_1 = 1,             /*!< Light channel number */
-    LIGHT_CH_NUM_2 = 2,             /*!< Light channel number */
-    LIGHT_CH_NUM_3 = 3,             /*!< Light channel number */
-    LIGHT_CH_NUM_4 = 4,             /*!< Light channel number */
-    LIGHT_CH_NUM_5 = 5,             /*!< Light channel number */
-    LIGHT_CH_NUM_MAX,               /*!< user shouldn't use this */
-} light_channel_num_t;
+#define DUTY_SET_CYCLE         (20)  /**< Set duty cycle */
+#define DUTY_SET_GAMMA         (0.6) /**< Set the Gamma value for the fade curve, default value is 0.6 */
+
+#define LIGHT_MAX_CHANNEL_NUM  (5)
 
 /**
   * @brief  light initialize
   *
-  * @param  timer the ledc timer used by light
-  * @param  speed_mode
-  * @param  freq_hz frequency of timer
+  * @param  timer the LEDC timer used by light
+  * @param  speed_mode speed mode of LEDC timer
+  * @param  freq_hz frequency of LEDC timer
   * @param  channel_num decide how many channels the light contains
-  * @param  timer_bit
+  * @param  timer_bit LEDC PWM duty resolution
   *
   * @return  the handle of light
   */
-light_handle_t iot_light_create(ledc_timer_t timer, ledc_mode_t speed_mode,
-                                uint32_t freq_hz, uint8_t channel_num, ledc_timer_bit_t timer_bit);
+light_handle_t iot_light_create(ledc_timer_t timer, ledc_mode_t speed_mode, uint32_t freq_hz, uint8_t channel_num, ledc_timer_bit_t timer_bit);
 
 /**
   * @brief  add an output channel to light
   *
-  * @param  light_handle
+  * @param  light_handle light handle
   * @param  channel_idx the id of channel (0 ~ channel_num-1)
-  * @param  io_num
+  * @param  io_num the IO number use to output LEDC PWM
   * @param  channel the ledc channel you want to use
   *
   * @return
   *     - ESP_OK: succeed
   *     - others: fail
   */
-esp_err_t iot_light_channel_regist(light_handle_t light_handle,
-                                   uint8_t channel_idx, gpio_num_t io_num, ledc_channel_t channel);
+esp_err_t iot_light_channel_regist(light_handle_t light_handle, uint8_t channel_idx, gpio_num_t io_num, ledc_channel_t channel);
 
 /**
-  * @brief  free the momery of light
+  * @brief  free the memory of light
   *
-  * @param  light_handle
+  * @param  light_handle light handle
   *
   * @return
   *     - ESP_OK: succeed
@@ -93,65 +89,51 @@ esp_err_t iot_light_channel_regist(light_handle_t light_handle,
 esp_err_t iot_light_delete(light_handle_t light_handle);
 
 /**
-  * @brief  set light fade with time
+  * @brief  get channel duty
   *
-  * @param  light_handle
-  * @param  channel_id
-  * @param  duty
-  * @param  fade_period_ms
+  * @param  light_handle light handle
+  * @param  channel_id the id of channel (0 ~ channel_num-1)
+  *
+  * @return
+  *     - LEDC_ERR_DUTY if parameter error
+  *     - Others Current LEDC duty
+  */
+uint32_t iot_light_duty_get(light_handle_t light_handle, uint8_t channel_id);
+
+/**
+  * @brief  set light fade with time. if set fade_period_ms as 0, set the duty directly.
+  *
+  * @param  light_handle light handle
+  * @param  channel_id the id of channel (0 ~ channel_num-1)
+  * @param  duty target duty
+  * @param  fade_period_ms fade time (uint: ms)
   *
   * @return
   *     - ESP_OK: succeed
   *     - others: fail
   */
-esp_err_t iot_light_fade_with_time(light_handle_t light_handle,
-                                   uint8_t channel_id, uint32_t duty, uint32_t fade_period_ms);
+esp_err_t iot_light_fade_with_time(light_handle_t light_handle, uint8_t channel_id, uint32_t duty, uint32_t fade_period_ms);
 
 /**
-  * @brief  set breath config of a light channel, call `iot_light_breath_start` to start breath operation
+  * @brief  set breath config of a light channel, call `iot_light_operate_start` to start breath operation
   *
-  * @param  light_handle
-  * @param  channel_id
-  * @param  duty
-  * @param  breath_period
+  * @param  light_handle light handle
+  * @param  channel_id the id of channel (0 ~ channel_num-1)
+  * @param  duty the maximum duty when breath
+  * @param  breath_period_ms breath period (uint: ms)
   *
   * @return
   *     - ESP_OK: succeed
   *     - others: fail
   */
-esp_err_t iot_light_breath_config(light_handle_t light_handle,
-                                  uint8_t channel_id, uint32_t duty, int breath_period);
+esp_err_t iot_light_breath_config(light_handle_t light_handle, uint8_t channel_id, uint32_t duty, uint32_t breath_period_ms);
 
 /**
-  * @brief  start breath operation, user need to set breath config befor call this API
+  * @brief  set blink config of a light channel, call `iot_light_operate_start` to start blink operation
   *
-  * @param  light_handle
-  * @param  channel_id
-  *
-  * @return
-  *     - ESP_OK: succeed
-  *     - others: fail
-  */
-esp_err_t iot_light_breath_start(light_handle_t light_handle, uint8_t channel_id);
-
-/**
-  * @brief  stop breath operation
-  *
-  * @param  light_handle
-  * @param  channel_id
-  *
-  * @return
-  *     - ESP_OK: succeed
-  *     - others: fail
-  */
-esp_err_t iot_light_breath_stop(light_handle_t light_handle, uint8_t channel_id);
-
-/**
-  * @brief  set blink config of a light channel, call `iot_light_blink_start` to start blink operation
-  *
-  * @param  light_handle
-  * @param  channel_id
-  * @param  blink_period_ms
+  * @param  light_handle light handle
+  * @param  channel_id the id of channel (0 ~ channel_num-1)
+  * @param  blink_period_ms blink period (uint: ms)
   *
   * @return
   *     - ESP_OK: succeed
@@ -160,28 +142,28 @@ esp_err_t iot_light_breath_stop(light_handle_t light_handle, uint8_t channel_id)
 esp_err_t iot_light_blink_config(light_handle_t light_handle, uint8_t channel_id, uint32_t blink_period_ms);
 
 /**
-  * @brief  start blink operation, user need to set blink config befor call this API
+  * @brief  start breath or blink operation, user need to set breath or blink config before call this API
   *
-  * @param  light_handle
-  * @param  channel_id
+  * @param  light_handle light handle
+  * @param  channel_id the id of channel (0 ~ channel_num-1)
   *
   * @return
   *     - ESP_OK: succeed
   *     - others: fail
   */
-esp_err_t iot_light_blink_start(light_handle_t light_handle, uint8_t channel_id);
+esp_err_t iot_light_operate_start(light_handle_t light_handle, uint8_t channel_id);
 
 /**
-  * @brief  stop blink operation
+  * @brief  stop breath or blink operation
   *
-  * @param  light_handle
-  * @param  channel_id
+  * @param  light_handle light handle
+  * @param  channel_id the id of channel (0 ~ channel_num-1)
   *
   * @return
   *     - ESP_OK: succeed
   *     - others: fail
   */
-esp_err_t iot_light_blink_stop(light_handle_t light_handle, uint8_t channel_id);
+esp_err_t iot_light_operate_stop(light_handle_t light_handle, uint8_t channel_id);
 
 #ifdef __cplusplus
 }

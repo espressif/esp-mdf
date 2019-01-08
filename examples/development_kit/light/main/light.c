@@ -35,8 +35,11 @@
 
 #define LIGHT_TID                     (1)
 #define LIGHT_RESTART_COUNT_RESET     (3)
-#define LIGHT_RESTART_TIMEOUT_MS      (30000)
+#define LIGHT_RESTART_TIMEOUT_MS      (3000)
 #define LIGHT_STORE_RESTART_COUNT_KEY "light_count"
+
+#define EVENT_GROUP_TRIGGER_HANDLE     BIT0
+#define EVENT_GROUP_TRIGGER_RECV       BIT1
 
 /**
  * @brief The value of the cid corresponding to each attribute of the light
@@ -51,9 +54,19 @@ enum light_cid {
     LIGHT_CID_MODE              = 6,
 };
 
-static const char *TAG = "light";
-static TaskHandle_t g_root_write_task_handle = NULL;
-static TaskHandle_t g_root_read_task_handle  = NULL;
+enum light_status {
+    LIGHT_STATUS_OFF               = 0,
+    LIGHT_STATUS_ON                = 1,
+    LIGHT_STATUS_SWITCH            = 2,
+    LIGHT_STATUS_HUE               = 3,
+    LIGHT_STATUS_BRIGHTNESS        = 4,
+    LIGHT_STATUS_COLOR_TEMPERATURE = 5,
+};
+
+static const char *TAG                          = "light";
+static TaskHandle_t g_root_write_task_handle    = NULL;
+static TaskHandle_t g_root_read_task_handle     = NULL;
+static EventGroupHandle_t g_event_group_trigger = NULL;
 
 static mdf_err_t wifi_init()
 {
@@ -107,6 +120,7 @@ static void show_system_info_timercb(void *timer)
     }
 
 #ifdef CONFIG_LIGHT_MEMORY_DEBUG
+
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
     }
@@ -159,6 +173,34 @@ static int restart_count_get()
     return restart_count;
 }
 
+static bool light_restart_is_exception()
+{
+    mdf_err_t ret                      = ESP_OK;
+    ssize_t coredump_len               = 0;
+    esp_partition_iterator_t part_itra = NULL;
+
+    part_itra = esp_partition_find(ESP_PARTITION_TYPE_DATA,
+                                   ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
+    MDF_ERROR_CHECK(!part_itra, false, "<%s> esp_partition_find fail", mdf_err_to_name(ret));
+
+    const esp_partition_t *coredump_part = esp_partition_get(part_itra);
+    MDF_ERROR_CHECK(!coredump_part, false, "<%s> esp_partition_get fail", mdf_err_to_name(ret));
+
+
+    ret = esp_partition_read(coredump_part, sizeof(ssize_t), &coredump_len, sizeof(ssize_t));
+    MDF_ERROR_CHECK(ret, false, "<%s> esp_partition_read fail", mdf_err_to_name(ret));
+
+    if (coredump_len <= 0) {
+        return false;
+    }
+
+    /**< erase all coredump partition */
+    ret = esp_partition_erase_range(coredump_part, 0, coredump_part->size);
+    MDF_ERROR_CHECK(ret, false, "<%s> esp_partition_erase_range fail", mdf_err_to_name(ret));
+
+    return true;
+}
+
 static mdf_err_t get_network_config(mwifi_init_config_t *init_config, mwifi_config_t *ap_config)
 {
     MDF_PARAM_CHECK(init_config);
@@ -208,11 +250,105 @@ static mdf_err_t get_network_config(mwifi_init_config_t *init_config, mwifi_conf
     return MDF_OK;
 }
 
-static mdf_err_t mlink_set_value(uint16_t cid, int value)
+static mdf_err_t mlink_set_value(uint16_t cid, void *arg)
 {
+    int value = *((int *)arg);
+
     switch (cid) {
         case LIGHT_CID_STATUS:
-            light_driver_set_switch(value);
+            switch (value) {
+                case LIGHT_STATUS_ON:
+                case LIGHT_STATUS_OFF:
+                    light_driver_set_switch(value);
+                    break;
+
+                case LIGHT_STATUS_SWITCH:
+                    light_driver_set_switch(!light_driver_get_switch());
+                    break;
+
+                case LIGHT_STATUS_HUE: {
+                    uint16_t hue = light_driver_get_hue();
+                    hue = (hue + 60) % 360;
+
+                    light_driver_set_saturation(100);
+                    light_driver_set_hue(hue);
+                    break;
+                }
+
+                case LIGHT_STATUS_BRIGHTNESS: {
+                    if (light_driver_get_mode() == MODE_HSV) {
+                        uint8_t value = (light_driver_get_value() + 20) % 100;
+                        light_driver_set_value(value);
+                    } else {
+                        uint8_t brightness = (light_driver_get_brightness() + 20) % 100;
+                        light_driver_set_brightness(brightness);
+                    }
+
+                    break;
+                }
+
+                case LIGHT_STATUS_COLOR_TEMPERATURE: {
+                    uint8_t color_temperature = (light_driver_get_color_temperature() + 20) % 100;
+
+                    if (!light_driver_get_brightness()) {
+                        light_driver_set_brightness(30);
+                    }
+
+                    light_driver_set_color_temperature(color_temperature);
+
+                    break;
+                }
+
+                default:
+                    break;
+            }
+
+            break;
+
+        case LIGHT_CID_MODE:
+            switch (value) {
+                case MODE_BRIGHTNESS_INCREASE:
+                    light_driver_fade_brightness(100);
+                    break;
+
+                case MODE_BRIGHTNESS_DECREASE:
+                    light_driver_fade_brightness(0);
+                    break;
+
+                case MODE_HUE_INCREASE:
+                    light_driver_set_saturation(100);
+                    light_driver_fade_hue(360);
+                    break;
+
+                case MODE_HUE_DECREASE:
+                    light_driver_set_saturation(100);
+                    light_driver_fade_hue(0);
+                    break;
+
+                case MODE_WARM_INCREASE:
+                    if (!light_driver_get_brightness()) {
+                        light_driver_set_brightness(30);
+                    }
+
+                    light_driver_fade_warm(100);
+                    break;
+
+                case MODE_WARM_DECREASE:
+                    if (!light_driver_get_brightness()) {
+                        light_driver_set_brightness(30);
+                    }
+
+                    light_driver_fade_warm(0);
+                    break;
+
+                case MODE_NONE:
+                    light_driver_fade_stop();
+                    break;
+
+                default:
+                    break;
+            }
+
             break;
 
         case LIGHT_CID_HUE:
@@ -240,14 +376,14 @@ static mdf_err_t mlink_set_value(uint16_t cid, int value)
             return MDF_FAIL;
     }
 
-    MDF_LOGV("cid: %d, value: %d", cid, value);
+    MDF_LOGD("cid: %d, value: %d", cid, value);
 
     return MDF_OK;
 }
 
-static mdf_err_t mlink_get_value(uint16_t cid, int *value)
+static mdf_err_t mlink_get_value(uint16_t cid, void *arg)
 {
-    MDF_PARAM_CHECK(value);
+    int *value = (int *)arg;
 
     switch (cid) {
         case LIGHT_CID_STATUS:
@@ -291,16 +427,17 @@ static mdf_err_t mlink_get_value(uint16_t cid, int *value)
 static void root_write_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    char *data    = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
-    size_t size   = MWIFI_PAYLOAD_LEN;
+    char *data    = NULL;
+    size_t size   = 0;
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
     mwifi_data_type_t data_type      = {0};
 
     MDF_LOGI("root_write_task is running");
 
     while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
-        size = MWIFI_PAYLOAD_LEN;
-        ret = mwifi_root_read(src_addr, &data_type, data, &size, portMAX_DELAY);
+        size = MWIFI_PAYLOAD_LEN * 4;
+        MDF_FREE(data);
+        ret = mwifi_root_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
         if (data_type.upgrade) {
@@ -366,7 +503,7 @@ static void root_read_task(void *arg)
         }
 
         ret = mlink_httpd_read(&httpd_data, portMAX_DELAY);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
+        MDF_ERROR_CONTINUE(ret != MDF_OK || !httpd_data, "<%s> mwifi_root_read", mdf_err_to_name(ret));
         MDF_LOGD("Root receive, addrs_num: %d, addrs_list: " MACSTR ", size: %d, data: %.*s",
                  httpd_data->addrs_num, MAC2STR(httpd_data->addrs_list),
                  httpd_data->size, httpd_data->size, httpd_data->data);
@@ -392,7 +529,7 @@ static void root_read_task(void *arg)
 void request_handle_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    uint8_t *data = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    uint8_t *data = NULL;
     size_t size   = MWIFI_PAYLOAD_LEN;
     mwifi_data_type_t data_type      = {0x0};
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
@@ -404,11 +541,10 @@ void request_handle_task(void *arg)
         }
 
         size = MWIFI_PAYLOAD_LEN;
-        ret = mwifi_read(src_addr, &data_type, data, &size, portMAX_DELAY);
+        MDF_FREE(data);
+        ret = mwifi_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> Receive a packet targeted to self over the mesh network",
                            mdf_err_to_name(ret));
-
-        MDF_LOGI("Node receive, addr: " MACSTR ", size: %d, data: %.*s", MAC2STR(src_addr), size, size, data);
 
         if (data_type.upgrade) {
             ret = mupgrade_handle(src_addr, data, size);
@@ -417,8 +553,18 @@ void request_handle_task(void *arg)
             continue;
         }
 
-        ret = mlink_handle(src_addr, (mlink_httpd_type_t *)&data_type.custom, data, size);
+        MDF_LOGI("Node receive, addr: " MACSTR ", size: %d, data: %.*s", MAC2STR(src_addr), size, size, data);
+
+        mlink_httpd_type_t *httpd_type = (mlink_httpd_type_t *)&data_type.custom;
+
+        ret = mlink_handle(src_addr, httpd_type, data, size);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_handle", mdf_err_to_name(ret));
+
+        if (httpd_type->from == MLINK_HTTPD_FROM_DEVICE) {
+            data_type.protocol = MLINK_PROTO_NOTICE;
+            ret = mwifi_write(NULL, &data_type, "status", strlen("status"), true);
+            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_handle", mdf_err_to_name(ret));
+        }
     }
 
     MDF_FREE(data);
@@ -451,6 +597,18 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
             MDF_LOGI("Parent is disconnected on station interface");
             break;
+
+        case MDF_EVENT_MWIFI_FIND_NETWORK: {
+            MDF_LOGI("the root connects to another router with the same SSID");
+            mwifi_config_t ap_config  = {0x0};
+            wifi_second_chan_t second = 0;
+
+            mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t));
+            esp_wifi_get_channel(&ap_config.channel, &second);
+            mwifi_set_config(&ap_config);
+            mdf_info_save("ap_config", &ap_config, sizeof(mwifi_config_t));
+            break;
+        }
 
         case MDF_EVENT_MWIFI_ROUTING_TABLE_ADD:
         case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE: {
@@ -512,13 +670,13 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MCONFIG_BLUFI_FINISH:
         case MDF_EVENT_MCONFIG_CHAIN_FINISH:
-            light_driver_breath_start(0, 0, 255); /**< blue blink */
+            light_driver_breath_start(0, 255, 0); /**< green blink */
             break;
 
         case MDF_EVENT_MUPGRADE_STARTED:
             MDF_LOGI("Enter upgrade mode");
             light_driver_breath_start(0, 0, 128); /**< blue blink */
-            vTaskDelay(2000 / portTICK_RATE_MS);
+            vTaskDelay(3000 / portTICK_RATE_MS);
             light_driver_breath_stop();
             break;
 
@@ -534,7 +692,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MUPGRADE_FINISH:
             MDF_LOGI("Upgrade completed waiting for restart");
-            light_driver_breath_start(0, 255, 0); /**< green blink */
+            light_driver_breath_start(0, 0, 255); /**< blue blink */
             break;
 
         case MDF_EVENT_MLINK_SYSTEM_RESET:
@@ -551,11 +709,79 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             esp_restart();
             break;
 
+        case MDF_EVENT_MLINK_SET_STATUS:
+            if (!g_event_group_trigger) {
+                g_event_group_trigger = xEventGroupCreate();
+            }
+
+            xEventGroupSetBits(g_event_group_trigger, EVENT_GROUP_TRIGGER_HANDLE);
+            break;
+
+        case MDF_EVENT_MESPNOW_RECV:
+            if ((int)ctx == MESPNOW_TRANS_PIPE_CONTROL) {
+                xEventGroupSetBits(g_event_group_trigger, EVENT_GROUP_TRIGGER_RECV);
+            }
+
+            break;
+
         default:
             break;
     }
 
     return MDF_OK;
+}
+
+static void trigger_handle_task(void *arg)
+{
+    mdf_err_t ret = MDF_OK;
+
+    if (!g_event_group_trigger) {
+        g_event_group_trigger = xEventGroupCreate();
+    }
+
+    for (;;) {
+        EventBits_t uxBits = xEventGroupWaitBits(g_event_group_trigger,
+                             EVENT_GROUP_TRIGGER_RECV | EVENT_GROUP_TRIGGER_HANDLE,
+                             pdTRUE, pdFALSE, portMAX_DELAY);
+
+        if (uxBits & EVENT_GROUP_TRIGGER_RECV) {
+            uint8_t *data       = NULL;
+            uint8_t *addrs_list = NULL;
+            size_t addrs_num    = 0;
+            size_t size         = 0;
+            mwifi_data_type_t data_type = {
+                .protocol = MLINK_PROTO_HTTPD,
+            };
+
+            mlink_httpd_type_t httpd_type = {
+                .format = MLINK_HTTPD_FORMAT_JSON,
+                .from   = MLINK_HTTPD_FROM_DEVICE,
+                .resp   = false,
+            };
+
+            memcpy(&data_type.custom, &httpd_type, sizeof(mlink_httpd_type_t));
+
+            ret = mlink_espnow_read(&addrs_list, &addrs_num, &data, &size, portMAX_DELAY);
+            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_espnow_read", esp_err_to_name(ret));
+
+            MDF_LOGI("Mlink espnow read data: %.*s", size, data);
+
+            for (int i = 0; i < addrs_num; ++i) {
+                ret = mwifi_write(addrs_list  + 6 * i, &data_type, data, size, true);
+                MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
+            }
+
+            MDF_FREE(data);
+            MDF_FREE(addrs_list);
+        }
+
+        if (uxBits & EVENT_GROUP_TRIGGER_HANDLE) {
+            ret = mlink_trigger_handle(MLINK_COMMUNICATE_MESH);
+            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_trigger_handle", mdf_err_to_name(ret));
+        }
+    }
+
+    vTaskDelete(NULL);
 }
 
 void app_main()
@@ -605,9 +831,13 @@ void app_main()
      */
     if (mdf_info_load("init_config", &init_config, sizeof(mwifi_init_config_t)) == MDF_OK
             && mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t)) == MDF_OK) {
-        light_driver_set_switch(true);
+        if (light_restart_is_exception()) {
+            light_driver_breath_start(255, 0, 0); /**< red blink */
+        } else {
+            light_driver_set_switch(true);
+        }
     } else {
-        light_driver_breath_start(128, 128, 0); /**< yellow blink */
+        light_driver_breath_start(255, 255, 0); /**< yellow blink */
         MDF_ERROR_ASSERT(get_network_config(&init_config, &ap_config));
         MDF_LOGI("mconfig, ssid: %s, password: %s, mesh_id: " MACSTR,
                  ap_config.router_ssid, ap_config.router_password,
@@ -628,14 +858,17 @@ void app_main()
     MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
     snprintf(name, sizeof(name), "light_%02x%02x", sta_mac[4], sta_mac[5]);
     MDF_ERROR_ASSERT(mlink_add_device(LIGHT_TID, name, CONFIG_LIGHT_VERSION));
-    MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_STATUS, "on", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 1, 1));
+    MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_STATUS, "on", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 3, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_HUE, "hue", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 360, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_SATURATION, "saturation", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 100, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_VALUE, "value", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 100, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_COLOR_TEMPERATURE, "color_temperature", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 100, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_BRIGHTNESS, "brightness", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 100, 1));
-    MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_MODE, "mode", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_READ, 1, 3, 1));
+    MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_MODE, "mode", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RW, 1, 3, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic_handle(mlink_get_value, mlink_set_value));
+
+    mlink_trigger_init();
+    xTaskCreate(trigger_handle_task, "trigger_handle", 1024 * 3,  NULL, 1, NULL);
 
     /**
      * @brief Initialize esp-mesh
