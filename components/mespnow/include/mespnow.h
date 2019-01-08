@@ -45,6 +45,9 @@ typedef enum {
     MESPNOW_TRANS_PIPE_MAX,
 } mespnow_trans_pipe_e;
 
+#define MDF_EVENT_MESPNOW_RECV (MDF_EVENT_MESPNOW_BASE + 0x200)
+#define MDF_EVENT_MESPNOW_SEND (MDF_EVENT_MESPNOW_BASE + 0x201)
+
 /**
  * @brief  add a peer to espnow peer list based on esp_now_add_peer(...).
  *         It is convenient to use simplified MACRO follows.

@@ -32,6 +32,33 @@
 
 static const char *TAG = "mupgrade_check";
 
+mdf_err_t mupgrade_version_fallback()
+{
+    mdf_err_t ret = MDF_OK;
+    const esp_partition_t *partition = NULL;
+
+#if CONFIG_MUPGRADE_VERSION_FALLBACK_FACTORY
+
+    partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,
+                                         ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+
+#endif /**< CONFIG_MUPGRADE_VERSION_FALLBACK_FACTORY */
+
+    if (partition == NULL) {
+        partition = esp_ota_get_next_update_partition(NULL);
+    }
+
+    ret = mupgrade_firmware_check(partition);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "mupgrade_firmware_check failed!");
+
+    ret = esp_ota_set_boot_partition(partition);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ota_set_boot_partition failed!");
+
+    MDF_LOGI("The next reboot will fall back to the previous version");
+
+    return MDF_OK;
+}
+
 #ifdef CONFIG_MUPGRADE_VERSION_FALLBACK_RESTART
 
 static void restart_count_erase_timercb(void *timer)
@@ -86,29 +113,6 @@ static bool restart_trigger()
     return ret;
 }
 
-mdf_err_t mupgrade_version_fallback()
-{
-    mdf_err_t ret = MDF_OK;
-    const esp_partition_t *partition = NULL;
-
-    partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP,
-                                         ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-
-    if (partition == NULL) {
-        partition = esp_ota_get_next_update_partition(NULL);
-    }
-
-    ret = mupgrade_firmware_check(partition);
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "mupgrade_firmware_check failed!");
-
-    ret = esp_ota_set_boot_partition(partition);
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ota_set_boot_partition failed!");
-
-    MDF_LOGI("The next reboot will fall back to the previous version");
-
-    return MDF_OK;
-}
-
 #ifndef CONFIG_FREERTOS_UNICORE
 
 static void mupgrade_version_fallback_task(void *arg)
@@ -130,7 +134,8 @@ __attribute((constructor)) mdf_err_t mupgrade_partition_switch()
 {
     const volatile uint8_t firmware_flag[MUPGRADE_FIRMWARE_FLAG_SIZE] = MUPGRADE_FIRMWARE_FLAG;
 
-    MDF_LOGI("Add an identifier to the firmware: %s", firmware_flag);
+    (void)firmware_flag;
+    MDF_LOGD("Add an identifier to the firmware: %s", firmware_flag);
 
 #ifdef CONFIG_MUPGRADE_VERSION_FALLBACK_RESTART
 

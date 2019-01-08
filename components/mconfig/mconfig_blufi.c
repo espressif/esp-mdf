@@ -376,6 +376,9 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
                 esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, sta_conn_state, 0, NULL);
                 mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_DISCONNECTED, (void *)disconnected_reason);
                 mconfig_chain_slave_channel_switch_enable();
+
+                ret = esp_ble_gap_disconnect(g_spp_remote_bda);
+                MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_ble_gap_disconnect", mdf_err_to_name(ret));
             } else {
                 ret = esp_wifi_connect();
                 MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_wifi_connect");
@@ -558,11 +561,13 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             mconfig_ble_connect_timer_delete();
 
             if (!g_recv_config) {
-                g_recv_config = MDF_CALLOC(1, sizeof(mconfig_data_t));
-                mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
-
-                memcpy(&g_recv_config->init_config, &init_config, sizeof(mwifi_init_config_t));
+                g_recv_config = MDF_MALLOC(sizeof(mconfig_data_t));
             }
+
+            memset(g_recv_config, 0, sizeof(mconfig_data_t));
+
+            mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
+            memcpy(&g_recv_config->init_config, &init_config, sizeof(mwifi_init_config_t));
 
             for (int blufi_data_len = 0; blufi_data_len < param->custom_data.data_len;) {
                 blufi_data_element_t *blufi_data = (blufi_data_element_t *)(param->custom_data.data + blufi_data_len);

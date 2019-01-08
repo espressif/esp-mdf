@@ -132,6 +132,11 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
 
     espnow_queue = g_espnow_queue[espnow_data->pipe];
 
+    if (espnow_data->seq == 0) {
+        int pipe_tmp = espnow_data->pipe;
+        mdf_event_loop_send(MDF_EVENT_MESPNOW_RECV, (void *)pipe_tmp);
+    }
+
     /**< If espnow_queue is full, delete the front item */
     if (!uxQueueSpacesAvailable(espnow_queue)
             && xQueueReceive(espnow_queue, &espnow_data, 0)) {
@@ -259,6 +264,9 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
         espnow_data->seq++;
     } while (write_size > 0);
 
+    int pipe_tmp = espnow_data->pipe;
+    mdf_event_loop_send(MDF_EVENT_MESPNOW_SEND, (void *)pipe_tmp);
+
 EXIT:
     MDF_FREE(espnow_data);
     xSemaphoreGive(s_send_lock);
@@ -373,8 +381,6 @@ mdf_err_t mespnow_init()
     if (g_espnow_init_flag) {
         return MDF_OK;
     }
-
-    // MDF_LOGW("MESPNOW_PAYLOAD_LEN: %d", MESPNOW_PAYLOAD_LEN);
 
     /**< Event group for espnow sent cb */
     g_event_group = xEventGroupCreate();

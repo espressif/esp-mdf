@@ -94,6 +94,8 @@ void mdf_mem_remove_record(void *ptr, const char *tag, int line)
 
 void mdf_mem_print_record(void)
 {
+    size_t total_size = 0;
+
     if (!MDF_MEM_DEBUG) {
         MDF_LOGE("Please enable memory record");
     }
@@ -103,14 +105,15 @@ void mdf_mem_print_record(void)
         return ;
     }
 
-    MDF_LOGW("Memory record, num: %d", g_mem_count);
-
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].ptr || g_mem_info[i].size != 0) {
-            MDF_LOGW("(%d) <%s : %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
+            MDF_LOGW("(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
                      g_mem_info[i].ptr, g_mem_info[i].size);
+            total_size += g_mem_info[i].size;
         }
     }
+
+    MDF_LOGW("Memory record, num: %d, size: %d", g_mem_count, total_size);
 }
 
 void mdf_mem_print_heap(void)
