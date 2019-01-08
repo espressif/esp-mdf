@@ -45,4 +45,12 @@ config MUPGRADE_RESTART_TIMEOUT
     help
        Continuous restart interval.
 
+config MUPGRADE_VERSION_FALLBACK_FACTORY
+    bool "If there is a factory partition, fall back to the factory version"
+    default y
+    depends on MUPGRADE_VERSION_FALLBACK_RESTART
+    help
+       If there is a factory partition, fall back to the factory version instead
+       of rolling back to the previous version
+
 endmenu
