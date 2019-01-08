@@ -46,6 +46,7 @@
 static QueueHandle_t *g_notice_udp_queue       = NULL;
 static SemaphoreHandle_t g_notice_udp_exit_sem = NULL;
 static bool g_notice_udp_exit_flag             = false;
+static bool g_notice_mdns_init_flag            = false;
 static const char *TAG                         = "mlink_notice";
 
 typedef struct {
@@ -55,6 +56,10 @@ typedef struct {
 
 static mdf_err_t mlink_notice_mdns_init(void)
 {
+    if (g_notice_mdns_init_flag) {
+        return MDF_OK;
+    }
+
     mdf_err_t ret                   = MDF_OK;
     uint8_t root_mac[6]             = {0};
     char mac_str[16]                = {0};
@@ -82,12 +87,15 @@ static mdf_err_t mlink_notice_mdns_init(void)
 
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mdns_service_add");
 
+    g_notice_mdns_init_flag = true;
+
     return MDF_OK;
 }
 
 static void mlink_notice_mdns_deinit(void)
 {
     mdns_free();
+    g_notice_mdns_init_flag = false;
 }
 
 static int mlink_notice_udp_broadcast_create(void)

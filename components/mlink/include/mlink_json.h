@@ -64,19 +64,19 @@ enum mlink_json_type {
 esp_err_t __mlink_json_parse(const char *json_str,  const char *key, void *value, int value_type);
 #define mlink_json_parse(json_str, key, value) \
     __mlink_json_parse(json_str, key, value, \
-                     __builtin_types_compatible_p(typeof(value), int8_t *) * MLINK_JSON_TYPE_INT8 \
-                     + __builtin_types_compatible_p(typeof(value), uint8_t *) * MLINK_JSON_TYPE_INT8 \
-                     + __builtin_types_compatible_p(typeof(value), short *) * MLINK_JSON_TYPE_INT16 \
-                     + __builtin_types_compatible_p(typeof(value), uint16_t *) * MLINK_JSON_TYPE_INT16 \
-                     + __builtin_types_compatible_p(typeof(value), int *) * MLINK_JSON_TYPE_INT32 \
-                     + __builtin_types_compatible_p(typeof(value), uint32_t *) * MLINK_JSON_TYPE_INT32 \
-                     + __builtin_types_compatible_p(typeof(value), long *) * MLINK_JSON_TYPE_INT32 \
-                     + __builtin_types_compatible_p(typeof(value), unsigned long *) * MLINK_JSON_TYPE_INT32 \
-                     + __builtin_types_compatible_p(typeof(value), float *) * MLINK_JSON_TYPE_FLOAT \
-                     + __builtin_types_compatible_p(typeof(value), double *) * MLINK_JSON_TYPE_DOUBLE \
-                     + __builtin_types_compatible_p(typeof(value), char *) * MLINK_JSON_TYPE_STRING \
-                     + __builtin_types_compatible_p(typeof(value), char []) * MLINK_JSON_TYPE_STRING \
-                     + __builtin_types_compatible_p(typeof(value), char **) * MLINK_JSON_TYPE_POINTER)
+                       __builtin_types_compatible_p(typeof(value), int8_t *) * MLINK_JSON_TYPE_INT8 \
+                       + __builtin_types_compatible_p(typeof(value), uint8_t *) * MLINK_JSON_TYPE_INT8 \
+                       + __builtin_types_compatible_p(typeof(value), short *) * MLINK_JSON_TYPE_INT16 \
+                       + __builtin_types_compatible_p(typeof(value), uint16_t *) * MLINK_JSON_TYPE_INT16 \
+                       + __builtin_types_compatible_p(typeof(value), int *) * MLINK_JSON_TYPE_INT32 \
+                       + __builtin_types_compatible_p(typeof(value), uint32_t *) * MLINK_JSON_TYPE_INT32 \
+                       + __builtin_types_compatible_p(typeof(value), long *) * MLINK_JSON_TYPE_INT32 \
+                       + __builtin_types_compatible_p(typeof(value), unsigned long *) * MLINK_JSON_TYPE_INT32 \
+                       + __builtin_types_compatible_p(typeof(value), float *) * MLINK_JSON_TYPE_FLOAT \
+                       + __builtin_types_compatible_p(typeof(value), double *) * MLINK_JSON_TYPE_DOUBLE \
+                       + __builtin_types_compatible_p(typeof(value), char *) * MLINK_JSON_TYPE_STRING \
+                       + __builtin_types_compatible_p(typeof(value), char []) * MLINK_JSON_TYPE_STRING \
+                       + __builtin_types_compatible_p(typeof(value), char **) * MLINK_JSON_TYPE_POINTER)
 
 /**
  * @brief  mlink_json_pack(char *json_str, const char *key, int/double/char value);
@@ -97,22 +97,22 @@ esp_err_t __mlink_json_parse(const char *json_str,  const char *key, void *value
 esp_err_t __mlink_json_pack(char **json_str,  const char *key, int value, int value_type);
 #define mlink_json_pack(json_str, key, value) \
     __mlink_json_pack(json_str, key, (int)(value), \
-                    __builtin_types_compatible_p(typeof(value), char) * MLINK_JSON_TYPE_INT8 \
-                    + __builtin_types_compatible_p(typeof(value), int8_t) * MLINK_JSON_TYPE_INT8 \
-                    + __builtin_types_compatible_p(typeof(value), uint8_t) * MLINK_JSON_TYPE_INT8 \
-                    + __builtin_types_compatible_p(typeof(value), short) * MLINK_JSON_TYPE_INT16 \
-                    + __builtin_types_compatible_p(typeof(value), uint16_t) * MLINK_JSON_TYPE_INT16 \
-                    + __builtin_types_compatible_p(typeof(value), int) * MLINK_JSON_TYPE_INT32 \
-                    + __builtin_types_compatible_p(typeof(value), uint32_t) * MLINK_JSON_TYPE_INT32 \
-                    + __builtin_types_compatible_p(typeof(value), long) * MLINK_JSON_TYPE_INT32 \
-                    + __builtin_types_compatible_p(typeof(value), unsigned long) * MLINK_JSON_TYPE_INT32 \
-                    + __builtin_types_compatible_p(typeof(value), char *) * MLINK_JSON_TYPE_STRING  \
-                    + __builtin_types_compatible_p(typeof(value), const char *) * MLINK_JSON_TYPE_STRING  \
-                    + __builtin_types_compatible_p(typeof(value), char []) * MLINK_JSON_TYPE_STRING  \
-                    + __builtin_types_compatible_p(typeof(value), unsigned char *) * MLINK_JSON_TYPE_STRING  \
-                    + __builtin_types_compatible_p(typeof(value), const unsigned char *) * MLINK_JSON_TYPE_STRING \
-                    + __builtin_types_compatible_p(typeof(json_str), char **) * MLINK_JSON_TYPE_POINTER \
-                    + __builtin_types_compatible_p(typeof(json_str), uint8_t **) * MLINK_JSON_TYPE_POINTER)
+                      __builtin_types_compatible_p(typeof(value), char) * MLINK_JSON_TYPE_INT8 \
+                      + __builtin_types_compatible_p(typeof(value), int8_t) * MLINK_JSON_TYPE_INT8 \
+                      + __builtin_types_compatible_p(typeof(value), uint8_t) * MLINK_JSON_TYPE_INT8 \
+                      + __builtin_types_compatible_p(typeof(value), short) * MLINK_JSON_TYPE_INT16 \
+                      + __builtin_types_compatible_p(typeof(value), uint16_t) * MLINK_JSON_TYPE_INT16 \
+                      + __builtin_types_compatible_p(typeof(value), int) * MLINK_JSON_TYPE_INT32 \
+                      + __builtin_types_compatible_p(typeof(value), uint32_t) * MLINK_JSON_TYPE_INT32 \
+                      + __builtin_types_compatible_p(typeof(value), long) * MLINK_JSON_TYPE_INT32 \
+                      + __builtin_types_compatible_p(typeof(value), unsigned long) * MLINK_JSON_TYPE_INT32 \
+                      + __builtin_types_compatible_p(typeof(value), char *) * MLINK_JSON_TYPE_STRING  \
+                      + __builtin_types_compatible_p(typeof(value), const char *) * MLINK_JSON_TYPE_STRING  \
+                      + __builtin_types_compatible_p(typeof(value), char []) * MLINK_JSON_TYPE_STRING  \
+                      + __builtin_types_compatible_p(typeof(value), unsigned char *) * MLINK_JSON_TYPE_STRING  \
+                      + __builtin_types_compatible_p(typeof(value), const unsigned char *) * MLINK_JSON_TYPE_STRING \
+                      + __builtin_types_compatible_p(typeof(json_str), char **) * MLINK_JSON_TYPE_POINTER \
+                      + __builtin_types_compatible_p(typeof(json_str), uint8_t **) * MLINK_JSON_TYPE_POINTER)
 
 /**
  * @brief  Create a double type json string, Make up for the lack of mdf_json_pack()

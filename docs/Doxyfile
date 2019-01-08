@@ -38,6 +38,8 @@ INPUT = \
     ../../components/mlink/include/mlink_utils.h \
     ../../components/mlink/include/mlink_notice.h \
     ../../components/mlink/include/mlink_httpd.h \
+    ../../components/mlink/include/mlink_trigger.h \
+    ../../components/mlink/include/mlink_espnow.h \
     ../../components/mlink/include/mlink_handle.h
 
 

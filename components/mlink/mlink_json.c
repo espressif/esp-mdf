@@ -50,6 +50,10 @@ esp_err_t __mlink_json_parse(const char *json_str, const char *key,
     char **array_index = NULL;
     int array_size     = 0;
 
+    if (pSub->type == cJSON_Array) {
+        pSub->valueint = cJSON_GetArraySize(pSub);
+    }
+
     switch (value_type) {
         case MLINK_JSON_TYPE_INT8:
             *((char *)value) = pSub->valueint;
@@ -140,9 +144,6 @@ esp_err_t __mlink_json_parse(const char *json_str, const char *key,
                         /**< no sub cJSON_Array, just support one layer of cJSON_Array */
                     }
 
-                    /**< cJSON_Array parsed successful, return array_size */
-                    cJSON_Delete(pJson);
-                    return array_size;
                     break;
 
                 default:
@@ -166,10 +167,13 @@ ssize_t __mlink_json_pack(char **json_ptr, const char *key, int value, int value
 
     char *json_str = (char *)json_ptr;
 
-    MDF_LOGV("value_type: %d", value_type);
+    MDF_LOGV("key: %s, value: %d, value_type: %d", key, value, value_type);
 
     if (value_type / MLINK_JSON_TYPE_POINTER) {
         value_type %= MLINK_JSON_TYPE_POINTER;
+        MDF_ERROR_CHECK(value_type == MLINK_JSON_TYPE_STRING && !value,
+                        MDF_ERR_INVALID_ARG, "<MDF_ERR_INVALID_ARG> !(value)");
+
         size_t value_len = (value_type == MLINK_JSON_TYPE_STRING) ? strlen((char *)value) : 10;
 
         if (!*json_ptr) {
