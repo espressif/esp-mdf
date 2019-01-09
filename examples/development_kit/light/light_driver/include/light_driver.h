@@ -33,6 +33,24 @@ extern "C" {
 #endif
 
 /**
+ * @brief The mode of the five-color light
+ */
+enum light_mode {
+    MODE_NONE                = 0,
+    MODE_RGB                 = 1,
+    MODE_HSV                 = 2,
+    MODE_CTB                 = 3,
+    MODE_ON                  = 4,
+    MODE_OFF                 = 5,
+    MODE_HUE_INCREASE        = 4,
+    MODE_HUE_DECREASE        = 5,
+    MODE_WARM_INCREASE       = 6,
+    MODE_WARM_DECREASE       = 7,
+    MODE_BRIGHTNESS_INCREASE = 8,
+    MODE_BRIGHTNESS_DECREASE = 9,
+};
+
+/**
  * @brief Light driven configuration
  */
 typedef struct {
@@ -128,7 +146,20 @@ mdf_err_t light_driver_breath_start(uint8_t red, uint8_t green, uint8_t blue);
 mdf_err_t light_driver_breath_stop();
 mdf_err_t light_driver_blink_start(uint8_t red, uint8_t green, uint8_t blue);
 mdf_err_t light_driver_blink_stop();
+/**@}*/
 
+/**@{*/
+/**
+ * @brief  Color gradient
+ *
+ * @return
+ *      - MDF_OK
+ *      - MDF_ERR_INVALID_ARG
+ */
+mdf_err_t light_driver_fade_brightness(uint8_t brightness);
+mdf_err_t light_driver_fade_hue(uint16_t hue);
+mdf_err_t light_driver_fade_warm(uint8_t color_temperature);
+mdf_err_t light_driver_fade_stop();
 /**@}*/
 
 #ifdef __cplusplus

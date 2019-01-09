@@ -66,7 +66,7 @@ endmenu
 
 config LIGHT_VERSION
     string "Light version"
-    default "1.0.0"
+    default "1.1.0"
     help
         Version of the five-color light
 

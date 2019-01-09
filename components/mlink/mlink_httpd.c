@@ -29,9 +29,8 @@
 #include "mlink.h"
 #include "mupgrade.h"
 
-#define MLINK_HTTPD_DATA_MAX_SIZE    (4096)
 #define MLINK_HTTPD_FIRMWARE_URL_LEN (128)
-#define MLINK_HTTPD_RESP_TIMEROUT_MS (5000)
+#define MLINK_HTTPD_RESP_TIMEROUT_MS (15000)
 
 /**
  * @brief The flag of http chunks
@@ -290,13 +289,6 @@ static esp_err_t mlink_device_request(httpd_req_t *req)
     ssize_t httpd_hdr_value_len = 0;
     mlink_httpd_t *httpd_data   = MDF_CALLOC(1, sizeof(mlink_httpd_t));
 
-    if (req->content_len > MLINK_HTTPD_DATA_MAX_SIZE) {
-        MDF_LOGW("Exceeded the maximum length of the data, content_len: %d, max_size: %d",
-                 req->content_len, MLINK_HTTPD_DATA_MAX_SIZE);
-        mlink_httpd_resp(req, HTTPD_400, "Exceeded the maximum length of the data");
-        goto EXIT;
-    }
-
     httpd_hdr_value_len = mlink_httpd_get_hdr(req, "Content-Type", &httpd_hdr_value);
     MDF_ERROR_GOTO(httpd_hdr_value_len <= 0, EXIT, "Get 'Content-Type' from the request headers");
 
@@ -353,23 +345,24 @@ static esp_err_t mlink_device_request(httpd_req_t *req)
 
     httpd_data->size = req->content_len;
     httpd_data->data = MDF_MALLOC(req->content_len);
-    ret = httpd_req_recv(req, httpd_data->data, req->content_len);
 
-    if (ret <= 0) {
-        MDF_LOGW("Read content data from the HTTP request");
+    for (int i = 0, recv_size = 0; i < 5 && recv_size < req->content_len; ++i, recv_size += ret) {
+        ret = httpd_req_recv(req, httpd_data->data + recv_size, req->content_len - recv_size);
+        MDF_ERROR_CONTINUE(ret == HTTPD_SOCK_ERR_TIMEOUT, "<HTTPD_SOCK_ERR_TIMEOUT> Read content data from the HTTP request");
+        MDF_ERROR_GOTO(ret <= 0, EXIT, "<%s> Read content data from the HTTP request",
+                       mdf_err_to_name(ret));
+    }
 
-        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-            ret = httpd_resp_send_408(req);
-            MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Helper function for HTTP 408");
-        }
-
-        goto EXIT;
+    if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+        ret = httpd_resp_send_408(req);
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Helper function for HTTP 408");
     }
 
     if (!httpd_data->type.resp) {
         mlink_httpd_resp_200(req);
     } else {
         httpd_data->type.sockfd = httpd_req_to_sockfd(req);
+
         if (httpd_data->addrs_num == 1
                 && (MWIFI_ADDR_IS_ANY(httpd_data->addrs_list)
                     || MWIFI_ADDR_IS_BROADCAST(httpd_data->addrs_list))) {
@@ -503,7 +496,11 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
             mlink_httpd_resp(req, HTTPD_500, mdf_err_to_name(ret));
         }
 
-        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Write firmware to flash", mdf_err_to_name(ret));
+        if (ret != MDF_OK) {
+            MDF_LOGW("<%s> Write firmware to flash", mdf_err_to_name(ret));
+            mlink_httpd_resp(req, HTTPD_400, mdf_err_to_name(ret));
+            goto EXIT;
+        }
     }
 
     MDF_LOGI("Firmware is sent to the device to complete, Spend time: %ds",
@@ -571,7 +568,6 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
         if (*tmp == ',' || *tmp == '\0') {
             mlink_mac_str2hex(tmp - 12, addrs_list + addrs_num * MWIFI_ADDR_LEN);
             addrs_num++;
-            MDF_LOGW("add_num: %d, addrs_list: "MACSTR, addrs_num, MAC2STR(addrs_list));
 
             if (*tmp == '\0') {
                 break;
@@ -584,8 +580,8 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
 
     http_client_handle = esp_http_client_init(&http_client_config);
 
-    if (http_client_handle) {
-        MDF_LOGW("Initialise HTTP connection");
+    if (!http_client_handle) {
+        MDF_LOGW("Initialise HTTP connection, URL: %s", firmware_url);
         mlink_httpd_resp(req, HTTPD_400, "Initialise HTTP connection");
         goto EXIT;
     }
@@ -773,7 +769,7 @@ mdf_err_t mlink_httpd_write(const mlink_httpd_t *response, TickType_t wait_ticks
 
         MDF_LOGD("send chunk_size, sockfd: %d, data: %s", mlink_conn->sockfd, chunk_size);
         ret = httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_size, strlen(chunk_size), 0);
-        MDF_ERROR_GOTO(ret <= 0, EXIT, "This is the low level default send function of the HTTPD");
+        MDF_ERROR_GOTO(ret <= 0, EXIT, "<%s> This is the low level default send function of the HTTPD", strerror(errno));
 
         resp_data[resp_size++] = '\r';
         resp_data[resp_size++] = '\n';
@@ -821,7 +817,7 @@ mdf_err_t mlink_httpd_read(mlink_httpd_t **request, TickType_t wait_ticks)
     }
 
     ret = xQueueReceive(g_mlink_queue, request, wait_ticks);
-    MDF_ERROR_CHECK(request == NULL, MDF_ERR_NOT_SUPPORTED, "MLINK HTTPD EXIT");
+    MDF_ERROR_CHECK(*request == NULL, MDF_ERR_NOT_SUPPORTED, "MLINK HTTPD EXIT");
     MDF_ERROR_CHECK(ret != true, MDF_ERR_TIMEOUT, "xQueueSend failed");
 
     return MDF_OK;

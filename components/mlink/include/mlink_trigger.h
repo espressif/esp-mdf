@@ -22,38 +22,65 @@
  *
  */
 
-#ifndef __MLINK_H__
-#define __MLINK_H__
-
 #include "mdf_common.h"
 #include "mlink_json.h"
 #include "mlink_utils.h"
 #include "mlink_notice.h"
 #include "mlink_httpd.h"
 #include "mlink_handle.h"
-#include "mlink_trigger.h"
-#include "mlink_espnow.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /**< _cplusplus */
-
-#define MDF_EVENT_MLINK_SYSTEM_RESET   (MDF_EVENT_MLINK_BASE + 0x00)
-#define MDF_EVENT_MLINK_SYSTEM_REBOOT  (MDF_EVENT_MLINK_BASE + 0x01)
-#define MDF_EVENT_MLINK_SET_STATUS     (MDF_EVENT_MLINK_BASE + 0x02)
-#define MDF_EVENT_MLINK_GET_STATUS     (MDF_EVENT_MLINK_BASE + 0x03)
-#define MDF_EVENT_MLINK_SET_TRIGGER    (MDF_EVENT_MLINK_BASE + 0x04)
+#ifndef __MLINK_TRIGGER_H__
+#define __MLINK_TRIGGER_H__
 
 /**
- * @brief Type of protocol
+ * @brief The method of sending the package when the event is triggered
  */
-enum mlink_protocol {
-    MLINK_PROTO_HTTPD  = 0, /**< Http protocol communication */
-    MLINK_PROTO_NOTICE = 1, /**< UDP protocol communication */
-};
+typedef enum {
+    MLINK_COMMUNICATE_NONE,   /**< Invalid transmission method */
+    MLINK_COMMUNICATE_MESH,   /**< Transmission using MESH */
+    MLINK_COMMUNICATE_ESPNOW, /**< Transmission using ESPNOW */
+} mlink_communicate_t;
+
+/**
+ * @brief Initialize event handler
+ *
+ * @return
+ *    - MDF_OK
+ *    - MDF_FAIL
+ */
+mdf_err_t mlink_trigger_init();
+
+/**
+ * @brief Whether the handler exists
+ *
+ * @return [description]
+ */
+bool mlink_trigger_is_exist();
+
+/**
+ * @brief Whether the query event is triggered
+ *
+ * @param  communicate The method of sending the package when the event is triggered
+ *
+ * @return
+ *    - MDF_OK
+ *    - MDF_FAIL
+ */
+mdf_err_t mlink_trigger_handle(mlink_communicate_t communicate);
+
+/**
+ * @brief Add event handler
+ *
+ * @param  trigger_raw_data [description]
+ *
+ * @return
+ *    - MDF_OK
+ *    - MDF_FAIL
+ */
+mdf_err_t mlink_trigger_add(const char *trigger_raw_data);
 
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */
 
-#endif /**< __MLINK_H__ */
+#endif /**< __MLINK_TRIGGER_H__ */

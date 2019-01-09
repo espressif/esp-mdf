@@ -77,9 +77,8 @@ typedef struct {
 
 static const char *TAG               = "mlink_handle";
 static mlink_device_t *g_device_info = NULL;
-static mlink_characteristic_get_t mlink_device_get_value = NULL;
-static mlink_characteristic_set_t mlink_device_set_value = NULL;
-static mlink_characteristic_set_double_t mlink_device_set_value_double = NULL;
+mlink_characteristic_func_t mlink_device_get_value = NULL;
+static mlink_characteristic_func_t mlink_device_set_value = NULL;
 
 mdf_err_t mlink_add_device(uint32_t tid, const char *name, const char *version)
 {
@@ -209,13 +208,12 @@ static characteristic_format_t mlink_get_characteristics_format(uint16_t cid)
     return CHARACTERISTIC_FORMAT_NONE;
 }
 
-mdf_err_t mlink_add_characteristic_handle(void *get_value_func, void *set_value_func)
+mdf_err_t mlink_add_characteristic_handle(mlink_characteristic_func_t get_value_func, mlink_characteristic_func_t set_value_func)
 {
     MDF_PARAM_CHECK(get_value_func);
 
-    mlink_device_get_value = (mlink_characteristic_get_t)get_value_func;
-    mlink_device_set_value = (mlink_characteristic_set_t)set_value_func;
-    mlink_device_set_value_double = (mlink_characteristic_set_double_t)set_value_func;
+    mlink_device_get_value = get_value_func;
+    mlink_device_set_value = set_value_func;
 
     return MDF_OK;
 }
@@ -277,9 +275,9 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
     mlink_json_pack(&handle_data->resp_data, "name", g_device_info->name);
     mlink_json_pack(&handle_data->resp_data, "mesh_id", mlink_mac_hex2str(mesh_id.addr, tmp_str));
     mlink_json_pack(&handle_data->resp_data, "version", g_device_info->version);
-
-    snprintf(tmp_str, sizeof(tmp_str), "%s:%s", esp_get_idf_version(), mdf_get_version());
-    mlink_json_pack(&handle_data->resp_data, "sdk_version", tmp_str);
+    mlink_json_pack(&handle_data->resp_data, "idf_version", esp_get_idf_version());
+    mlink_json_pack(&handle_data->resp_data, "mdf_version", mdf_get_version());
+    mlink_json_pack(&handle_data->resp_data, "mlink_version", 2);
 
     for (int i = 0; i < g_device_info->characteristics_num; ++i) {
         char *tmp_str = NULL;
@@ -342,7 +340,13 @@ static mdf_err_t mlink_handle_get_status(mlink_handle_data_t *handle_data)
     int cids[CHARACTERISTICS_MAX_NUM] = {0};
     characteristic_value_t value      = {0};
 
-    cids_num = mlink_json_parse(handle_data->req_data, "cids", cids);
+    ret = mlink_json_parse(handle_data->req_data, "cids", &cids_num);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Parse the json formatted string");
+
+    ret = mlink_json_parse(handle_data->req_data, "cids", cids);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Parse the json formatted string");
+
+    mdf_event_loop_send(MDF_EVENT_MLINK_GET_STATUS, NULL);
 
     for (int i = 0; i < cids_num; ++i) {
         char *tmp_str = NULL;
@@ -381,6 +385,8 @@ static mdf_err_t mlink_handle_get_status(mlink_handle_data_t *handle_data)
         }
     }
 
+    MDF_ERROR_CHECK(!characteristics_list, MDF_FAIL, "Create a json string");
+
     handle_data->resp_size = mlink_json_pack(&handle_data->resp_data,
                              "characteristics", characteristics_list);
     MDF_FREE(characteristics_list);
@@ -398,7 +404,11 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
     characteristic_value_t value = {0};
     char *characteristics_list[CHARACTERISTICS_MAX_NUM] = {NULL};
 
-    cids_num = mlink_json_parse(handle_data->req_data, "characteristics", characteristics_list);
+    ret = mlink_json_parse(handle_data->req_data, "characteristics", &cids_num);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Parse the json formatted string");
+
+    ret = mlink_json_parse(handle_data->req_data, "characteristics", characteristics_list);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Parse the json formatted string");
 
     for (int i = 0; i < cids_num; ++i) {
         ret = mlink_json_parse(characteristics_list[i], "cid",  &cid);
@@ -412,24 +422,23 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
         switch (mlink_get_characteristics_format(cid)) {
             case CHARACTERISTIC_FORMAT_INT:
                 ret = mlink_json_parse(characteristics_list[i], "value", &value.value_int);
-                MDF_ERROR_BREAK(ret < 0, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
-                ret = mlink_device_set_value(cid, value.value_int);
-                MDF_ERROR_BREAK(ret < 0, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                ret = mlink_device_set_value(cid, &value.value_int);
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 break;
 
             case CHARACTERISTIC_FORMAT_DOUBLE:
                 ret = mlink_json_parse(characteristics_list[i], "value", &value.value_double);
-                MDF_ERROR_BREAK(ret < 0, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
-                MDF_LOGW("value_double: %lf", value.value_double);
-                ret = mlink_device_set_value_double(cid, value.value_double);
-                MDF_ERROR_BREAK(ret < 0, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                ret = mlink_device_set_value(cid, &value.value_double);
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 break;
 
             case CHARACTERISTIC_FORMAT_STRING:
                 ret = mlink_json_parse(characteristics_list[i], "value", value.value_string);
-                MDF_ERROR_BREAK(ret < 0, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
-                ret = mlink_device_set_value(cid, (int)value.value_string);
-                MDF_ERROR_BREAK(ret < 0, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                ret = mlink_device_set_value(cid, value.value_string);
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 break;
 
             default:
@@ -439,6 +448,8 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
 
         MDF_FREE(characteristics_list[i]);
     }
+
+    mdf_event_loop_send(MDF_EVENT_MLINK_SET_STATUS, NULL);
 
     return MDF_OK;
 }
@@ -457,10 +468,12 @@ static mdf_err_t mlink_handle_add_device(mlink_handle_data_t *handle_data)
     ret = mwifi_get_init_config(&mconfig_data->init_config);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Get Mwifi init configuration", mdf_err_to_name(ret));
 
-    ret = MDF_FAIL;
-    whitelist_json = MDF_CALLOC(CONFIG_MWIFI_CAPACITY_NUM, sizeof(char *));
-    whitelist_num  = mlink_json_parse(handle_data->req_data, "whitelist", whitelist_json);
-    MDF_ERROR_GOTO(whitelist_num <= 0, EXIT, "Parse the json formatted string: whitelist");
+    ret = mlink_json_parse(handle_data->req_data, "whitelist", &whitelist_num);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: whitelist");
+
+    whitelist_json = MDF_CALLOC(whitelist_num, sizeof(char *));
+    ret = mlink_json_parse(handle_data->req_data, "whitelist", whitelist_json);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: whitelist");
 
     mconfig_data->whitelist_size = whitelist_num * sizeof(mconfig_whitelist_t);
     mconfig_data = MDF_REALLOC(mconfig_data, sizeof(mconfig_data_t) + mconfig_data->whitelist_size);
@@ -614,7 +627,7 @@ static mlink_handle_t g_handles_list[MLINK_HANDLES_MAX_SIZE] = {
     {NULL,              NULL},
 };
 
-mdf_err_t mlink_set_handle(const char *name, const mlink_handle_func_t *func)
+mdf_err_t mlink_set_handle(const char *name, const mlink_handle_func_t func)
 {
     MDF_PARAM_CHECK(name);
     MDF_PARAM_CHECK(func);
@@ -664,7 +677,7 @@ mdf_err_t mlink_handle(const uint8_t *src_addr, const mlink_httpd_type_t *type,
                    "The current version only supports the json protocol");
 
     ret = mlink_json_parse(handle_data.req_data, "request", func_name);
-    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "mlink_json_parse, ret: %d, key: %s, value: %*.s",
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "mlink_json_parse, ret: %d, key: %s, value: %.*s",
                    ret, func_name, handle_data.req_size, handle_data.req_data);
 
     ret = MDF_ERR_NOT_SUPPORTED;
@@ -693,6 +706,7 @@ EXIT:
     resp_type.format = handle_data.resp_fromat;
     resp_type.from   = MLINK_HTTPD_FROM_DEVICE;
     resp_type.resp   = (ret == MDF_OK) ? true : false;
+    data_type.protocol = MLINK_PROTO_HTTPD;
     memcpy(&data_type.custom, &resp_type, sizeof(mlink_httpd_type_t));
 
     if (handle_data.resp_fromat == MLINK_HTTPD_FORMAT_JSON) {
@@ -701,7 +715,7 @@ EXIT:
     }
 
     ret = mwifi_write(dest_addr, &data_type, handle_data.resp_data, handle_data.resp_size, true);
-    MDF_LOGV("resp_size: %d, resp: %.*s", handle_data.resp_size, handle_data.resp_size, handle_data.resp_data);
+    MDF_LOGD("resp_size: %d, resp: %.*s", handle_data.resp_size, handle_data.resp_size, handle_data.resp_data);
     MDF_FREE(handle_data.resp_data);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "mdf_write, ret: %d", ret);
 
