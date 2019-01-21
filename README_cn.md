@@ -22,17 +22,17 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
 
 - **Utils**：
     - Third Party：第三方的组件
-        - [Driver](https://github.com/espressif/esp-iot-solution)：常用的按键、LED 等驱动
-        - [Miniz](https://github.com/richgel999/miniz)：无损高性能数据压缩库
-        - [Aliyun](https://github.com/espressif/esp-aliyun): 阿里云物联网套件
+        - [Driver](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/third_party/index.html)：常用的按键、LED 等驱动
+        - [Miniz](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/third_party/index.html)：无损高性能数据压缩库
+        - [Aliyun](https://github.com/espressif/esp-aliyun)：阿里云物联网套件
 
-    - Transmission: 设备间数据通信方式
-        - [Mwifi](docs/zh_CN/api-reference/mwifi/index.rst): 对 ESP-MESH 的封装，在其基础上增加了重包过滤、数据压缩、分包传输和 P2P 组播
-        - [Mespnow](docs/zh_CN/api-reference/mespnow/index.rst): 对 ESP-NOW 的封装，在其基础上增加了重包过滤、CRC 校验、数据分包
+    - Transmission：设备间数据通信方式
+        - [Mwifi](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/mwifi/index.html)：对 ESP-MESH 的封装，在其基础上增加了重包过滤、数据压缩、分包传输和 P2P 组播
+        - [Mespnow](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/mespnow/index.html)：对 ESP-NOW 的封装，在其基础上增加了重包过滤、CRC 校验、数据分包
 
     - Mcommon：ESP-MDF 各组件之间的共用模块
-        - Event loop: ESP-MDF 的事件处理
-        - Error Check: ESP-MDF 的错误码管理
+        - Event loop：ESP-MDF 的事件处理
+        - Error Check：ESP-MDF 的错误码管理
 
 - **Components**：
     - [Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html)：配网模块
@@ -82,7 +82,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     ```
     > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init`
 
-3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/add-idf_path-to-profile.html)
+3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/add-idf_path-to-profile.html)。
     ```shell
     export MDF_PATH=~/esp/esp-mdf
     ```

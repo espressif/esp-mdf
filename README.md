@@ -24,13 +24,13 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
 
 - **Utils**：
     - Third Party: the third-party items
-        - [Driver](https://github.com/espressif/esp-iot-solution): drivers for different devices, such as frequently used buttons and LEDs
-        - [Miniz](https://github.com/richgel999/miniz): lossless, high performance data compression library
+        - [Driver](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/third_party/index.html): drivers for different devices, such as frequently used buttons and LEDs
+        - [Miniz](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/third_party/index.html): lossless, high performance data compression library
         - [Aliyun](https://github.com/espressif/esp-aliyun): Aliyun IoT kit
 
     - Transmission: the way of data transmission between devices
-        - [Mwifi](docs/en/api-reference/mwifi/index.rst): adds to ESP-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features
-        - [Mespnow](docs/en/api-reference/mespnow/index.rst): adds to ESP-NOW the retransmission filter, Cyclic Redundancy Check (CRC), and data fragmentation features
+        - [Mwifi](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/mwifi/index.html): adds to ESP-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features
+        - [Mespnow](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/mespnow/index.html): adds to ESP-NOW the retransmission filter, Cyclic Redundancy Check (CRC), and data fragmentation features
 
     - Mcommon: modules shared by all ESP-MDF components
         - Event loop: deals with ESP-MDF events
@@ -88,7 +88,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     ```
     If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init`
 
-3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH to User Profile`](https://esp-idf.readthedocs.io/en/latest/get-started/add-idf_path-to-profile.html)
+3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH to User Profile`](https://esp-idf.readthedocs.io/en/latest/get-started/add-idf_path-to-profile.html).
     ```shell
     export MDF_PATH=~/esp/esp-mdf
     ```
@@ -151,6 +151,6 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 * If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](docs/en/contribute/index.rst).
 * To visit ESP32 official forum, please go to [ESP32 BBS](https://esp32.com/).
 * For the hardware documents related to ESP32-MeshKit, please visit [Espressif Website](https://www.espressif.com/en/support/download/documents).
-* ESP32-MeshKit-Light purchase link : [Taobao](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail).
+* ESP32-MeshKit-Light purchase link: [Taobao](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail).
 * ESP32-Buddy purchase link: Coming soon.
 

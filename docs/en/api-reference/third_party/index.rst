@@ -3,12 +3,12 @@ Third Party API
 
 The third-party items:
 
-- `Driver <https://github.com/espressif/esp-iot-solution>`_ : drivers for different devices, such as frequently used buttons and LEDs
-- `Miniz <https://github.com/richgel999/miniz>`_ ： lossless, high performance data compression library
+- `Driver <https://github.com/espressif/esp-iot-solution>`_: drivers for different devices, such as frequently used buttons and LEDs
+- `Miniz <https://github.com/richgel999/miniz>`_: lossless, high performance data compression library
 
 Driver
 -------
-We can regard IoT solution project as a platform that contains different device drivers and features
+We can regard IoT solution project as a platform that contains different device drivers and features.
 
 Miniz
 ------
