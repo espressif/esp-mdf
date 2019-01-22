@@ -226,7 +226,8 @@ typedef struct {
     bool upgrade        : 1; /**< Upgrade packet flag */
     uint8_t communicate : 2; /**< Mesh data communication method, There are three types:
                                   MWIFI_COMMUNICATE_UNICAST, MWIFI_COMMUNICATE_MULTICAST, MWIFI_COMMUNICATE_BROADCAST*/
-    uint8_t reserved    : 2; /**< Bit: 4..5 reserved */
+    bool group          : 1; /**< Send a package as a group */
+    uint8_t reserved    : 1; /**< reserved */
     uint8_t protocol    : 2; /**< Type of transmitted application protocol */
     uint32_t custom;         /**< Type of transmitted application data */
 } __attribute__((packed)) mwifi_data_type_t;
