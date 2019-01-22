@@ -26,16 +26,17 @@
 #include "miniz.h"
 
 typedef struct {
-    uint32_t magic; /**< Filter duplicate packets */
+    uint32_t magic;                   /**< Filter duplicate packets */
     struct {
-        uint32_t transmit_self : 1;  /**< Whether the forwarded packet is for yourself */
-        uint32_t transmit_all  : 1;  /**< Whether to send packages to all devices */
-        uint32_t transmit_num  : 10; /**< Number of destination devices forwarded */
-        uint32_t total_size    : 12; /**< Total length of the packet */
-        uint32_t packet_seq    : 4;  /**< Serial number of the packet */
-        uint32_t compress_rate : 4;  /**< The ratio of the data to the original after compression */
+        bool transmit_self      : 1;  /**< Whether the forwarded packet is for yourself */
+        bool transmit_all       : 1;  /**< Whether to send packages to all devices */
+        size_t transmit_num     : 10; /**< Number of destination devices forwarded */
+        size_t total_size_low   : 12; /**< Total length of the packet */
+        uint8_t packet_seq      : 3;  /**< Serial number of the packet */
+        size_t total_size_hight : 1;  /**< Total length of the packet */
+        uint8_t compress_rate   : 4;  /**< The ratio of the data to the original after compression */
     };
-    mwifi_data_type_t type;     /**< The type of data */
+    mwifi_data_type_t type;           /**< The type of data */
 } __attribute__((packed)) mwifi_data_head_t;
 
 static const char *TAG           = "mwifi";
@@ -150,6 +151,8 @@ void mwifi_print_config()
     mesh_attempts_t attempts           = {0};
     int beacon_interval                = 0;
     mesh_switch_parent_t switch_parent = {0};
+    const char *bool_str[]             = {"false", "true"};
+    const char *mesh_type_str[]        = {"idle", "root", "node", "leaf"};
 
     ESP_ERROR_CHECK(esp_mesh_get_config(&cfg));
     ESP_ERROR_CHECK(esp_mesh_get_attempts(&attempts));
@@ -163,8 +166,8 @@ void mwifi_print_config()
     MDF_LOGD("attempt_count         : %d", attempts.fail);
     MDF_LOGD("monitor_ie_count      : %d", attempts.monitor_ie);
     MDF_LOGD("root_healing_ms       : %d", esp_mesh_get_root_healing_delay());
-    MDF_LOGD("root_conflicts_enable : %d", esp_mesh_is_root_conflicts_allowed());
-    MDF_LOGD("fix_root_enable       : %d", esp_mesh_is_root_fixed());
+    MDF_LOGD("root_conflicts_enable : %s", bool_str[esp_mesh_is_root_conflicts_allowed()]);
+    MDF_LOGD("fix_root_enable       : %s", bool_str[esp_mesh_is_root_fixed()]);
 
     MDF_LOGD("****************  Capacity   ****************");
     MDF_LOGD("max_layer             : %d", esp_mesh_get_max_layer());
@@ -183,15 +186,19 @@ void mwifi_print_config()
 
     MDF_LOGD("**************** Transmission ****************");
     MDF_LOGD("xon_qsize             : %d", esp_mesh_get_xon_qsize());
-    MDF_LOGD("authmode              : %d", esp_mesh_get_ap_authmode());
+    MDF_LOGD("retransmit_enable     : %s", bool_str[g_init_config->retransmit_enable]);
 
     MDF_LOGD("**************** Router info  ****************");
     MDF_LOGD("ssid                  : %s", cfg.router.ssid);
     MDF_LOGD("password              : %s", cfg.router.password);
     MDF_LOGD("bssid                 : " MACSTR, MAC2STR(cfg.router.bssid));
+    MDF_LOGD("mesh_type             : %s", mesh_type_str[g_ap_config->mesh_type]);
     MDF_LOGD("mesh_id               : " MACSTR, MAC2STR(cfg.mesh_id.addr));
     MDF_LOGD("mesh_password         : %s", cfg.mesh_ap.password);
+    MDF_LOGD("mesh_authmode         : %d", esp_mesh_get_ap_authmode());
     MDF_LOGD("channel               : %d", cfg.channel);
+    MDF_LOGD("allow_router_switch   : %s", bool_str[cfg.router.allow_router_switch]);
+    MDF_LOGD("allow_channel_switch  : %s", bool_str[cfg.allow_channel_switch]);
 }
 
 mdf_err_t mwifi_start()
@@ -416,9 +423,10 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
     mdf_err_t ret = MDF_OK;
     static SemaphoreHandle_t *s_mwifi_send_lock = NULL;
     mwifi_data_head_t *data_head = (mwifi_data_head_t *)opt->val;
-    mesh_data_t mesh_data = {0x0};
-    data_head->total_size = data->size;
-    data_head->packet_seq = 0;
+    mesh_data_t mesh_data        = {0x0};
+    data_head->total_size_hight  = data->size >> 12;
+    data_head->total_size_low    = data->size & 0xfff;
+    data_head->packet_seq        = 0;
 
     memcpy(&mesh_data, data, sizeof(mesh_data_t));
 
@@ -426,18 +434,17 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
         s_mwifi_send_lock = xSemaphoreCreateMutex();
     }
 
-    for (int unwritten_size = data_head->total_size; unwritten_size > 0;
+    for (int unwritten_size = data->size; unwritten_size > 0;
             unwritten_size -= MWIFI_PAYLOAD_LEN) {
         data_head->magic = esp_random();
         mesh_data.size   = MIN(unwritten_size, MWIFI_PAYLOAD_LEN);
 
-        MDF_LOGV("dest_addr: " MACSTR ", size: %d, data: %s",
-                 MAC2STR(dest_addr->addr), mesh_data.size, mesh_data.data);
         xSemaphoreTake(s_mwifi_send_lock, portMAX_DELAY);
         ret = esp_mesh_send(dest_addr, &mesh_data, flag, opt, 1);
         xSemaphoreGive(s_mwifi_send_lock);
-        MDF_ERROR_CHECK(ret != ESP_OK, ret, "Node failed to send packets, dest_mac: " MACSTR,
-                        MAC2STR(dest_addr->addr));
+        MDF_ERROR_CHECK(ret != ESP_OK, ret, "Node failed to send packets, dest_addr: " MACSTR
+                        ", flag: %02x, opt->type: %02x, opt->len: %d, data->tos: %d, data: %p, size: %d",
+                        MAC2STR(dest_addr->addr), flag, opt->type, opt->len, mesh_data.tos, mesh_data.data, mesh_data.size);
 
         data_head->packet_seq++;
         mesh_data.data += MWIFI_PAYLOAD_LEN;
@@ -502,14 +509,14 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
         }
 
         if (data_head->transmit_num || data_head->transmit_self || data_head->transmit_all) {
-            mesh_data_t tmp_data = {
-                .size = mesh_data->size + data_head->transmit_num * MWIFI_ADDR_LEN,
-            };
+            mesh_data_t tmp_data = {0x0};
 
             if (transmit_data) {
                 memcpy(transmit_data + data_head->transmit_num * MWIFI_ADDR_LEN, mesh_data->data, mesh_data->size);
+                tmp_data.size = mesh_data->size + data_head->transmit_num * MWIFI_ADDR_LEN;
                 tmp_data.data = transmit_data;
             } else {
+                tmp_data.size = mesh_data->size;
                 tmp_data.data = mesh_data->data;
             }
 
@@ -524,14 +531,12 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
 
     MDF_FREE(transmit_data);
 
-
     /**
      * @brief Prevent topology changes during the process of sending packets,
      *        such as: the child node becomes the parent node and cannot be found.
      */
     if (addrs_num > 0) {
-        data_flag &= ~(1 << 2);
-        data_flag |= MESH_DATA_P2P;
+        data_flag = MESH_DATA_P2P | MESH_DATA_DROP;
         data_head->transmit_num = 0;
 
         /**
@@ -558,7 +563,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
 {
     MDF_PARAM_CHECK(data_type);
     MDF_PARAM_CHECK(data);
-    MDF_PARAM_CHECK(size > 0);
+    MDF_PARAM_CHECK(size > 0 && size < 8096);
     MDF_PARAM_CHECK(!dest_addrs || !MWIFI_ADDR_IS_EMPTY(dest_addrs));
     MDF_ERROR_CHECK(!mwifi_is_started(), MDF_ERR_MWIFI_NOT_START, "Mwifi isn't started");
 
@@ -567,12 +572,13 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     mz_ulong compress_size = 0;
     uint8_t *compress_data = NULL;
     uint8_t root_addr[]    = MWIFI_ADDR_ROOT;
+    uint8_t empty_addr[]   = MWIFI_ADDR_NONE;
     bool to_root = !dest_addrs || !memcmp(dest_addrs, root_addr, MWIFI_ADDR_LEN) ? true : false;
     dest_addrs   = !dest_addrs ? root_addr : dest_addrs;
 
     mwifi_data_head_t data_head = {0x0};
     mesh_data_t mesh_data       = {
-        .tos   = (data_type->communicate != MWIFI_COMMUNICATE_BROADCAST && g_init_config->retransmit_enable)
+        .tos   = (to_root) || (data_type->communicate != MWIFI_COMMUNICATE_BROADCAST && g_init_config->retransmit_enable)
         ? MESH_TOS_P2P : MESH_TOS_DEF,
         .data  = (uint8_t *)data,
         .size  = size,
@@ -580,8 +586,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     mesh_opt_t mesh_opt   = {
         .len  = sizeof(mwifi_data_head_t),
         .val  = (void *) &data_head,
-        .type = (data_type->communicate == MWIFI_COMMUNICATE_BROADCAST)
-        ? MESH_OPT_SEND_GROUP : MESH_OPT_RECV_DS_ADDR,
+        .type = MESH_OPT_RECV_DS_ADDR,
     };
 
     data_flag = (to_root) ? MESH_DATA_TODS : MESH_DATA_P2P;
@@ -612,7 +617,22 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
         }
     }
 
-    data_head.total_size = mesh_data.size;
+    if (data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
+        MDF_FREE(compress_data);
+        compress_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
+        memcpy(compress_data, dest_addrs, MWIFI_ADDR_LEN);
+        memcpy(compress_data + MWIFI_ADDR_LEN, mesh_data.data, mesh_data.size);
+        mesh_data.tos  = MESH_TOS_P2P;
+        mesh_data.size += MWIFI_ADDR_LEN;
+        mesh_data.data = compress_data;
+        data_head.transmit_num = 1;
+        data_head.transmit_all = true;
+        dest_addrs = empty_addr;;
+    }
+
+    data_head.total_size_hight = mesh_data.size >> 12;
+    data_head.total_size_low   = mesh_data.size & 0xFFF;
+
     ret = mwifi_subcontract_write((mesh_addr_t *)dest_addrs, &mesh_data, data_flag, &mesh_opt);
     MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Node failed to send packets, data_flag: 0x%x, dest_mac: " MACSTR,
                    mdf_err_to_name(ret), data_flag, MAC2STR(dest_addrs));
@@ -639,6 +659,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     mdf_err_t ret                = MDF_OK;
     uint8_t *recv_data           = NULL;
     size_t recv_size             = 0;
+    size_t total_size            = 0;
     int data_flag                = 0;
     bool self_data_flag          = false;
     static uint32_t s_data_magic = 0;
@@ -652,11 +673,12 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     };
 
     for (;;) {
-        recv_size = 0;
-        recv_data = MDF_REALLOC(recv_data, MWIFI_PAYLOAD_LEN);
+        recv_size  = 0;
+        total_size = 0;
+        recv_data  = MDF_REALLOC(recv_data, MWIFI_PAYLOAD_LEN);
 
-        for (int expect_seq = 0; !recv_size || recv_size < data_head.total_size; expect_seq++) {
-            mesh_data.size = recv_size ? data_head.total_size - recv_size : MWIFI_PAYLOAD_LEN;
+        for (int expect_seq = 0; !recv_size || recv_size < total_size; expect_seq++) {
+            mesh_data.size = recv_size ? total_size - recv_size : MWIFI_PAYLOAD_LEN;
             mesh_data.data = recv_data + recv_size;
             wait_ticks     = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
                              xTaskGetTickCount() - start_ticks < wait_ticks ?
@@ -664,6 +686,8 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
 
             ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, wait_ticks * portTICK_RATE_MS,
                                 &data_flag, &mesh_opt, 1);
+            MDF_LOGV("esp_mesh_recv, src_addr: " MACSTR ", size: %d, data: %.*s",
+                     MAC2STR(src_addr), mesh_data.size, mesh_data.size, mesh_data.data);
 
             if (ret == ESP_ERR_MESH_NOT_START) {
                 MDF_LOGW("<ESP_ERR_MESH_NOT_START> Node failed to receive packets");
@@ -705,8 +729,9 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             }
 
             s_data_magic = data_head.magic;
+            total_size   = (data_head.total_size_hight << 12) + data_head.total_size_low;
             recv_size   += mesh_data.size;
-            recv_data    = MDF_REALLOC(recv_data, data_head.total_size);
+            recv_data    = MDF_REALLOC(recv_data, total_size);
         }
 
         self_data_flag = data_head.transmit_self;
@@ -717,6 +742,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             mesh_addr_t *transmit_addr       = NULL;
             size_t transmit_num              = data_head.transmit_num;
             uint8_t addr_any[MWIFI_ADDR_LEN] = MWIFI_ADDR_ANY;
+            data_flag = MESH_DATA_P2P;
 
             if (data_head.transmit_all) {
                 transmit_num  = 1;
@@ -727,13 +753,20 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
                 mesh_data.size = recv_size - data_head.transmit_num * MWIFI_ADDR_LEN;
             }
 
-            MDF_LOGV("Data forwarding, size: %d, recv_size: %d, transmit_num: %d, data: %.*s",
-                     mesh_data.size, recv_size, data_head.transmit_num, mesh_data.size, mesh_data.data);
+            MDF_LOGV("Data forwarding, size: %d, recv_size: %d, flag: %d, transmit_num: %d, data: %.*s",
+                     mesh_data.size, recv_size, data_flag, data_head.transmit_num, mesh_data.size, mesh_data.data);
 
             ret = mwifi_transmit_write(transmit_addr, transmit_num, &mesh_data,
                                        data_flag, &mesh_opt);
             MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> mwifi_root_write, size: %d",
                            mdf_err_to_name(ret), mesh_data.size);
+        }
+
+        if (data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST
+                && esp_mesh_is_my_group((mesh_addr_t *)mesh_data.data)) {
+            self_data_flag = true;
+            mesh_data.data += MWIFI_ADDR_LEN;
+            mesh_data.size -= MWIFI_ADDR_LEN;
         }
 
         if (self_data_flag) {
@@ -798,7 +831,7 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
     MDF_PARAM_CHECK(data_type);
     MDF_PARAM_CHECK(data);
     MDF_PARAM_CHECK(!MWIFI_ADDR_IS_EMPTY(addrs_list));
-    MDF_PARAM_CHECK(size > 0);
+    MDF_PARAM_CHECK(size > 0 && size < 8096);
     MDF_ERROR_CHECK(!mwifi_is_started(), MDF_ERR_MWIFI_NOT_START, "Mwifi isn't started");
 
     mdf_err_t ret = MDF_OK;
@@ -821,6 +854,18 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
 
     data_flag = (!block) ? data_flag | MESH_DATA_NONBLOCK : data_flag;
     memcpy(&data_head.type, data_type, sizeof(mwifi_data_type_t));
+
+    if (data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
+        for (int i = 0; i < addrs_num; ++i) {
+            MDF_LOGD("count: %d, dest_addr: " MACSTR" mesh_data.size: %d, data: %.*s",
+                     i, MAC2STR(addrs_list + 6 * i), mesh_data.size, mesh_data.size, mesh_data.data);
+            ret = mwifi_write(addrs_list + 6 * i, data_type, data, size, block);
+            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
+                            mdf_err_to_name(ret), MAC2STR(addrs_list));
+        }
+
+        return ret;
+    }
 
     /**
      * @brief data compression
@@ -875,7 +920,11 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
                  addrs_num, MAC2STR(tmp_addrs), mesh_data.size);
         ret = mwifi_transmit_write((mesh_addr_t *)tmp_addrs, addrs_num, &mesh_data,
                                    data_flag, &mesh_opt);
-        MDF_ERROR_CHECK(ret != MDF_OK, ret, "Mwifi_transmit_write");
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Mwifi_transmit_write");
+    } else if (data_type->communicate == MWIFI_COMMUNICATE_BROADCAST && addrs_num == 1) {
+        ret = mwifi_subcontract_write((mesh_addr_t *)addrs_list, &mesh_data, data_flag, &mesh_opt);
+        MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Root node failed to send packets, dest_mac: " MACSTR,
+                       mdf_err_to_name(ret), MAC2STR(addrs_list));
     } else {
         MDF_LOGE("<MDF_ERR_NOT_SUPPORTED> The current version does not support broadcasting.");
         return MDF_ERR_NOT_SUPPORTED;
@@ -908,6 +957,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     TickType_t start_ticks      = xTaskGetTickCount();
     ssize_t recv_size           = 0;
     uint8_t *recv_data          = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    size_t total_size           = 0;
 
     mesh_data_t mesh_data = {0x0};
     mesh_opt_t mesh_opt   = {
@@ -916,8 +966,8 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         .type = MESH_OPT_RECV_DS_ADDR,
     };
 
-    for (int expect_seq = 0; !expect_seq || recv_size < data_head.total_size; expect_seq++) {
-        mesh_data.size = !expect_seq ? MWIFI_PAYLOAD_LEN : data_head.total_size - recv_size;
+    for (int expect_seq = 0; !expect_seq || recv_size < total_size; expect_seq++) {
+        mesh_data.size = !expect_seq ? MWIFI_PAYLOAD_LEN : total_size - recv_size;
         mesh_data.data = recv_data + recv_size;
         wait_ticks     = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
                          xTaskGetTickCount() - start_ticks < wait_ticks ?
@@ -951,8 +1001,9 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             memcpy(recv_data, mesh_data.data, mesh_data.size);
         }
 
+        total_size = (data_head.total_size_hight << 12) + data_head.total_size_low;
         recv_size += mesh_data.size;
-        recv_data = MDF_REALLOC(recv_data, data_head.total_size);
+        recv_data  = MDF_REALLOC(recv_data, total_size);
     }
 
     memcpy(data_type, &data_head.type, sizeof(mwifi_data_type_t));
