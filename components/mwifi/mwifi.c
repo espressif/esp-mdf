@@ -421,7 +421,7 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
         int flag, const mesh_opt_t *opt)
 {
     mdf_err_t ret = MDF_OK;
-    static SemaphoreHandle_t *s_mwifi_send_lock = NULL;
+    static SemaphoreHandle_t s_mwifi_send_lock = NULL;
     mwifi_data_head_t *data_head = (mwifi_data_head_t *)opt->val;
     mesh_data_t mesh_data        = {0x0};
     data_head->total_size_hight  = data->size >> 12;
