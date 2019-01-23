@@ -30,8 +30,36 @@
 #include "esp_mesh_internal.h"
 
 #ifdef __cplusplus
+
+/*
+ *@brief Next templates makes gnu builtin: __builtin_types_compatible_p
+ *       compatible with C++ compilation
+ */
+template<typename T, typename U>
+struct is_same {
+    static const int value = 0;
+};
+
+template<typename T>
+struct is_same<T, T> {
+    static const int value = 1;
+};
+
+template<typename T, typename U>
+int cxx_is_compatible()
+{
+    return is_same<T, U>::value;
+}
+
+/**
+ * @brief Macro adaptation for C++ compilation, using previous C++ templates for type checking
+ */
+#define builtin_types_compatible_p(data, type)  cxx_is_compatible<decltype(data),type>()
 extern "C" {
+#else
+#define builtin_types_compatible_p(data, type)  __builtin_types_compatible_p(typeof(data), type)
 #endif /**< _cplusplus */
+
 
 #define MWIFI_PAYLOAD_LEN       (1456) /**< Max payload size(in bytes) */
 
@@ -147,31 +175,27 @@ typedef struct {
 #endif /**< CONFIG_MWIFI_RETRANSMIT_ENABLE */
 
 #define MWIFI_INIT_CONFIG_DEFAULT() { \
-        /**< root */ \
-        .vote_percentage       = CONFIG_MWIFI_VOTE_PERCENTAGE, \
-        .vote_max_count        = CONFIG_MWIFI_VOTE_MAX_COUNT, \
-        .backoff_rssi          = CONFIG_MWIFI_BACKOFF_RSSI, \
-        .scan_min_count        = CONFIG_MWIFI_SCAN_MINI_COUNT, \
-        .root_healing_ms       = CONFIG_MWIFI_ROOT_HEALING_MS, \
-        .root_conflicts_enable = CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE, \
-        /**< capacity */ \
-        .capacity_num          = CONFIG_MWIFI_CAPACITY_NUM, \
-        .max_layer             = CONFIG_MWIFI_MAX_LAYER, \
-        .max_connection        = CONFIG_MWIFI_MAX_CONNECTION, \
-        /**< stability */ \
-        .assoc_expire_ms       = CONFIG_MWIFI_ASSOC_EXPIRE_MS, \
-        .beacon_interval_ms    = CONFIG_MWIFI_BEACON_INTERVAL_MS, \
-        .passive_scan_ms       = CONFIG_MWIFI_PASSIVE_SCAN_MS, \
-        .monitor_duration_ms   = CONFIG_MWIFI_MONITOR_DURATION_MS, \
-        .cnx_rssi              = CONFIG_MWIFI_CNX_RSSI, \
-        .select_rssi           = CONFIG_MWIFI_SELECT_RSSI, \
-        .switch_rssi           = CONFIG_MWIFI_SWITCH_RSSI, \
-        .attempt_count         = CONFIG_MWIFI_ATTEMPT_COUNT, \
-        .monitor_ie_count      = CONFIG_MWIFI_MONITOR_IE_COUNT, \
-        /**< transmission */ \
-        .xon_qsize             = CONFIG_MWIFI_XON_QSIZE, \
-        .retransmit_enable     = CONFIG_MWIFI_RETRANSMIT_ENABLE, \
-        .data_drop_enable      = CONFIG_MWIFI_DATA_DROP_ENABLE, \
+        /**< .vote_percentage       =*/ CONFIG_MWIFI_VOTE_PERCENTAGE, \
+        /**< .vote_max_count        =*/ CONFIG_MWIFI_VOTE_MAX_COUNT, \
+        /**< .backoff_rssi          =*/ CONFIG_MWIFI_BACKOFF_RSSI, \
+        /**< .scan_min_count        =*/ CONFIG_MWIFI_SCAN_MINI_COUNT, \
+        /**< .root_conflicts_enable =*/ CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE, \
+        /**< .root_healing_ms       =*/ CONFIG_MWIFI_ROOT_HEALING_MS, \
+        /**< .capacity_num          =*/ CONFIG_MWIFI_CAPACITY_NUM, \
+        /**< .max_layer             =*/ CONFIG_MWIFI_MAX_LAYER, \
+        /**< .max_connection        =*/ CONFIG_MWIFI_MAX_CONNECTION, \
+        /**< .assoc_expire_ms       =*/ CONFIG_MWIFI_ASSOC_EXPIRE_MS, \
+        /**< .beacon_interval_ms    =*/ CONFIG_MWIFI_BEACON_INTERVAL_MS, \
+        /**< .passive_scan_ms       =*/ CONFIG_MWIFI_PASSIVE_SCAN_MS, \
+        /**< .monitor_duration_ms   =*/ CONFIG_MWIFI_MONITOR_DURATION_MS, \
+        /**< .cnx_rssi              =*/ CONFIG_MWIFI_CNX_RSSI, \
+        /**< .select_rssi           =*/ CONFIG_MWIFI_SELECT_RSSI, \
+        /**< .switch_rssi           =*/ CONFIG_MWIFI_SWITCH_RSSI, \
+        /**< .attempt_count         =*/ CONFIG_MWIFI_ATTEMPT_COUNT, \
+        /**< .monitor_ie_count      =*/ CONFIG_MWIFI_MONITOR_IE_COUNT, \
+        /**< .xon_qsize             =*/ CONFIG_MWIFI_XON_QSIZE, \
+        /**< .retransmit_enable     =*/ CONFIG_MWIFI_RETRANSMIT_ENABLE, \
+        /**< .data_drop_enable      =*/ CONFIG_MWIFI_DATA_DROP_ENABLE, \
     };
 
 /**
@@ -236,9 +260,9 @@ typedef struct {
  * @brief Buffer space when reading data
  */
 typedef enum {
-    MLINK_DATA_MEMORY_MALLOC_INTERNAL = 1,  /**< Buffer space is requested by internal when reading data */
-    MLINK_DATA_MEMORY_MALLOC_EXTERNAL = 2,  /**< Buffer space is requested by external when reading data */
-} mlink_data_memory_t;
+    MWIFI_DATA_MEMORY_MALLOC_INTERNAL = 1,  /**< Buffer space is requested by internal when reading data */
+    MWIFI_DATA_MEMORY_MALLOC_EXTERNAL = 2,  /**< Buffer space is requested by external when reading data */
+} mwifi_data_memory_t;
 
 /**
  * @brief  Get mesh networking IE.
@@ -405,6 +429,11 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
 /**
  * @brief  Receive a packet targeted to self over the mesh network
  *
+ * @attention Judging the allocation of buffers by the type of the parameter 'data'
+ *            The memory of `data` is externally allocated, and the memory is larger than the total length expected to be received.
+ *            The memory of `data` is allocated internally by `mwifi_read`, which needs to be released after the call.
+ *
+ *
  * @param  src_addr    The address of the original source of the packet
  * @param  data_type   The type of the data
  * @param  data        Pointer to the received mesh packet
@@ -423,14 +452,13 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
  *    - ESP_ERR_MESH_TIMEOUT
  *    - ESP_ERR_MESH_DISCARD
  */
-mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
-                       void *data, size_t *size, TickType_t wait_ticks, mlink_data_memory_t type);
+mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type, void *data, size_t *size, TickType_t wait_ticks, uint8_t type);
 #define mwifi_read(src_addr, data_type, data, size, wait_ticks) \
     __mwifi_read(src_addr, data_type, (void *)data, size, wait_ticks, \
-                 __builtin_types_compatible_p(typeof(data), char *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
-                 + __builtin_types_compatible_p(typeof(data), uint8_t *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
-                 + __builtin_types_compatible_p(typeof(data), char **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL \
-                 + __builtin_types_compatible_p(typeof(data), uint8_t **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL)
+                 builtin_types_compatible_p(data, char *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
+                 + builtin_types_compatible_p(data, uint8_t *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
+                 + builtin_types_compatible_p(data, char **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL \
+                 + builtin_types_compatible_p(data, uint8_t **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL)
 
 /**
  * @brief  The root sends a packet to the device in the mesh.
@@ -472,7 +500,10 @@ mdf_err_t mwifi_root_write(const uint8_t *dest_addrs, size_t dest_addrs_num,
  *         root forwards the received packets to the final destination via socket.
  *         This API is only used at the root node
  *
- * @attention This API is only used at the root node
+ * @attention 1. This API is only used at the root node
+ *            2. Judging the allocation of buffers by the type of the parameter 'data'
+ *               The memory of `data` is externally allocated, and the memory is larger than the total length expected to be received.
+ *               The memory of `data` is allocated internally by `mwifi_read`, which needs to be released after the call.
  *
  * @param  src_addr    the address of the original source of the packet
  * @param  data_type   the type of the data
@@ -492,13 +523,13 @@ mdf_err_t mwifi_root_write(const uint8_t *dest_addrs, size_t dest_addrs_num,
  *    - ESP_ERR_MESH_DISCARD
  */
 mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
-                            void *data, size_t *size, TickType_t wait_ticks, mlink_data_memory_t type);
+                            void *data, size_t *size, TickType_t wait_ticks, uint8_t type);
 #define mwifi_root_read(src_addr, data_type, data, size, wait_ticks) \
     __mwifi_root_read(src_addr, data_type, (void *)data, size, wait_ticks, \
-                      __builtin_types_compatible_p(typeof(data), char *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
-                      + __builtin_types_compatible_p(typeof(data), uint8_t *) * MLINK_DATA_MEMORY_MALLOC_EXTERNAL \
-                      + __builtin_types_compatible_p(typeof(data), char **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL \
-                      + __builtin_types_compatible_p(typeof(data), uint8_t **) * MLINK_DATA_MEMORY_MALLOC_INTERNAL)
+                      builtin_types_compatible_p(data, char *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
+                      + builtin_types_compatible_p(data, uint8_t *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
+                      + builtin_types_compatible_p(data, char **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL \
+                      + builtin_types_compatible_p(data, uint8_t **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL)
 
 #ifdef __cplusplus
 }
