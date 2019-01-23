@@ -863,6 +863,10 @@ mdf_err_t mlink_httpd_start(void)
 
 mdf_err_t mlink_httpd_stop(void)
 {
+    if (!g_httpd_handle) {
+        return MDF_OK;
+    }
+
     mdf_err_t ret = MDF_OK;
     void *mlink_queue_exit = NULL;
 

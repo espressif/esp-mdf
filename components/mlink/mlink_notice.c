@@ -45,7 +45,7 @@
 
 static QueueHandle_t *g_notice_udp_queue       = NULL;
 static SemaphoreHandle_t g_notice_udp_exit_sem = NULL;
-static bool g_notice_udp_exit_flag             = false;
+static bool g_notice_udp_exit_flag             = true;
 static bool g_notice_mdns_init_flag            = false;
 static const char *TAG                         = "mlink_notice";
 
@@ -94,6 +94,10 @@ static mdf_err_t mlink_notice_mdns_init(void)
 
 static void mlink_notice_mdns_deinit(void)
 {
+    if (!g_notice_mdns_init_flag) {
+        return ;
+    }
+
     mdns_free();
     g_notice_mdns_init_flag = false;
 }
@@ -316,6 +320,12 @@ mdf_err_t mlink_notice_write(const char *message, size_t size, const uint8_t *ad
 
 static mdf_err_t mlink_notice_udp_init()
 {
+    if (!g_notice_udp_exit_flag) {
+        return MDF_OK;
+    }
+
+    g_notice_udp_exit_flag = false;
+
     if (!g_notice_udp_queue) {
         g_notice_udp_queue = xQueueCreate(MLINK_NOTICE_UDP_QUEUE_NUM, sizeof(void *));
     }
@@ -333,12 +343,22 @@ static mdf_err_t mlink_notice_udp_init()
 
 static void mlink_notice_udp_deinit()
 {
+    if (g_notice_udp_exit_flag) {
+        return ;
+    }
+
     g_notice_udp_exit_flag = true;
-    xSemaphoreTake(g_notice_udp_exit_sem, portMAX_DELAY);
-    vQueueDelete(g_notice_udp_exit_sem);
-    vQueueDelete(g_notice_udp_queue);
-    g_notice_udp_exit_sem  = NULL;
-    g_notice_udp_queue = NULL;
+
+    if (g_notice_udp_exit_sem) {
+        xSemaphoreTake(g_notice_udp_exit_sem, portMAX_DELAY);
+        vQueueDelete(g_notice_udp_exit_sem);
+        g_notice_udp_exit_sem  = NULL;
+    }
+
+    if (g_notice_udp_queue) {
+        vQueueDelete(g_notice_udp_queue);
+        g_notice_udp_queue = NULL;
+    }
 }
 
 mdf_err_t mlink_notice_init()

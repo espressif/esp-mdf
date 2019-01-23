@@ -550,7 +550,7 @@ static mdf_err_t mlink_handle_set_ota_fallback(mlink_handle_data_t *handle_data)
     ret = mupgrade_version_fallback();
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "Upgrade error back to previous version");
 
-    return MDF_OK;
+    return mlink_handle_system_reboot(handle_data);
 }
 
 static mdf_err_t mlink_handle_get_config(mlink_handle_data_t *handle_data)
@@ -717,7 +717,7 @@ EXIT:
     ret = mwifi_write(dest_addr, &data_type, handle_data.resp_data, handle_data.resp_size, true);
     MDF_LOGD("resp_size: %d, resp: %.*s", handle_data.resp_size, handle_data.resp_size, handle_data.resp_data);
     MDF_FREE(handle_data.resp_data);
-    MDF_ERROR_CHECK(ret != ESP_OK, ret, "mdf_write, ret: %d", ret);
+    MDF_ERROR_CHECK(ret != ESP_OK, ret, "mdf_write");
 
     return MDF_OK;
 }
