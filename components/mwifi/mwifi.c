@@ -644,15 +644,15 @@ EXIT:
 
 mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
                        void *data, size_t *size, TickType_t wait_ticks,
-                       mlink_data_memory_t type)
+                       uint8_t type)
 {
     MDF_PARAM_CHECK(src_addr);
     MDF_PARAM_CHECK(data_type);
     MDF_PARAM_CHECK(data);
     MDF_PARAM_CHECK(size);
-    MDF_PARAM_CHECK(type == MLINK_DATA_MEMORY_MALLOC_INTERNAL || *size > 0);
+    MDF_PARAM_CHECK(type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL || *size > 0);
     MDF_ERROR_CHECK(!mwifi_is_started(), MDF_ERR_MWIFI_NOT_START, "Mwifi isn't started");
-    MDF_ERROR_CHECK(type != MLINK_DATA_MEMORY_MALLOC_EXTERNAL && type != MLINK_DATA_MEMORY_MALLOC_INTERNAL, MDF_ERR_INVALID_ARG,
+    MDF_ERROR_CHECK(type != MWIFI_DATA_MEMORY_MALLOC_EXTERNAL && type != MWIFI_DATA_MEMORY_MALLOC_INTERNAL, MDF_ERR_INVALID_ARG,
                     "To apply for buffer space externally, set the type of the data parameter to be (char *) or (uint8_t *)\n"
                     "To apply for buffer space internally, set the type of the data parameter to be (char **) or (uint8_t **)");
 
@@ -780,7 +780,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         int mz_ret  = MZ_OK;
         int mz_rate = data_head.compress_rate;
 
-        if (type == MLINK_DATA_MEMORY_MALLOC_INTERNAL) {
+        if (type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL) {
             do {
                 mz_rate = (!mz_rate) ? 5 : mz_rate;
                 *size = mesh_data.size * mz_rate;
@@ -802,7 +802,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             MDF_ERROR_GOTO(mz_ret != MZ_OK, EXIT, "<%s> Uncompress, size: %d", mz_error(mz_ret), mesh_data.size);
         }
     } else {
-        if (type == MLINK_DATA_MEMORY_MALLOC_INTERNAL) {
+        if (type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL) {
             *size = mesh_data.size;
             *((uint8_t **)data) = MDF_MALLOC(mesh_data.size);
             memcpy(*((uint8_t **)data), mesh_data.data, mesh_data.size);
@@ -937,16 +937,15 @@ EXIT:
 }
 
 mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
-                            void *data, size_t *size, TickType_t wait_ticks,
-                            mlink_data_memory_t type)
+                            void *data, size_t *size, TickType_t wait_ticks, uint8_t type)
 {
     MDF_PARAM_CHECK(src_addr);
     MDF_PARAM_CHECK(data_type);
     MDF_PARAM_CHECK(data);
     MDF_PARAM_CHECK(size);
-    MDF_PARAM_CHECK(type == MLINK_DATA_MEMORY_MALLOC_INTERNAL || *size > 0);
+    MDF_PARAM_CHECK(type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL || *size > 0);
     MDF_ERROR_CHECK(!mwifi_is_started(), MDF_ERR_MWIFI_NOT_START, "Mwifi isn't started");
-    MDF_ERROR_CHECK(type != MLINK_DATA_MEMORY_MALLOC_EXTERNAL && type != MLINK_DATA_MEMORY_MALLOC_INTERNAL, MDF_ERR_INVALID_ARG,
+    MDF_ERROR_CHECK(type != MWIFI_DATA_MEMORY_MALLOC_EXTERNAL && type != MWIFI_DATA_MEMORY_MALLOC_INTERNAL, MDF_ERR_INVALID_ARG,
                     "To apply for buffer space externally, set the type of the data parameter to be (char *) or (uint8_t *)\n"
                     "To apply for buffer space internally, set the type of the data parameter to be (char **) or (uint8_t **)");
 
@@ -1012,7 +1011,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         int mz_ret  = MZ_OK;
         int mz_rate = data_head.compress_rate;
 
-        if (type == MLINK_DATA_MEMORY_MALLOC_INTERNAL) {
+        if (type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL) {
             do {
                 mz_rate = (!mz_rate) ? 5 : mz_rate;
                 *size = recv_size * mz_rate;
@@ -1034,7 +1033,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             MDF_ERROR_GOTO(mz_ret != MZ_OK, EXIT, "<%s> Uncompress, size: %d", mz_error(mz_ret), recv_size);
         }
     } else {
-        if (type == MLINK_DATA_MEMORY_MALLOC_INTERNAL) {
+        if (type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL) {
             *size = recv_size;
             *((uint8_t **)data) = MDF_MALLOC(recv_size);
             memcpy(*((uint8_t **)data), recv_data, recv_size);
