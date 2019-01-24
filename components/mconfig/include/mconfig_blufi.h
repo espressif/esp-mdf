@@ -56,6 +56,7 @@ typedef struct {
     uint16_t tid;                                   /**< Type of device */
     uint8_t custom_size;                            /**< Custom data size */
     uint8_t custom_data[MCONFIG_BLUFI_CUSTOM_SIZE]; /**< Placed in a Bluetooth broadcast package */
+    bool only_beacon;                               /**< Send only beacon does not support connection */
 } mconfig_blufi_config_t;
 
 /**

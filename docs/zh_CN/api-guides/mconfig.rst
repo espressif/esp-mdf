@@ -240,9 +240,10 @@ App 将配置信息与设备列表合成一个数据包，并以 BluFi 的自定
 ====== ============================ ====================
 0      ESP_BLUFI_STA_CONN_SUCCESS   连接路由器成功
 1      ESP_BLUFI_STA_CONN_FAIL      连接路由器失败
-300    BLUFI_STA_PASSWORD_ERR       密码配置错误
-301    BLUFI_STA_AP_FOUND_ERR       路由器未找到
-302    BLUFI_STA_TOOMANY_ERR        路由器已经达到最大的连接数
+16     BLUFI_STA_PASSWORD_ERR       密码配置错误
+17     BLUFI_STA_AP_FOUND_ERR       路由器未找到
+18     BLUFI_STA_TOOMANY_ERR        路由器已经达到最大的连接数
+19     BLUFI_STA_CONFIG_ERR         参数配置错误
 ====== ============================ ====================
 
 

@@ -193,7 +193,7 @@ static void mconfig_chain_master_task(void *arg)
         MDF_LOGV("pubkey_pem: %s", pubkey_pem);
 
         if (!mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)) {
-            MDF_LOGW("this device("MACSTR") is not on the whitelist of the device configuration network device",
+            MDF_LOGD("this device("MACSTR") is not on the whitelist of the device configuration network device",
                      MAC2STR(src_addr));
             continue;
         }
