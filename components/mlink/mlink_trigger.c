@@ -345,7 +345,7 @@ mdf_err_t mlink_trigger_handle(mlink_communicate_t communicate)
     for (mlink_trigger_t *trigger_idex = g_trigger_list->next; trigger_idex; trigger_idex = trigger_idex->next) {
         trigger_compare_t *cmp = &trigger_idex->trigger_compare;
         ret = mlink_device_get_value(trigger_idex->trigger_cid, &value);
-        MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mlink_device_get_value, ret: %d", ret);
+        MDF_ERROR_CONTINUE(ret < 0, "<%s> mlink_device_get_value, cid: %d", mdf_err_to_name(ret), trigger_idex->trigger_cid);
 
         bool equal        = (!cmp->flag.equal        || (cmp->flag.equal        && cmp->equal == value)) ? true       : false;
         bool unequal      = (!cmp->flag.unequal      || (cmp->flag.unequal      && cmp->unequal != value)) ? true     : false;
