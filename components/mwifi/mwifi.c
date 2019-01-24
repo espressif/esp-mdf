@@ -677,14 +677,16 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         total_size = 0;
         recv_data  = MDF_REALLOC(recv_data, MWIFI_PAYLOAD_LEN);
 
-        for (int expect_seq = 0; !recv_size || recv_size < total_size; expect_seq++) {
+        for (int expect_seq = 0, recv_ticks = 0; !recv_size || recv_size < total_size; expect_seq++) {
             mesh_data.size = recv_size ? total_size - recv_size : MWIFI_PAYLOAD_LEN;
             mesh_data.data = recv_data + recv_size;
-            wait_ticks     = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
+            recv_ticks     = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
                              xTaskGetTickCount() - start_ticks < wait_ticks ?
                              wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
 
-            ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, wait_ticks * portTICK_RATE_MS,
+            MDF_LOGV("wait_ticks: %d, start_ticks: %d, recv_ticks: %d", wait_ticks, start_ticks, recv_ticks);
+
+            ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, recv_ticks * portTICK_RATE_MS,
                                 &data_flag, &mesh_opt, 1);
             MDF_LOGV("esp_mesh_recv, src_addr: " MACSTR ", size: %d, data: %.*s",
                      MAC2STR(src_addr), mesh_data.size, mesh_data.size, mesh_data.data);
@@ -965,15 +967,17 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         .type = MESH_OPT_RECV_DS_ADDR,
     };
 
-    for (int expect_seq = 0; !expect_seq || recv_size < total_size; expect_seq++) {
+    for (int expect_seq = 0, recv_ticks = 0; !expect_seq || recv_size < total_size; expect_seq++) {
         mesh_data.size = !expect_seq ? MWIFI_PAYLOAD_LEN : total_size - recv_size;
         mesh_data.data = recv_data + recv_size;
-        wait_ticks     = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
+        recv_ticks     = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
                          xTaskGetTickCount() - start_ticks < wait_ticks ?
                          wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
 
+        MDF_LOGV("wait_ticks: %d, start_ticks: %d, recv_ticks: %d", wait_ticks, start_ticks, recv_ticks);
+
         ret = esp_mesh_recv_toDS((mesh_addr_t *)src_addr, &dest_addr,
-                                 &mesh_data, wait_ticks * portTICK_RATE_MS, &data_flag, &mesh_opt, 1);
+                                 &mesh_data, recv_ticks * portTICK_RATE_MS, &data_flag, &mesh_opt, 1);
 
         if (ret == ESP_ERR_MESH_NOT_START) {
             MDF_LOGW("<ESP_ERR_MESH_NOT_START> Node failed to receive packets");
