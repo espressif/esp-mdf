@@ -146,17 +146,9 @@ static void restart_count_erase_timercb(void *timer)
 
 static int restart_count_get()
 {
-    mdf_err_t ret             = MDF_OK;
-    TimerHandle_t timer       = NULL;
-    uint32_t restart_count    = 0;
-    RESET_REASON reset_reason = rtc_get_reset_reason(0);
-
-    mdf_info_load(LIGHT_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
-
-    if (reset_reason != POWERON_RESET && reset_reason != RTCWDT_RTC_RESET) {
-        restart_count = 0;
-        MDF_LOGW("restart reason: %d", reset_reason);
-    }
+    mdf_err_t ret          = MDF_OK;
+    TimerHandle_t timer    = NULL;
+    uint32_t restart_count = 0;
 
     /**< If the device restarts within the instruction time,
          the event_mdoe value will be incremented by one */
@@ -596,6 +588,16 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
             MDF_LOGI("Parent is disconnected on station interface");
+
+            if (!esp_mesh_is_root()) {
+                break;
+            }
+
+            ret = mlink_notice_deinit();
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_notice_deinit", mdf_err_to_name(ret));
+
+            ret = mlink_httpd_stop();
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_stop", mdf_err_to_name(ret));
             break;
 
         case MDF_EVENT_MWIFI_FIND_NETWORK: {
@@ -649,16 +651,6 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             break;
         }
-
-        case MDF_EVENT_MWIFI_ROOT_LOST_IP:
-            MDF_LOGI("Root loses the IP address");
-
-            ret = mlink_notice_deinit();
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_notice_deinit", mdf_err_to_name(ret));
-
-            ret = mlink_httpd_stop();
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_stop", mdf_err_to_name(ret));
-            break;
 
         case MDF_EVENT_MCONFIG_BLUFI_STA_DISCONNECTED:
             light_driver_breath_start(128, 128, 0); /**< yellow blink */
@@ -807,6 +799,14 @@ void app_main()
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
     /**
+     * @brief Continuous power off and restart more than three times to reset the device
+     */
+    if (restart_count_get() >= LIGHT_RESTART_COUNT_RESET) {
+        MDF_LOGW("Erase information saved in flash");
+        mdf_info_erase(MDF_SPACE_NAME);
+    }
+
+    /**
      * @brief Initialize wifi
      */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
@@ -817,14 +817,6 @@ void app_main()
      * @brief Light driver initialization
      */
     MDF_ERROR_ASSERT(light_driver_init(&driver_config));
-
-    /**
-     * @brief Continuous power off and restart more than three times to reset the device
-     */
-    if (restart_count_get() >= LIGHT_RESTART_COUNT_RESET) {
-        MDF_LOGW("Erase information saved in flash");
-        mdf_info_erase(MDF_SPACE_NAME);
-    }
 
     /**
      * @brief Indicate the status of the device by means of a light
@@ -867,7 +859,10 @@ void app_main()
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_MODE, "mode", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RW, 1, 3, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic_handle(mlink_get_value, mlink_set_value));
 
-    mlink_trigger_init();
+    /**
+     * @brief Initialize trigger handler
+     */
+    MDF_ERROR_ASSERT(mlink_trigger_init());
     xTaskCreate(trigger_handle_task, "trigger_handle", 1024 * 3,  NULL, 1, NULL);
 
     /**
