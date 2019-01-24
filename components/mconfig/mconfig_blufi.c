@@ -48,9 +48,10 @@
 
 // #define ESP_BLUFI_STA_CONN_SUCCESS (0)
 // #define ESP_BLUFI_STA_CONN_FAIL    (1)
-#define BLUFI_STA_PASSWORD_ERR    (300)
-#define BLUFI_STA_AP_FOUND_ERR    (301)
-#define BLUFI_STA_TOOMANY_ERR     (302)
+#define BLUFI_STA_PASSWORD_ERR    (0x10)
+#define BLUFI_STA_AP_FOUND_ERR    (0x11)
+#define BLUFI_STA_TOOMANY_ERR     (0x12)
+#define BLUFI_STA_CONFIG_ERR      (0x13)
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
@@ -123,10 +124,11 @@ typedef struct {
     uint16_t company_id; /**< Company Identifiers (https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers) */
     uint8_t OUI[3];      /**< Used to filter other Bluetooth broadcast packets */
     struct {
-        uint8_t version            : 2; /**< Version of the agreement */
-        uint8_t whitelist          : 1; /**< Enable whitelist filtering */
-        uint8_t whitelist_security : 1; /**< Enable whitelist security */
-        uint8_t reserved           : 4; /**< Reserved for late expansion */
+        uint8_t version         : 2; /**< Version of the agreement */
+        bool whitelist          : 1; /**< Enable whitelist filtering */
+        bool whitelist_security : 1; /**< Enable whitelist security */
+        bool only_beacon        : 1; /**< Send only beacon does not support connection */
+        uint8_t reserved        : 3; /**< Reserved for late expansion */
     };
     uint8_t sta_addr[MWIFI_ADDR_LEN]; /**< STA's MAC address, used to distinguish different devices*/
     uint16_t tid;                   /**< Unique identifier for the type of device */
@@ -421,6 +423,7 @@ static mdf_err_t mconfig_blufi_adv_config()
         .tid        = g_blufi_cfg.tid,
         .OUI        = {0x4d, 0x44, 0x46},
         .version    = MCONFIG_BLUFI_VERSION,
+        .only_beacon = g_blufi_cfg.only_beacon,
 
 #ifdef CONFIG_MCONFIG_WHITELIST_ENABLE
         .whitelist  = true,
@@ -553,6 +556,8 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
 
         case ESP_BLUFI_EVENT_RECV_USERNAME:
         case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA: {
+            bool config_flag = true;
+
             MDF_LOGV("param->custom_data.data_len: %d, param->custom_data.data: %s",
                      param->custom_data.data_len, param->custom_data.data);
             MDF_ERROR_BREAK(param->custom_data.data_len < 6,
@@ -607,16 +612,35 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         break;
 
                     case BLUFI_DATA_ROUTER_BSSID:
+                        if (blufi_data->len != sizeof(g_recv_config->config.router_bssid)) {
+                            MDF_LOGW("Router bssid: %s, len: %d", blufi_data->data, blufi_data->len);
+                            config_flag = false;
+                            break;
+                        }
+
                         memcpy(g_recv_config->config.router_bssid, blufi_data->data, blufi_data->len);
                         MDF_LOGD("Router bssid: " MACSTR, MAC2STR(g_recv_config->config.router_bssid));
                         break;
 
                     case BLUFI_DATA_MESH_ID:
+                        if (blufi_data->len != sizeof(g_recv_config->config.mesh_id)
+                                && !MWIFI_ADDR_IS_EMPTY(blufi_data->data)) {
+                            MDF_LOGW("Mesh id: %s, len: %d", blufi_data->data, blufi_data->len);
+                            config_flag = false;
+                            break;
+                        }
+
                         memcpy(g_recv_config->config.mesh_id, blufi_data->data, blufi_data->len);
                         MDF_LOGD("Mesh id: " MACSTR, MAC2STR(g_recv_config->config.mesh_id));
                         break;
 
                     case BLUFI_DATA_MESH_PASSWORD:
+                        if (blufi_data->len < 8) {
+                            MDF_LOGW("Mesh password: %s, len: %d", blufi_data->data, blufi_data->len);
+                            config_flag = false;
+                            break;
+                        }
+
                         memcpy(g_recv_config->config.mesh_password, blufi_data->data, blufi_data->len);
                         MDF_LOGD("Mesh password: %s", g_recv_config->config.mesh_password);
                         break;
@@ -672,11 +696,23 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         break;
 
                     case BLUFI_DATA_MAX_LAYER:
+                        if (blufi_data->data[0] > 25) {
+                            MDF_LOGW("Mesh max_layer: %d, len: %d", blufi_data->data[25], blufi_data->len);
+                            config_flag = false;
+                            break;
+                        }
+
                         memcpy(&g_recv_config->init_config.max_layer, blufi_data->data, blufi_data->len);
                         MDF_LOGD("Mesh max_layer: %d", g_recv_config->init_config.max_layer);
                         break;
 
                     case BLUFI_DATA_MAX_CONNECTION:
+                        if (blufi_data->data[0] > 10) {
+                            MDF_LOGW("Mesh max_connection: %d, len: %d", blufi_data->data[0], blufi_data->len);
+                            config_flag = false;
+                            break;
+                        }
+
                         memcpy(&g_recv_config->init_config.max_connection, blufi_data->data, blufi_data->len);
                         MDF_LOGD("Mesh max_connection: %d", g_recv_config->init_config.max_connection);
                         break;
@@ -732,7 +768,6 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         break;
 
                     case BLUFI_DATA_WHITELIST: {
-                        MDF_LOGD("blufi_data_len: %d", blufi_data->len);
                         size_t tmp_size = sizeof(mconfig_data_t) + g_recv_config->whitelist_size;
                         g_recv_config = MDF_REALLOC(g_recv_config, tmp_size + blufi_data->len);
 
@@ -763,6 +798,11 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         MDF_LOGW("recv data type: %d", blufi_data->type);
                         break;
                 }
+            }
+
+            if (!config_flag) {
+                esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, BLUFI_STA_CONFIG_ERR, 0, NULL);
+                break;
             }
 
             mconfig_chain_slave_channel_switch_disable();

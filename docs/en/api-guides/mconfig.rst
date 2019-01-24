@@ -247,9 +247,10 @@ Type   Definition                   Description
 ====== ============================ ====================
 0      ESP_BLUFI_STA_CONN_SUCCESS   Connecting to router successful
 1      ESP_BLUFI_STA_CONN_FAIL      Connecting to router failed
-300    BLUFI_STA_PASSWORD_ERR       Password configuration error
-301    BLUFI_STA_AP_FOUND_ERR       Router is not found
-302    BLUFI_STA_TOOMANY_ERR        Router reached max number of connections
+16     BLUFI_STA_PASSWORD_ERR       Password configuration error
+17     BLUFI_STA_AP_FOUND_ERR       Router is not found
+18     BLUFI_STA_TOOMANY_ERR        Router reached max number of connections
+19     BLUFI_STA_CONFIG_ERR         Parameter configuration error
 ====== ============================ ====================
 
 .. ---------------------- Mconfig-Chain --------------------------
