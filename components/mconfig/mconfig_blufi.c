@@ -375,7 +375,7 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
             if (sta_conn_state != ESP_BLUFI_STA_CONN_SUCCESS) {
                 uint32_t disconnected_reason = disconnected->reason;
 
-                esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, sta_conn_state, 0, NULL);
+                esp_blufi_send_error_info(sta_conn_state);
                 mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_DISCONNECTED, (void *)disconnected_reason);
                 mconfig_chain_slave_channel_switch_enable();
 
@@ -801,7 +801,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             }
 
             if (!config_flag) {
-                esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, BLUFI_STA_CONFIG_ERR, 0, NULL);
+                esp_blufi_send_error_info(BLUFI_STA_CONFIG_ERR);
                 break;
             }
 

@@ -152,6 +152,7 @@ static int restart_count_get()
 
     /**< If the device restarts within the instruction time,
          the event_mdoe value will be incremented by one */
+    mdf_info_load(LIGHT_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
     restart_count++;
     ret = mdf_info_save(LIGHT_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Save the number of restarts within the set time");
@@ -187,8 +188,8 @@ static bool light_restart_is_exception()
     }
 
     /**< erase all coredump partition */
-    ret = esp_partition_erase_range(coredump_part, 0, coredump_part->size);
-    MDF_ERROR_CHECK(ret, false, "<%s> esp_partition_erase_range fail", mdf_err_to_name(ret));
+    // ret = esp_partition_erase_range(coredump_part, 0, coredump_part->size);
+    // MDF_ERROR_CHECK(ret, false, "<%s> esp_partition_erase_range fail", mdf_err_to_name(ret));
 
     return true;
 }
@@ -238,6 +239,45 @@ static mdf_err_t get_network_config(mwifi_init_config_t *init_config, mwifi_conf
     }
 
     MDF_FREE(mconfig_data);
+
+    return MDF_OK;
+}
+
+static mdf_err_t light_show_layer(mlink_handle_data_t *handle_data)
+{
+    switch (esp_mesh_get_layer()) {
+        case 1:
+            light_driver_set_rgb(255, 0, 0);   /**< red */
+            break;
+
+        case 2:
+            light_driver_set_rgb(255, 128, 0); /**< orange */
+            break;
+
+        case 3:
+            light_driver_set_rgb(255, 255, 0); /**< yellow */
+            break;
+
+        case 4:
+            light_driver_set_rgb(0, 255, 0);   /**< green */
+            break;
+
+        case 5:
+            light_driver_set_rgb(0, 255, 255); /**< cyan */
+            break;
+
+        case 6:
+            light_driver_set_rgb(0, 0, 255);   /**< blue */
+            break;
+
+        case 7:
+            light_driver_set_rgb(128, 0, 255); /**< purple */
+            break;
+
+        default:
+            light_driver_set_rgb(255, 255, 255); /**< white */
+            break;
+    }
 
     return MDF_OK;
 }
@@ -824,7 +864,7 @@ void app_main()
     if (mdf_info_load("init_config", &init_config, sizeof(mwifi_init_config_t)) == MDF_OK
             && mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t)) == MDF_OK) {
         if (light_restart_is_exception()) {
-            light_driver_breath_start(255, 0, 0); /**< red blink */
+            light_driver_set_rgb(255, 0, 0); /**< red */
         } else {
             light_driver_set_switch(true);
         }
@@ -864,6 +904,11 @@ void app_main()
      */
     MDF_ERROR_ASSERT(mlink_trigger_init());
     xTaskCreate(trigger_handle_task, "trigger_handle", 1024 * 3,  NULL, 1, NULL);
+
+    /**
+     * @brief Add a request handler
+     */
+    MDF_ERROR_ASSERT(mlink_set_handle("show_layer", light_show_layer));
 
     /**
      * @brief Initialize esp-mesh
