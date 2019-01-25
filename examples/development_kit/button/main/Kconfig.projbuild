@@ -1,0 +1,15 @@
+menu "Example Configuration"
+
+config BUTTON_VERSION
+    string "Button version"
+    default "1.0.0"
+    help
+        Version of the five-color light
+
+config BUTTON_MEMORY_DEBUG
+    bool "Enable memory debugging"
+    default n
+    help
+        Enable memory debugging.
+
+endmenu

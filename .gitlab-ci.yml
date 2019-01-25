@@ -101,6 +101,12 @@ build_example_light:
     ARTIFACTS_NAME: "light"
     EXAMPLE_PATH: "examples/development_kit/light"
 
+build_example_button:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "button"
+    EXAMPLE_PATH: "examples/development_kit/button"
+
 push_master_to_github:
   stage: deploy
   only:
