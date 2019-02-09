@@ -50,6 +50,12 @@ void tcp_client_write_task(void *arg)
         ret = mwifi_root_read(src_addr, &data_type, data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
+        if (size >= MWIFI_PAYLOAD_LEN) {
+            size = MWIFI_PAYLOAD_LEN - 1;
+        }
+
+        data[size] = 0;
+
         char *json_data = NULL;
         int json_size   = asprintf(&json_data, "{\"addr\":\"" MACSTR "\",\"data\":%s}",
                                    MAC2STR(src_addr), data);
@@ -291,6 +297,7 @@ static void print_system_info_timercb(void *timer)
     }
 
 #ifdef MEMORY_DEBUG
+
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
     }
