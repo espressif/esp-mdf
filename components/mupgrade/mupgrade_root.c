@@ -48,7 +48,8 @@ mdf_err_t mupgrade_firmware_init(const char *name, size_t size)
 
     MDF_ERROR_CHECK(!running || !update, MDF_ERR_MUPGRADE_FIRMWARE_PARTITION,
                     "No partition is found or flash read operation failed");
-    MDF_ERROR_CHECK(size > update->size, MDF_ERR_INVALID_ARG, "The size of the firmware is wrong");
+    MDF_ERROR_CHECK(size != OTA_SIZE_UNKNOWN && size > update->size,
+                    MDF_ERR_INVALID_ARG, "The size of the firmware is wrong");
 
     MDF_LOGI("Running partition, label: %s, type: 0x%x, subtype: 0x%x, address: 0x%x",
              running->label, running->type, running->subtype, running->address);
@@ -95,18 +96,29 @@ mdf_err_t mupgrade_firmware_download(const void *data, size_t size)
              g_upgrade_config->status.written_size * 100 / g_upgrade_config->status.total_size);
 
     if (g_upgrade_config->status.written_size == g_upgrade_config->status.total_size) {
-        const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
-
-        g_upgrade_config->status.error_code = esp_ota_end(g_upgrade_config->handle);
-        MDF_ERROR_CHECK(g_upgrade_config->status.error_code != ESP_OK,
-                        MDF_ERR_MUPGRADE_FIRMWARE_INVALID, "esp_ota_end");
-
-        g_upgrade_config->status.error_code = mupgrade_firmware_check(update_partition);
-        MDF_ERROR_CHECK(g_upgrade_config->status.error_code != ESP_OK,
-                        g_upgrade_config->status.error_code, "mupgrade_firmware_check");
-
-        g_upgrade_config->status.error_code = MDF_ERR_MUPGRADE_FIRMWARE_FINISH;
+        return mupgrade_firmware_download_finished(g_upgrade_config->status.total_size);
     }
+
+    return MDF_OK;
+}
+
+mdf_err_t mupgrade_firmware_download_finished(size_t total_size)
+{
+    MDF_ERROR_CHECK(!g_upgrade_config, MDF_ERR_MUPGRADE_FIRMWARE_NOT_INIT,
+                    "Mupgrade firmware is not initialized");
+
+    const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
+
+    g_upgrade_config->status.total_size = total_size;
+    g_upgrade_config->status.error_code = esp_ota_end(g_upgrade_config->handle);
+    MDF_ERROR_CHECK(g_upgrade_config->status.error_code != ESP_OK,
+                    MDF_ERR_MUPGRADE_FIRMWARE_INVALID, "esp_ota_end");
+
+    g_upgrade_config->status.error_code = mupgrade_firmware_check(update_partition);
+    MDF_ERROR_CHECK(g_upgrade_config->status.error_code != ESP_OK,
+                    g_upgrade_config->status.error_code, "mupgrade_firmware_check");
+
+    g_upgrade_config->status.error_code = MDF_ERR_MUPGRADE_FIRMWARE_FINISH;
 
     return MDF_OK;
 }
