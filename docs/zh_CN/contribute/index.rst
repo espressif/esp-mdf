@@ -22,7 +22,7 @@ ESP-MDF 贡献指南
 您在提交代码之前需要对代码进行格式化，ESP-MDF 使用的格式化式工具为：`astyle <http://astyle.sourceforge.net/>`_ 和 `dos2unix <https://waterlan.home.xs4all.nl/dos2unix.html>`_。您需要先安装他们，在 Linux 安装命令如下::
 
     sudo apt-get install astyle
-    sudo apt-get install doc2unix
+    sudo apt-get install dos2unix
 
 运行如下代码格式化命令::
 
