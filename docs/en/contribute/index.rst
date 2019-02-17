@@ -22,7 +22,7 @@ Format Code
 Make sure to format the code prior to your submission, with either one of the formatting tools for ESP-MDF: `astyle <http://astyle.sourceforge.net/>`_ and `dos2unix <https://waterlan.home.xs4all.nl/dos2unix.html>`_. Please install such tools first. For the installation on Linux, please refer to the command below::
 
     sudo apt-get install astyle
-    sudo apt-get install doc2unix
+    sudo apt-get install dos2unix
 
 Run the code formatting command below::
 
