@@ -46,7 +46,8 @@ void tcp_client_write_task(void *arg)
             continue;
         }
 
-        size = MWIFI_PAYLOAD_LEN;
+        size = MWIFI_PAYLOAD_LEN - 1;
+        memset(data, 0, MWIFI_PAYLOAD_LEN);
         ret = mwifi_root_read(src_addr, &data_type, data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
