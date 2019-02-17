@@ -103,6 +103,7 @@ static void ota_task()
     char name[32]       = {0x0};
     size_t total_size   = 0;
     int start_time      = 0;
+    int recv_size       = 0;
     mwifi_data_type_t data_type = {.communicate = MWIFI_COMMUNICATE_MULTICAST};
     uint8_t dest_addr[] = MWIFI_ADDR_ANY;
 
@@ -130,23 +131,33 @@ static void ota_task()
     total_size = esp_http_client_fetch_headers(client);
     sscanf(CONFIG_FIRMWARE_UPGRADE_URL, "%*[^//]//%*[^/]/%[^.bin]", name);
 
+    if (esp_http_client_is_chunked_response(client)) {
+        total_size = OTA_SIZE_UNKNOWN;
+    }
+
     ret = mupgrade_firmware_init(name, total_size);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Initialize the upgrade status", mdf_err_to_name(ret));
 
-    for (int recv_size = 0, size = 0;; recv_size += size) {
+    for (ssize_t size = 0;; recv_size += size) {
         size = esp_http_client_read(client, (char *)data, MWIFI_PAYLOAD_LEN);
         MDF_ERROR_GOTO(size < 0, EXIT, "<%s> Read data from http stream", mdf_err_to_name(ret));
 
         if (size > 0) {
             ret = mupgrade_firmware_download(data, size);
-            MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Write firmware to flash", mdf_err_to_name(ret));
-        } else if (recv_size == total_size) {
-            MDF_LOGI("Connection closed, all data received");
+            MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Write firmware to flash, size: %d, data: %.*s",
+                           mdf_err_to_name(ret), size, size, data);
+        } else if (recv_size == total_size || esp_http_client_is_chunked_response(client)) {
+            MDF_LOGI("Connection closed, Firmware download completed");
             break;
         } else {
             MDF_LOGW("<%s> esp_http_client_read", mdf_err_to_name(ret));
             goto EXIT;
         }
+    }
+
+    if (esp_http_client_is_chunked_response(client)) {
+        ret = mupgrade_firmware_download_finished(recv_size);
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Firmware download completed", mdf_err_to_name(ret));
     }
 
     MDF_LOGI("The service download firmware is complete, Spend time: %ds",
@@ -248,8 +259,8 @@ void app_main()
      * @brief Set the log level for serial port printing.
      */
     esp_log_level_set("*", ESP_LOG_INFO);
-    esp_log_level_set("mupgrade_node", ESP_LOG_INFO);
-    esp_log_level_set("mupgrade_root", ESP_LOG_INFO);
+    esp_log_level_set("mupgrade_node", ESP_LOG_DEBUG);
+    esp_log_level_set("mupgrade_root", ESP_LOG_DEBUG);
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
     MDF_LOGI("Starting OTA example ...");
