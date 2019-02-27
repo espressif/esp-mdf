@@ -65,8 +65,6 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req);
 static esp_err_t mlink_ota_url(httpd_req_t *req);
 static mdf_err_t mlink_ota_stop(httpd_req_t *req);
 
-extern int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags);
-
 static const httpd_uri_t basic_handlers[] = {
     {
         .uri      = "/mesh_info",
@@ -99,6 +97,16 @@ static const httpd_uri_t basic_handlers[] = {
         .user_ctx = NULL,
     }
 };
+
+static int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
+{
+    MDF_PARAM_CHECK(buf);
+
+    int ret = send(sockfd, buf, buf_len, flags);
+    MDF_ERROR_CHECK(ret < 0, ret, "socket send, sockfd: %d, buf_len: %d", sockfd, buf_len);
+
+    return ret;
+}
 
 static void mlink_connection_remove(mlink_connection_t *mlink_conn)
 {
