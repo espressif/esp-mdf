@@ -4,7 +4,7 @@
 
 ## 概述
 
-ESP32-MeshKit-Light 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 应⽤的智能电灯，包含配网、升级、本地控制和设备联动等功能，它将帮助您更好地了解 ESP-MESH 的相关特性，并对 ESP32-MeshKit-Light 的程序进⾏⼆次开发。在运行本示例之前，请先详细阅读 [ESP32-MeshKit 指南](../README_cn.md)。
+ESP32-MeshKit-Light 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 应⽤的智能电灯（板载 ESP32 芯片），包含配网、升级、本地控制和设备联动等功能，它将帮助您更好地了解 ESP-MESH 的相关特性，并对 ESP32-MeshKit-Light 的程序进⾏⼆次开发。在运行本示例之前，请先详细阅读 [ESP32-MeshKit 指南](../README_cn.md)。
 
 > 注：本示例不限于 ESP32-MeshKit-Light，您可以直接使用 ESP32 模块外接 LED 灯使用。
 
@@ -40,16 +40,22 @@ ESP32-MeshKit-Light 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp
 | 16 | UORXD| I/O|UART 调试和软件烧录接口接收脚 |
 | 17 | UOTXD| I/O|UART 调试和软件烧录接口发送脚|
 | 19 | ANT| I/O| 外置天线输出脚 |
-| 18, 20| GND | p| RF 接地|
+| 18, 20| GND | P| RF 接地|
 
 
-## 灯的状态
+## 指示灯状态
 
-1. 等待配网：黄色闪烁
-2. 验证配网信息：橙色闪烁
-3. 配网成功：绿色闪烁
-4. 开始升级：淡蓝色闪烁三秒
-5. 升级成功等待重启：蓝色闪烁
-6. 异常重启：红色闪烁
+连续通断电三次（关 > 开 > 关 > 开 > 关 > 开），可以使 ESP32-MeshKit-Light 进入配网模式。
 
-> 注：连续上电三次（关 > 开 > 关 > 开 > 关 > 开）重置设备
+| 指示灯颜色 | 状态 |
+| ----------- | ------ |
+| 黄色（闪烁）  | 进入配网模式，等待组网 |
+| 橙色（闪烁） | 连接路由器，校验从 ESP-MESH App 接收到的配网信息 |
+| 绿色（闪烁） | 路由器信息校验成功，并发送给其它白名单设备 |
+| 白色（常亮）| 组网成功 |
+| 淡蓝色（闪烁三秒） | 开始升级 |
+| 蓝色（闪烁） | 升级成功等待重启 |
+| 红色（闪烁） | 异常重启 |
+
+
+

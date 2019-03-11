@@ -4,23 +4,25 @@
 
 ## Overview
 
-ESP32-MeshKit-Light is a smart lighting solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html). It features network configuration, upgrade, local control, device association, etc., and will facilitate your understanding of ESP-MESH to implement further development. Before running this example, please refer to [ESP32-MeshKit Guide](../README.md).
+[ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf) is a smart lighting solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, local control, device association, etc.
 
-> Note: This example is not limited to ESP32-MeshKit-Light, and can also be applied to an ESP32 module connected to an external LED.
+ESP32-MeshKit-Light consists of light bulbs with integrated ESP32 chips. The kit will help you better understand how ESP-MESH can be further developed. Before reading this document, please refer to [ESP32-MeshKit Guide](../README.md).
+
+> **Note**: This demon is not limited to ESP32-MeshKit-Light. It can also be used for an ESP32 module connected to an external LED.
 
 
 ## Hardware
 
-[ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf) supports 5 types of PWM IO interfaces. Its color temperature (CW) and color hue (RGB) can be adjusted, with an output power of 9 W and 3.5 W respectively.
+The board integrated into ESP32-MeshKit-Light supports 5 types of PWM IO interfaces. The Light's color temperature (CW) and hue (RGB) can be adjusted with the output power of 9 W and 3.5 W respectively.
 
-1. Inside View and Pin Layout
+### 1. Inside View and Pin Layout
 
 <div align=center>
 <img src="../docs/_static/light_module.png"  width="400">
 <p> Inside View </p>
 </div>
 
-2. Pin Definition
+### 2. Pin Definition
 
 |No. | Name | Type | Description |
 | :----: | :----: | :----: |:---- |
@@ -44,18 +46,16 @@ ESP32-MeshKit-Light is a smart lighting solution based on [ESP-MESH](https://doc
 |18, 20 | GND | P | RF ground |
 
 
-## Light Color Change in Different Statuses
+## Statuses Represented by Light Colors
 
-1. Wait be to networked: flashes yellow
+To bring ESP32-MeshKit-Light into Network Configuration mode, turn it off and on for three consecutive times.
 
-2. Verify network configuration information: flashes orange
-
-3. Networked successfully: flashes green
-
-4. Start to upgrade: flashes light blue for 3 seconds
-
-5. Upgrade successfully, ready to reboot: flashes blue
-
-6. Abnormal reboot: flashes red
-
-> Note: The device can be reset by powering it off/on for three consecutive times. 
+| Light Color | Status |
+| ----------- | ------ |
+| Yellow (flashing) | Waiting be to networked, in Network Configuration mode. |
+| Orange (flashing) | Connecting to the router to verify the network configuration information received from ESP-MESH App. |
+| Green (flashing) | Router information verified successfully and is being sent to other whitelisted devices |
+| White (solid) | Networked successfully |
+| Light blue (flashing for 3 seconds) | Starting to upgrade |
+| Blue (flashing) | Upgraded successfully |
+| Red (flashing) | Abnormal reboot |

@@ -5,19 +5,29 @@
 ---
 
 ## Overview
-ESP32-MeshKit is a network configuration solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) for smart homes, which includes [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf), [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md) and [ESP32-MeshKit-Button](tobeadded). It can be used with ESP-MESH App to facilitate your understanding and research of ESP-MESH, as well as your development of other applications.
 
-* ESP32-MeshKit-Light: A smart lighting solution with ESP-MESH functioning as the master network. The Light can serve as a root node (similar to a gateway), an intermediate parent node or a leaf node.
+ESP32-MeshKit is a network configuration solution for smart homes based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html).
 
-* ESP32-MeshKit-Sense: A low-power consumption solution, specially designed for the applications where ESP-MESH is in Deep-sleep or Light-sleep mode. It is connected to ESP-MESH network as a leaf node only.
+ESP32-MeshKit currently allows you to integrate the following hardware components:
 
-* ESP32-MeshKit-Button: A smart button solution, great for the ESP-MESH applications with ultra-low power consumption. It's generally in a power-off status and only works upon waking up. It transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_now.html).
+* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): Smart lighting solution with ESP-MESH functioning as the master network. The kit consists of light bulbs with integrated ESP32 chips.
 
-## Protocols
+* [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md): Development board, specifically designed for applications where ESP-MESH is in Light-sleep or Deep-sleep mode. The board provides solutions for:
+   * Monitoring the power consumption of MeshKit peripherals
+   * Controlling MeshKit peripherals based on the data from multiple onboard sensors. 
+  
+* [ESP32-MeshKit-Button](button/README.md): Smart button solution, tailored for ESP-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_now.html).
+
+To configure and network these hardware components you need:
+
+* Android or iOS phone with installed ESP-Mesh App (See [section ESP-Mesh App](#esp-mesh-app)).
+* 2.4 GHz Wi-Fi network to which you connect your phone and one of the ESP-MESH devices.
+
+## Functions
 
 1. [Mconfig](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html) (MESH Network Configuration)
 
-	A network configuration solution for ESP-MESH, which uses a network configuration app to connect a single device to ESP-MESH network through Bluetooth. Then the networked device transfers the network configuration information to other non-networked devices.
+	A network configuration solution, which uses ESP-Mesh App to add the first device to ESP-MESH network via Bluetooth. After that, the added device transfers network configuration information to other devices waiting to be added.
 
 2. [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html) (MESH LAN Communication)
 
@@ -25,29 +35,43 @@ ESP32-MeshKit is a network configuration solution based on [ESP-MESH](https://do
 
 3. [Mupgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html) (MESH Upgrade)
 
-	A solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-MESH devices on the same wireless network with functions such as automatic retransmission of failed fragments, data compression, revert to an earlier version, and firmware check.
+	A solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-MESH devices on the same wireless network. This solution provides the following functions:
 
-## Network Configuration App
+## ESP-Mesh App
 
-### 1. ESP-MESH App
+* **Android**: [source code](https://github.com/EspressifApp/EspMeshForAndroid), [apk](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) (installation package)
+* **iOS**: Go to *App Store* and search for `ESP-Mesh`.
+* **WeChat mini program**: Open *WeChat* and search for `ESPMesh`. The mini program currently supports only network configuration.
 
-* Android: [source code](https://github.com/EspressifApp/EspMeshForAndroid), [apk](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) (installation package)
-* iOS: Open `App Store` and search `ESPMesh`. Only the devices below 0.5 version are supported currently.
-* WeChat mini grogram: Open WeChat and search `ESPMesh`. Only network configuration is supported currently.
+> **Note**: The Android version updates are given a higher priority.
 
-> Note: The Android version is given the top priority to be updated.
+ESP-Mesh App is a useful tool for researching the ESP-MESH protocol and will help better understand the protocol's potential.
 
-### 2. Network Configuration
+The shared ESP-Mesh App's source code will be helpful in development of your own applications.
 
-* Preparation:
-    * Make sure the device is in the Network Configuration mode. To do this, you may cut off its power supply and restart it for three times. Please refer to your device-specific guide or help documentation for details.
+## Hardware Preparation
+
+* Turn on Bluetooth and Wi-Fi on your smartphone and connect it to the router.
+
+* Make sure the device you want to add is in Network Configuration mode. 
+    * To establish a network, you have to use one or more ESP32-MeshKit-Light devices, because only ESP32-MeshKit-Light can serve as a root node (master nodes, similar to gateways). You can bring ESP32-MeshKit-Light into Network Configuration mode by turning it off and on for three consecutive times.
     
-    * Open Bluetooth and GPS on your phone, and connect your phone to the target router.
+    * ESP32-MeshKit-Button and ESP32-MeshKit-Sense can be added to an existing network only. Please refer to their respective guides for the information on how to bring them into Network Configuration mode.
 
-* Scan devices:
-    * Add devices for network configuration: App scans through Bluetooth and prompts you about any nearby devices that are in the Network Configuration mode. Tap on the button below `Add device` to add the scanned devices for network configuration.
+## Network Configuration
+
+### 1. Initial Configuration
+
+* Launch ESP-Mesh App, and it performs scanning via Bluetooth and notifies you about nearby devices in Network Configuration mode.
+
+* Tap on the `Add device` button to see the list of the found ESP-MESH devices.
+
+* Tap on the down arrow to the left of the search bar to reveal two filtering options:
+    * `RSSI` to filter devices based on their signal strength
     
-    * Get the device list: A device list will appear after you add the scanned devices for network configuration. Tap on the down arrow at the beginning of the search box, two options `RSSI` (signal strength) and `Only favorites` will appear. You can filter the devices by their `RSSI` or tap on `Only favorites` to display your favorite devices only (To add a favorite device, just tap on the device icon).
+    * `Only favorites` to display favorite devices only (to add a device to favorites, tap on the device's icon).
+   
+* Choose the devices you want to add and tap `Next`
 
     <table>
         <tr>
@@ -56,15 +80,16 @@ ESP32-MeshKit is a network configuration solution based on [ESP-MESH](https://do
         </tr>
     </table>
 
+* Enter the required network configuration information:
 
-* Enter the network configuration information:
-    * Wi-Fi name: note that only 2.4 G is supported
+    * **Wi-Fi name**: Shows the name of the Wi-Fi network to which the smartphone is connected. Note that only 2.4 GHz Wi-Fi networks are supported.
     
-    * `MESH ID`: the only identity of ESP-MESH network, which is the MAC address of the connected router by default. Multiple networks with the identical `MESH ID` will be integrated into one network.
-    
-    * Password: Wi-Fi password
-    
-    * `More`: related configuration within ESP-MESH network. Just use the default configuration. 
+    * **MESH ID**: Suggests the name for the ESP-MESH network, which equals to the router's MAC address. If you want to have several ESP-MESH networks on the same router, please give them unique names by modifying the initial `MESH ID`. Multiple networks with an identical MESH ID are merged into one network.
+   
+    * **Password**: Input the password of the current Wi-Fi network.
+   
+    * **More**: Tap to modify the default configuration parameters of the ESP-MESH network. For more information on the parameters, please check the [ESP-MESH Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_mesh.html).
+* After you fill out the required fields, tap `Next`
 
     <table>
         <tr>
@@ -73,13 +98,15 @@ ESP32-MeshKit is a network configuration solution based on [ESP-MESH](https://do
         </tr>
     </table>
 
-* Transfer the network configuration information:
+ESP-Mesh App starts uploading the network configuration information and performs the following actions:
 
-    * App screens the devices according to their signal strength and connects to the device with the strongest Bluetooth signal. It then transfers the network configuration information and the device whitelist to the connected device.
-    
-    * When the device receives the network configuration information, it attempts connecting to the router to verify if the information is correct.
-    
-    * After the information is confirmed correct, App displays the network is successfully configured, ready for the device to be networked. When the device is successfully networked via Bluetooth, it implements network configuration for the whitelisted devices.
+* App chooses a device with the strongest Bluetooth signal, connects to it, and sends the network configuration information and device whitelist. The whitelist contains the devices chosen to be added.
+
+* When the device receives the network configuration information, it connects to the router to verify if the information is correct.
+
+* After successful verification, the device notifies App via Bluetooth that configuration is completed, and the device can be networked.
+
+* When the device is successfully networked via Bluetooth, it performs network configuration for the whitelisted devices.
 
     <table>
         <tr>
@@ -88,8 +115,9 @@ ESP32-MeshKit is a network configuration solution based on [ESP-MESH](https://do
         </tr>
     </table>
 
-### 3. Add a Device
-When App finds a device that is successfully configured for its connected router, it automatically pops up a window, asking to add the device. Tap on `Add the device to the mesh network` if you'd like to add it.
+### 2. Adding Devices to an Existing Network
+
+If App finds a new ESP-MESH device in Network configuration mode, it shows a prompt. You can add the device by tapping on `Add the device to the mesh network`.
 
 <table>
     <tr>
@@ -98,8 +126,11 @@ When App finds a device that is successfully configured for its connected router
     </tr>
 </table>
 
-### 4. Control
-* Tap the App to navigate to the device control interface. You can drag the sliders to customize your lights and buttons.    
+### 3. Device Tab
+
+Go to the list of added devices and do the following:
+
+* Tap on an ESP-MeshKit-Light device to open its lighting settings.    
 
     <table>
         <tr>
@@ -108,21 +139,31 @@ When App finds a device that is successfully configured for its connected router
         </tr>
    </table>
 
-* Long tap the App interface to edit device related information:
-    * Send command: send device debugging command or add custom commands;
-    * Device association: This is to associates the devices. For example, when the light B is associated with the light A, it will be switched on after the light A is on. When a button is associated with a light, it can directly control the light's on/off status, color, etc.
+* Long press on a device to edit its configuration settings:
+    * **Device association**: Any ESP-MESH device can be associated with other devices. 
+
+    > Note: an association works in one direction only.
+    >
+    > For example, if you set a *light A > light B* association, then as soon as you turn on *light A*, *light B* will come on. But turning off light B will not affect light A, until you set a *light B > light A* association.
+
+     An *ESP32-MeshKit-Button > ESP32-MeshKit-Light* or *ESP32-MeshKit-Sense > ESP32-MeshKit-Light* association gives you direct control over the lighting settings of the *ESP32-MeshKit-Light*.
+
+    * **Send command**: You can send device debugging commands or your own commands.
+
 
     <table>
         <tr>
-            <td ><img src="docs/_static/en/send_command.jpg" width="300"><p align=center>Send command</p></td>
             <td ><img src="docs/_static/en/editing_device.png" width="300"><p align=center>Select device association</p></td>
             <td ><img src="docs/_static/en/more_configuration.png" width="300"><p align=center>Device association</p></td>
+            <td ><img src="docs/_static/en/send_command.jpg" width="300"><p align=center>Send command</p></td>
         </tr>
    </table>
 
-### 5. Group
-* Default group: App groups the devices according to their type by default. Note that the default group can't be deleted.
-* Add a group: You can add a custom group to group control the devices.
+### 4. Group Tab
+
+* **Default group**: App groups the added devices according to their type, which means the number of default groups equals to the number of device types. A default group cannot be deleted.
+
+* **Custom group**: User-defined group for simultaneous control of included devices.
 
     <table>
         <tr>
@@ -131,32 +172,38 @@ When App finds a device that is successfully configured for its connected router
         </tr>
    </table>
 
-### 6. User
-1. Setting: App version, App update, and common Q&A 
-2. Topology: About ESP-MESH network structure and network configuration information
+### 5. User Tab
+
+* **Settings**: The following options are available
+    * App version
+    * Update App
+    * Help provides the FAQ section
+    
+* **Topology**: Layout of the current ESP-MESH network structure. You can long press on a certain node to open the device's network configuration information.
 
 <table>
     <tr>
         <td ><img src="docs/_static/en/version_information.png" width="300"><p align=center>App version</p></td>
         <td ><img src="docs/_static/en/topology.png" width="300"><p  align=center>Topology</p></td>
-        <td ><img src="docs/_static/en/network_configuration.png" width="300"><p align=center>ESP-MESH network configuration information</p></td>
+        <td ><img src="docs/_static/en/network_configuration.png" width="300"><p align=center>Network configuration information for an ESP-MESH device</p></td>
     </tr>
 </table>
 
-### 7. Firmware Update
+### 6. Firmware Update
 
-There are two ways to update the firmware:
+Long press on a certain ESP-MESH device on the list of added devices and in the pop-up menu choose *Firmware update*. Choose one of the two ways to update the firmware:
 
-1. Enter firmware url on App: you can save the updated firmware on Cloud (such as GitHub) or a HTTP server that is created within LAN, and enter the url to the saved firmware on App. 
-2. Copy firmware to your phone: you can directly copy the updated firmware to the folder `File Management/Phone Storage/Espressif/Esp32/upgrade` on your phone.
+* **Download the bin**: Directly copy the firmware update to your smartphone's folder `File Management/Phone Storage/Espressif/Esp32/upgrade`.
+
+* **Enter bin URL**: Save the firmware update on a cloud, such as GitHub, or on an HTTP server created within LAN, and enter the link to the saved firmware into the appeared dialog box.
 
 <table>
     <tr>
-        <td ><img src="docs/_static/en/url_upgrade.png" width="300"><p align=center>Enter firmware url </p></td>
-        <td ><img src="docs/_static/en/add_firmware.png" width="300"><p align=center>Add firmware to phone </p></td>
+        <td ><img src="docs/_static/en/add_firmware.png" width="300"><p align=center>Download the bin</p></td>
+        <td ><img src="docs/_static/en/url_upgrade.png" width="300"><p align=center>Enter bin URL</p></td>
         <td ><img src="docs/_static/en/upgrading.png" width="300"><p align=center>Update in Process</p></td>
     </tr>
 </table>
 
 ## Drivers
-All the hardware drivers of ESP32-MeshKit use the corresponding driver code in [esp-iot-solution](https://github.com/espressif/esp-iot-solution). You can visit this repository for any code update.
+All the hardware drivers for ESP32-MeshKit use the corresponding driver code in [esp-iot-solution](https://github.com/espressif/esp-iot-solution). You can visit this repository for any code update.
