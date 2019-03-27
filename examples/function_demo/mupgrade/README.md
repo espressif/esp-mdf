@@ -17,6 +17,7 @@ Connect PC to the router that is connected to ESP-MESH network.
 A built-in python HTTP server can be used as the server for the example upgrade.
 Open a new terminal to run the HTTP server, and then run the below command to generate the firmware to be upgraded and start the server.
 
+Make:
 ```shell
 cd $MDF_PATH/esp-idf/examples/get-started/hello_world/
 export IDF_PATH=$MDF_PATH/esp-idf/
@@ -24,6 +25,16 @@ make
 cd build
 python -m SimpleHTTPServer 8070
 ```
+
+CMake:
+```shell
+cd $MDF_PATH/esp-idf/examples/get-started/hello_world/
+export IDF_PATH=$MDF_PATH/esp-idf/
+idf.py build
+cd build
+python -m SimpleHTTPServer 8070
+```
+
 While running the server, you may go to `http：// localhost：8070/` to browse the build directory.
 
 >> Note:
@@ -33,7 +44,7 @@ While running the server, you may go to `http：// localhost：8070/` to browse 
 
 ### Step 3: Build an OTA example
 
-Navigate to the OTA example directory, and type `make menuconfig` to configure the OTA example. Under the submenu "Example Configuration", please fill in the following information:
+Navigate to the OTA example directory, and type `make menuconfig`(Make) or `make menuconfig`(CMake) to configure the OTA example. Under the submenu "Example Configuration", please fill in the following information:
 
 * ESP-MESH network configuration information
 * Firmware upgrade URL, which would look like this:
@@ -44,14 +55,20 @@ https://<host-ip-address>:<host-port>/<firmware-image-filename>
 for e.g,
 https://192.168.0.3:8070/hello-world.bin
 ```
-Save the changes and type `make` to build the example.
+Save the changes and type `make`(Make) or `make`(CMake) to build the example.
 
 ### Step 4: Flash the OTA example
 
 When downloading the flash, please firstly use `erase_flash` to erase the entire flash memory (all the remaining data in ota_data partition will be deleted as well), and then write the followings via a serial port:
 
+Make:
 ```shell
 make erase_flash flash
+```
+
+CMake:
+```shell
+idf.py erase_flash flash
 ```
 
 ### Step 5: Run the OTA example

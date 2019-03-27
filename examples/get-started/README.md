@@ -13,7 +13,7 @@ To run this example, you need at least two development boards, one configured as
 - Root node: There is only one root node in an ESP-MESH network. `MESH` networks can be differentiated by their `MESH_ID` and channels.
 - Non-root node: Include leaf nodes and intermediate nodes, which automatically select their parent nodes according to the network conditions.
 
-You need to go to the submenu `Example Configuration` and configure one device as a root node, and the others as non-root nodes with `make menuconfig`.
+You need to go to the submenu `Example Configuration` and configure one device as a root node, and the others as non-root nodes with `make menuconfig`(Make) or `idf.py menuconfig`(CMake).
 
 You can also go to the submenu `Component config -> MDF Mwifi`, and configure the ESP-MESH related parameters like max number of layers, the number of the connected devices on each layer, the broadcast interval, etc.
 

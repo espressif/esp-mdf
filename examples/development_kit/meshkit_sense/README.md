@@ -60,7 +60,11 @@ Jumper caps can be used at 5 places on ESP32-MeshKit-Sense. Please find the tabl
 
 | Location   | Action | Function | Placement |
 |------------|--------|----------|-----------|
-| EXT5V-CH5V | Connects the 5 V USB power supply to the input pin of the charge management chip. | When these pins are shorted, the battery charging is enabled. | Place a jumper cap during battery charging  || CHVBA-VBA  | Connects the output pin of the charge management chip to the battery's positive terminal. | When these pins are shorted, the battery charging is enabled. | Place a jumper cap during battery charging || DCVCC-SUFVCC | Connects the power supply to the input of the DC-DC converter. | Used for measuring the power consumption of the whole device. | Place a jumper cap when the device is powered up via battery or USB. || 3.3V-PER_3.3V | Connects the 3.3 V power supply to the power supply for all peripherals. | Used for measuring the power consumption of peripherals. | Place a jumper cap when peripherals are used. || 3.3V-3.3V_ESP32 | Connects the 3.3 V power supply to the power supply for the module. | Used for measuring the power consumption of the module (as well as Reset Protect chip) | Place a jumper cap when modules are used. |
+| EXT5V-CH5V | Connects the 5 V USB power supply to the input pin of the charge management chip. | When these pins are shorted, the battery charging is enabled. | Place a jumper cap during battery charging  |
+| CHVBA-VBA  | Connects the output pin of the charge management chip to the battery's positive terminal. | When these pins are shorted, the battery charging is enabled. | Place a jumper cap during battery charging |
+| DCVCC-SUFVCC | Connects the power supply to the input of the DC-DC converter. | Used for measuring the power consumption of the whole device. | Place a jumper cap when the device is powered up via battery or USB. |
+| 3.3V-PER_3.3V | Connects the 3.3 V power supply to the power supply for all peripherals. | Used for measuring the power consumption of peripherals. | Place a jumper cap when peripherals are used. |
+| 3.3V-3.3V_ESP32 | Connects the 3.3 V power supply to the power supply for the module. | Used for measuring the power consumption of the module (as well as Reset Protect chip) | Place a jumper cap when modules are used. |
 
 ESP32-MeshKit-Sense is equipped with 6 LED indicators, whose functions and indicated statuses are listed in the table below:
 
@@ -92,7 +96,7 @@ Please refer to [ULP introduction on Espressif Github](https://github.com/espres
 
 Copy `development_kit/meshkit_sense` to the `~/esp` directory and connect your board.
 
-After that, go to `~/esp/development_kit/meshkit_sense` and configure the example by running the command `make menuconfig`.
+After that, go to `~/esp/development_kit/meshkit_sense` and configure the example by running the command `make menuconfig`(Make) or `idf.py menuconfig`(CMake).
 
 <div align=center>
 <img src="docs/_static/meshkit_sense_configurations.png" width="800">
@@ -132,7 +136,11 @@ In the menu, navigate to `Example Configuration` where you can configure the fol
 
 Build and flash the example onto your device and start the log monitoring program by running the following command:
 
+Make:
 `make erase_flash flash monitor -j5`
+
+CMake:
+`idf.py erase_flash flash monitor`
 
 When the above process is successfully completed, the Sensor indicator on ESP32-MeshKit-Sense turns solid red, indicating that the device is powered on and functions normally. Meanwhile, the WiFi indicator starts slowly flashing green, indicating that the device is in **Network Configuration mode**. 
 

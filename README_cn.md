@@ -71,7 +71,8 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     * LED：运行状态指示
     * 温湿度传感器：数据采集
 
-### 快速开始
+### 快速开始(Make)
+
 通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
 
 1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html#get-started-setup-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/macos-setup.html)）进行配置。
@@ -102,6 +103,48 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
     ```shell
     make monitor
+    ```
+
+7. **更新 ESP-MDF**：
+    ```shell
+    cd ~/esp/esp-mdf
+    git pull
+    git submodule update --init --recursive
+    ```
+
+### 快速开始(CMake)
+
+通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南(CMake)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
+
+1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#step-1-set-up-the-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started-cmake/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started-cmake/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started-cmake/macos-setup.html)）进行配置。
+
+2. **获取 ESP-MDF**：
+    ```shell
+    git clone --recursive https://github.com/espressif/esp-mdf.git
+    ```
+    > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init`
+
+3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH & idf.py 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/add-idf_path-to-profile.html)。
+    ```shell
+    export MDF_PATH=~/esp/esp-mdf
+    export PATH="$MDF_PATH/esp-idf/tools:$PATH"
+    ```
+
+4. **创建一个工程**：此工程为 ESP-MESH 两个设备之间通信的示例
+    ```shell
+    cp -r $MDF_PATH/examples/get-started/ .
+    cd get-started/
+    ```
+
+5. **编译和烧写**：除串口号需要修改外，其余使用默认配置即可
+    ```shell
+    idf.py menuconfig
+    idf.py erase_flash flash
+    ```
+
+6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
+    ```shell
+    idf.py monitor
     ```
 
 7. **更新 ESP-MDF**：

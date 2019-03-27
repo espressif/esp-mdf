@@ -22,10 +22,11 @@
  *
  */
 
+#include "sdkconfig.h"
+
+#if CONFIG_BT_ENABLED
 
 #include "esp_bt.h"
-#ifdef CONFIG_BT_ENABLED
-
 #include "esp_blufi_api.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"

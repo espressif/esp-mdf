@@ -13,7 +13,7 @@
 - 根节点：一个 ESP-MESH 网络中有且仅有一个根节点，通过 `MESH_ID` 和信道来区分不同的 `MESH` 网络
 - 非根节点：包含叶子节点和中间节点，其根据网络情况自动选择父节点
 
-你需要通过 `make menuconfig`，在 `Example Configuration` 子菜单下，配置一个设备为根节点，其余设备为非根节点。
+你需要通过 `make menuconfig`(Make) 或者 `idf.py menuconfig`(CMake)，在 `Example Configuration` 子菜单下，配置一个设备为根节点，其余设备为非根节点。
 您也可以在 `Component config -> MDF Mwifi` 子菜单下，配置 ESP-MESH 的最大层级、每层的连接数、广播包的间隔等参数。
 
 <div align=center>

@@ -4,6 +4,5 @@
 #
 
 PROJECT_NAME := $(notdir $(shell pwd))
-EXTRA_COMPONENT_DIRS := $(shell pwd)/button_driver
 
 include $(MDF_PATH)/project.mk
