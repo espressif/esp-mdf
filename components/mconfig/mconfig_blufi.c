@@ -23,8 +23,8 @@
  */
 
 
-#include "esp_bt.h"
 #ifdef CONFIG_BT_ENABLED
+#include "esp_bt.h"
 
 #include "esp_blufi_api.h"
 #include "esp_bt_defs.h"
