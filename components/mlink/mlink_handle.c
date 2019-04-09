@@ -277,6 +277,7 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
     mlink_json_pack(&handle_data->resp_data, "version", g_device_info->version);
     mlink_json_pack(&handle_data->resp_data, "idf_version", esp_get_idf_version());
     mlink_json_pack(&handle_data->resp_data, "mdf_version", mdf_get_version());
+    mlink_json_pack(&handle_data->resp_data, "mlink_trigger", mlink_trigger_is_exist());
     mlink_json_pack(&handle_data->resp_data, "mlink_version", 2);
 
     for (int i = 0; i < g_device_info->characteristics_num; ++i) {

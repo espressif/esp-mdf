@@ -386,6 +386,8 @@ static esp_err_t mlink_device_request(httpd_req_t *req)
     if (!uxQueueSpacesAvailable(g_mlink_queue)
             && xQueueReceive(g_mlink_queue, &q_data, 0)) {
         MDF_LOGW("Mlink data queue is full, delete the front item");
+        MDF_FREE(q_data->addrs_list);
+        MDF_FREE(q_data->data);
         MDF_FREE(q_data);
     }
 
@@ -825,7 +827,25 @@ mdf_err_t mlink_httpd_read(mlink_httpd_t **request, TickType_t wait_ticks)
     }
 
     ret = xQueueReceive(g_mlink_queue, request, wait_ticks);
-    MDF_ERROR_CHECK(*request == NULL, MDF_ERR_NOT_SUPPORTED, "MLINK HTTPD EXIT");
+
+    if (!*request) {
+        mlink_httpd_t *q_data = NULL;
+
+        while (xQueueReceive(g_mlink_queue, &q_data, 0)) {
+            if (q_data) {
+                MDF_FREE(q_data->addrs_list);
+                MDF_FREE(q_data->data);
+                MDF_FREE(q_data);
+            }
+        }
+
+        vQueueDelete(g_mlink_queue);
+        g_mlink_queue = NULL;
+
+        MDF_LOGW("MLINK HTTPD EXIT");
+        return MDF_ERR_NOT_SUPPORTED;
+    }
+
     MDF_ERROR_CHECK(ret != true, MDF_ERR_TIMEOUT, "xQueueSend failed");
 
     return MDF_OK;

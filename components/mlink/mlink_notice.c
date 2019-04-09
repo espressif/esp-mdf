@@ -98,6 +98,8 @@ static void mlink_notice_mdns_deinit(void)
         return ;
     }
 
+    MDF_LOGD("mlink notice udp deinit");
+
     mdns_free();
     g_notice_mdns_init_flag = false;
 }
@@ -347,6 +349,8 @@ static void mlink_notice_udp_deinit()
         return ;
     }
 
+    MDF_LOGD("mlink notice udp deinit");
+
     g_notice_udp_exit_flag = true;
 
     if (g_notice_udp_exit_sem) {
@@ -356,6 +360,12 @@ static void mlink_notice_udp_deinit()
     }
 
     if (g_notice_udp_queue) {
+        notice_udp_data_t *q_data    = NULL;
+
+        while (xQueueReceive(g_notice_udp_queue, &q_data, 0)) {
+            MDF_FREE(q_data);
+        }
+
         vQueueDelete(g_notice_udp_queue);
         g_notice_udp_queue = NULL;
     }
