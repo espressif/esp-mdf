@@ -98,6 +98,7 @@ esp_err_t __mlink_json_pack(char **json_str,  const char *key, int value, int va
 #define mlink_json_pack(json_str, key, value) \
     __mlink_json_pack(json_str, key, (int)(value), \
                       __builtin_types_compatible_p(typeof(value), char) * MLINK_JSON_TYPE_INT8 \
+                      + __builtin_types_compatible_p(typeof(value), bool) * MLINK_JSON_TYPE_INT8 \
                       + __builtin_types_compatible_p(typeof(value), int8_t) * MLINK_JSON_TYPE_INT8 \
                       + __builtin_types_compatible_p(typeof(value), uint8_t) * MLINK_JSON_TYPE_INT8 \
                       + __builtin_types_compatible_p(typeof(value), short) * MLINK_JSON_TYPE_INT16 \
