@@ -402,6 +402,11 @@ bool mwifi_is_started(void);
 bool mwifi_is_connected(void);
 
 /**
+ * @brief  Print mesh configuration information
+ */
+void mwifi_print_config();
+
+/**
  * @brief  Send a packet to any node in the mesh network.
  *
  * @attention 1. If data encryption is enabled, you must ensure that the task that
