@@ -24,6 +24,7 @@ variables:
 before_script:
   - export PATH="/opt/xtensa-esp32-elf/bin:$PATH"
   - export PATH="/opt/esp32ulp-elf-binutils/bin:$PATH"
+  - export PATH="$MDF_PATH/esp-idf/tools:$PATH"
   # add gitlab ssh key
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
@@ -34,6 +35,7 @@ before_script:
   # replace submodule esp-idf to internal repository to speedup cloning
   - sed -i "s%https://github.com/espressif/esp-idf.git%${GITLAB_SSH_SERVER}/idf/esp-idf.git%" .gitmodules
   - git submodule update --init
+  - source esp-idf/tools/ci/setup_python.sh
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source esp-idf/tools/ci/configure_ci_environment.sh
 
@@ -44,10 +46,12 @@ before_script:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - build
+    - build_test
   variables:
     ARTIFACTS_NAME: "default"
     DEFAULT_CONFIG: ""
+    BATCH_BUILD: "1"
+    V: "0"
   artifacts:
     when: always
     paths:
@@ -64,6 +68,8 @@ before_script:
     - make defconfig
     - make -j5
     - make print_flash_cmd | tail -n 1 > build/download.config
+    #- idf.py defconfig
+    - idf.py build
 
 build_example_get_started:
   <<: *build_template
@@ -159,6 +165,7 @@ build_docs:
       - docs/zh_CN/_build/html
     expire_in: 1 mos
   script:
+    - /opt/pyenv/pyenv-1.2.6/versions/2.7.15/bin/python -m pip install --user -r /builds/application/esp-mdf/docs/requirements.txt
     - cd docs
     - ./check_lang_folder_sync.sh
     - cd en

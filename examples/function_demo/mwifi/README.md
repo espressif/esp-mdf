@@ -41,8 +41,14 @@ Enter `make menuconfig`, and configure the followings under the submenu "Example
 
 ### Build and Flash
 
+Make:
 ```shell
 make erase_flash flash -j5 monitor ESPBAUD=921600 ESPPORT=/dev/ttyUSB0
+```
+
+CMake:
+```shell
+idf.py erase_flash flash monitor-b 921600 -p /dev/ttyUSB0
 ```
 
 ### Run

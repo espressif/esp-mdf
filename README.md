@@ -75,7 +75,8 @@ ESP32-Buddy is a development board specifically designed to test the development
     * LED: indicates the board's status
     * Temperature & humidity sensor: collects environmental parameters
 
-### Quick Start
+### Quick Start(Make)
+
 This section provides the steps for quick start with your development of ESP-MDF applications. For more details, please refer to [ESP-IDF Get Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html).
 
 The directory ``~/esp`` will be used further to install the compiling toolchain, ESP-MDF and demo programs. You can use another directory, but make sure to modify the commands accordingly.
@@ -108,6 +109,50 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 6. [**Monitor/Debugging**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html): If you want to exit the monitor, please use the shortcut key ``Ctrl+]``.
     ```shell
     make monitor
+    ```
+
+7. **Update ESP-MDF**:
+    ```shell
+    cd ~/esp/esp-mdf
+    git pull
+    git submodule update --init --recursive
+    ```
+
+### Quick Start(CMake)
+
+This section provides the steps for quick start with your development of ESP-MDF applications. For more details, please refer to [ESP-IDF Get Started (CMake)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#).
+
+The directory ``~/esp`` will be used further to install the compiling toolchain, ESP-MDF and demo programs. You can use another directory, but make sure to modify the commands accordingly.
+
+1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#step-1-set-up-the-toolchain): please set up according to your PC's operating system ([Windows](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/windows-setup.html), [Linux](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/linux-setup.html) or [Mac OS](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/macos-setup.html)).
+
+2. **Get ESP-MDF**:
+    ```shell
+    git clone --recursive https://github.com/espressif/esp-mdf.git
+    ```
+    If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init`
+
+3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH & idf.py PATH to User Profile (CMake)`](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/add-idf_path-to-profile.html).
+    ```shell
+    export MDF_PATH=~/esp/esp-mdf
+    export PATH="$MDF_PATH/esp-idf/tools:$PATH"
+    ```
+
+4. **Start a Project**: The word *project* refers to the communication example between two ESP-MESH devices.
+    ```shell
+    cp -r $MDF_PATH/examples/get-started/ .
+    cd  get-started/
+    ```
+
+5. **Build and Flash**: Only the serial port number needs to be modified. For the rest, just keep the default configuration untouched.
+    ```shell
+    idf.py menuconfig
+    idf.py erase_flash flash
+    ```
+
+6. [**Monitor/Debugging**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html): If you want to exit the monitor, please use the shortcut key ``Ctrl+]``.
+    ```shell
+    idf.py monitor
     ```
 
 7. **Update ESP-MDF**:

@@ -17,6 +17,7 @@
 Python 有一个内置的 HTTP 服务器，可用于本示例升级服务器。
 打开一个新的终端来运行 HTTP 服务器，然后运行这些命令来生成待升级的固件并启动服务器：
 
+Make:
 ```shell
 cd $MDF_PATH/esp-idf/examples/get-started/hello_world/
 export IDF_PATH=$MDF_PATH/esp-idf/
@@ -24,6 +25,16 @@ make
 cd build
 python -m SimpleHTTPServer 8070
 ```
+
+CMake:
+```shell
+cd $MDF_PATH/esp-idf/examples/get-started/hello_world/
+export IDF_PATH=$MDF_PATH/esp-idf/
+idf.py build
+cd build
+python -m SimpleHTTPServer 8070
+```
+
 在服务器运行时，可以在 `http：// localhost：8070/` 浏览构建目录的内容。
 
 >> 注意：
@@ -33,7 +44,7 @@ python -m SimpleHTTPServer 8070
 
 ### 步骤 3：构建 OTA 示例
 
-切换回 OTA 示例目录，然后键入 `make menuconfig` 以配置 OTA 示例。在 “Example Configuration” 子菜单下，填写以下详细信息：
+切换回 OTA 示例目录，然后键入 `make menuconfig`(Make) 或者 `make menuconfig`(CMake) 以配置 OTA 示例。在 “Example Configuration” 子菜单下，填写以下详细信息：
 
 * ESP-MESH 网络的配置信息
 * 固件升级 URL。URL 将如下所示：
@@ -44,14 +55,20 @@ https://<host-ip-address>:<host-port>/<firmware-image-filename>
 for e.g,
 https://192.168.0.3:8070/hello-world.bin
 ```
-保存更改，然后键入`make`来构建示例。
+保存更改，然后键入 `make`(Make) 或者 `idf.py`(CMake) 来构建示例。
 
 ### 步骤 4：Flash OTA 示例
 
 烧录 Flash 时，首先使用`erase_flash`擦除整个闪存（这将删除 ota_data 分区中的所有剩余数据），然后通过串口写入：
 
+Make:
 ```shell
 make erase_flash flash
+```
+
+CMake:
+```shell
+idf.py erase_flash flash
 ```
 
 ### 步骤 5：运行 OTA 示例

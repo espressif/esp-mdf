@@ -4,6 +4,5 @@
 #
 
 PROJECT_NAME := meshkit_sense
-EXTRA_COMPONENT_DIRS := $(shell pwd)/sense_driver
 
 include $(MDF_PATH)/project.mk
