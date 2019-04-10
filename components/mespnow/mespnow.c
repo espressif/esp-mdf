@@ -82,7 +82,7 @@ static const uint8_t g_oui[MESPNOW_OUI_LEN]                = {0x4E, 0x4F}; /**< 
 static EventGroupHandle_t g_event_group                    = NULL;
 static xQueueHandle g_espnow_queue[MESPNOW_TRANS_PIPE_MAX] = {NULL};
 static uint8_t g_espnow_queue_size[MESPNOW_TRANS_PIPE_MAX] = {5, 5, 10, 5};
-static uint16_t g_last_magic[MESPNOW_TRANS_PIPE_MAX]       = {0};
+static uint32_t g_last_magic[MESPNOW_TRANS_PIPE_MAX]       = {0};
 
 static void mespnow_send_cb(const uint8_t *addr, esp_now_send_status_t status)
 {
@@ -119,7 +119,7 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
     }
 
     if (g_last_magic[espnow_data->pipe] == espnow_data->magic) {
-        MDF_LOGD("Receive duplicate packets, magic: %d", espnow_data->magic);
+        MDF_LOGD("Receive duplicate packets, magic: 0x%x", espnow_data->magic);
         return;
     }
 
@@ -132,7 +132,7 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
 
     espnow_queue = g_espnow_queue[espnow_data->pipe];
 
-    if (espnow_data->seq == 0) {
+    if (espnow_data->seq == 0 && espnow_data->pipe != MESPNOW_TRANS_PIPE_DEBUG) {
         int pipe_tmp = espnow_data->pipe;
         mdf_event_loop_send(MDF_EVENT_MESPNOW_RECV, (void *)pipe_tmp);
     }
@@ -208,8 +208,9 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
     MDF_ERROR_CHECK(!g_espnow_init_flag, ESP_ERR_ESPNOW_NOT_INIT, "ESPNOW is not initialized");
 
     mdf_err_t ret                        = ESP_FAIL;
-    mespnow_head_data_t *espnow_data      = NULL;
+    mespnow_head_data_t *espnow_data     = NULL;
     ssize_t write_size                   = size;
+    TickType_t write_ticks               = 0;
     uint32_t start_ticks                 = xTaskGetTickCount();
     static SemaphoreHandle_t s_send_lock = NULL;
 
@@ -228,9 +229,9 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
     memcpy(espnow_data->oui, g_oui, MESPNOW_OUI_LEN);
 
     do {
-        wait_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
-                     xTaskGetTickCount() - start_ticks < wait_ticks ?
-                     wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
+        write_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
+                      xTaskGetTickCount() - start_ticks < wait_ticks ?
+                      wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
         espnow_data->size  = MIN(write_size, MESPNOW_PAYLOAD_LEN);
         espnow_data->crc   = crc8_le(UINT8_MAX, (uint8_t *)data, espnow_data->size);
         espnow_data->magic = esp_random();
@@ -246,11 +247,11 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
             MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_now_send", mdf_err_to_name(ret));
 
             uxBits = xEventGroupWaitBits(g_event_group, SEND_CB_OK | SEND_CB_FAIL,
-                                         pdTRUE, pdFALSE, wait_ticks);
+                                         pdTRUE, pdFALSE, write_ticks);
 
-            wait_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
-                         xTaskGetTickCount() - start_ticks < wait_ticks ?
-                         wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
+            write_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
+                          xTaskGetTickCount() - start_ticks < wait_ticks ?
+                          wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
         } while ((uxBits & SEND_CB_OK) != SEND_CB_OK && --retry_count);
 
         if ((uxBits & SEND_CB_OK) != SEND_CB_OK) {
@@ -264,8 +265,10 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
         espnow_data->seq++;
     } while (write_size > 0);
 
-    int pipe_tmp = espnow_data->pipe;
-    mdf_event_loop_send(MDF_EVENT_MESPNOW_SEND, (void *)pipe_tmp);
+    if (espnow_data->pipe != MESPNOW_TRANS_PIPE_DEBUG) {
+        int pipe_tmp = espnow_data->pipe;
+        mdf_event_loop_send(MDF_EVENT_MESPNOW_SEND, (void *)pipe_tmp);
+    }
 
 EXIT:
     MDF_FREE(espnow_data);
@@ -289,14 +292,15 @@ mdf_err_t mespnow_read(mespnow_trans_pipe_e pipe, uint8_t *src_addr,
     uint32_t start_ticks            = xTaskGetTickCount();
     ssize_t read_size               = 0;
     size_t total_size               = 0;
+    TickType_t recv_ticks           = 0;
 
     /**< Clear the data in the last buffer space */
     for (;;) {
-        wait_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
+        recv_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
                      xTaskGetTickCount() - start_ticks < wait_ticks ?
                      wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
 
-        if (xQueueReceive(espnow_queue, (void *)&q_data, wait_ticks) != pdPASS) {
+        if (xQueueReceive(espnow_queue, (void *)&q_data, recv_ticks) != pdPASS) {
             MDF_LOGD("Read queue timeout");
             return MDF_ERR_TIMEOUT;
         }
@@ -308,7 +312,7 @@ mdf_err_t mespnow_read(mespnow_trans_pipe_e pipe, uint8_t *src_addr,
             break;
         }
 
-        MDF_LOGW("Expected sequence: 0, receive sequence: %d, size: %d",
+        MDF_LOGD("Expected sequence: 0, receive sequence: %d, size: %d",
                  espnow_data->seq, espnow_data->total_size);
         MDF_FREE(q_data);
     }
@@ -319,12 +323,12 @@ mdf_err_t mespnow_read(mespnow_trans_pipe_e pipe, uint8_t *src_addr,
     memcpy(data, espnow_data->payload, espnow_data->size);
     MDF_FREE(q_data);
 
-    for (int expect_seq = 1; read_size < total_size; expect_seq++) {
-        wait_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
+    for (int expect_seq = 1, recv_ticks = 0; read_size < total_size; expect_seq++) {
+        recv_ticks = (wait_ticks == portMAX_DELAY) ? portMAX_DELAY :
                      xTaskGetTickCount() - start_ticks < wait_ticks ?
                      wait_ticks - (xTaskGetTickCount() - start_ticks) : 0;
 
-        if (xQueueReceive(espnow_queue, &q_data, wait_ticks) != pdPASS) {
+        if (xQueueReceive(espnow_queue, &q_data, recv_ticks) != pdPASS) {
             MDF_LOGW("Read queue timeout");
             return MDF_ERR_TIMEOUT;
         }
