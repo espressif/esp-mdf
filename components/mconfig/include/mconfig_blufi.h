@@ -39,6 +39,10 @@ extern "C" {
 #define MCONFIG_BLUFI_NAME_SIZE                  (11) /**< Contains the ending character */
 #define MCONFIG_BLUFI_CUSTOM_SIZE                (31) /**< BLE broadcast data packets have a valid length of up to 31 bytes */
 
+#ifndef CONFIG_BLUFI_BROADCAST_OUI
+#define CONFIG_BLUFI_BROADCAST_OUI               "MDF" /**< Used to filter other Bluetooth broadcast packets, 3 bytes */
+#endif  /**< CONFIG_BLUFI_FILTER_OUI */
+
 #define MDF_EVENT_MCONFIG_BLUFI_STARTED          (MDF_EVENT_MCONFIG_BASE + 0x200)
 #define MDF_EVENT_MCONFIG_BLUFI_STOPED           (MDF_EVENT_MCONFIG_BASE + 0x201)
 #define MDF_EVENT_MCONFIG_BLUFI_CONNECTED        (MDF_EVENT_MCONFIG_BASE + 0x202)
