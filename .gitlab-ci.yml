@@ -46,7 +46,7 @@ before_script:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
-    - build_test
+    - build
   variables:
     ARTIFACTS_NAME: "default"
     DEFAULT_CONFIG: ""
@@ -165,7 +165,6 @@ build_docs:
       - docs/zh_CN/_build/html
     expire_in: 1 mos
   script:
-    - /opt/pyenv/pyenv-1.2.6/versions/2.7.15/bin/python -m pip install --user -r /builds/application/esp-mdf/docs/requirements.txt
     - cd docs
     - ./check_lang_folder_sync.sh
     - cd en
