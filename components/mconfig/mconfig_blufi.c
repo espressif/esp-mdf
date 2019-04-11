@@ -68,6 +68,11 @@ enum blufi_sec_type {
 
 enum blufi_data_type {
     /**
+     * @brief Custom data
+     */
+    BLUFI_DATA_CUSTUM                = 0,
+
+    /**
      * @brief mwifi router configuration
      */
     BLUFI_DATA_ROUTER_SSID           = 1,
@@ -422,7 +427,7 @@ static mdf_err_t mconfig_blufi_adv_config()
     blufi_adv_manufacturer_data_t manufacturer_data = {
         .company_id = g_blufi_cfg.company_id,
         .tid        = g_blufi_cfg.tid,
-        .OUI        = {0x4d, 0x44, 0x46},
+        .OUI        = CONFIG_BLUFI_BROADCAST_OUI,
         .version    = MCONFIG_BLUFI_VERSION,
         .only_beacon = g_blufi_cfg.only_beacon,
 
@@ -435,23 +440,19 @@ static mdf_err_t mconfig_blufi_adv_config()
 #endif /**< CONFIG_MCONFIG_WHITELIST_SECURITY_ENABLE */
     };
 
-    esp_ble_adv_data_t g_scan_rsp_data = {
+    esp_ble_adv_data_t scan_rsp_data = {
         .set_scan_rsp        = g_blufi_cfg.custom_size ? true : false,
         .include_name        = true,
-        .include_txpower     = false,
         .min_interval        = 0x100,
         .max_interval        = 0x100,
-        .appearance          = 0x00,
         .manufacturer_len    = sizeof(blufi_adv_manufacturer_data_t),
         .p_manufacturer_data = (uint8_t *) &manufacturer_data,
-        .service_data_len    = 0,
-        .p_service_data      = NULL,
         .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
     };
 
     ESP_ERROR_CHECK(esp_read_mac(manufacturer_data.sta_addr, ESP_MAC_WIFI_STA));
 
-    if (g_scan_rsp_data.set_scan_rsp) {
+    if (scan_rsp_data.set_scan_rsp) {
         ret = esp_ble_gap_config_adv_data_raw(g_blufi_cfg.custom_data, g_blufi_cfg.custom_size);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data_raw");
     }
@@ -459,7 +460,7 @@ static mdf_err_t mconfig_blufi_adv_config()
     ret = esp_ble_gap_set_device_name(g_blufi_cfg.name);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_set_device_name");
 
-    ret = esp_ble_gap_config_adv_data(&g_scan_rsp_data);
+    ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data");
 
     return MDF_OK;
@@ -581,27 +582,12 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                 MDF_LOGV("blufi_data type: %d, len: %d, data: %s",
                          blufi_data->type, blufi_data->len, blufi_data->data);
 
-                /**
-                 * @brief Compatible with previous version
-                 *        enum blufi_data_type {
-                 *            BLUFI_DATA_ROUTER_SSID   = 1,
-                 *            BLUFI_DATA_ROUTER_PASSWD = 2,
-                 *            BLUFI_DATA_MESH_ID       = 3,
-                 *            BLUFI_DATA_RESERVED      = 4,
-                 *            BLUFI_DATA_WHITELIST     = 5,
-                 *        };
-                 */
-                if (event == ESP_BLUFI_EVENT_RECV_USERNAME) {
-                    if (blufi_data->type == 3) {
-                        blufi_data->type += (BLUFI_DATA_MESH_ID - 3);
-                    } else if (blufi_data->type == 4) {
-                        blufi_data->type = 0;
-                    } else if (blufi_data->type == 5) {
-                        blufi_data->type += (BLUFI_DATA_WHITELIST - 5);
-                    }
-                }
-
                 switch (blufi_data->type) {
+                    case BLUFI_DATA_CUSTUM:
+                        memcpy(&g_recv_config->custom, blufi_data->data, blufi_data->len);
+                        MDF_LOGD("Data custom: %.*s", blufi_data->len, blufi_data->data);
+                        break;
+
                     case BLUFI_DATA_ROUTER_SSID:
                         memcpy(g_recv_config->config.router_ssid, blufi_data->data, blufi_data->len);
                         MDF_LOGD("Router ssid: %s", g_recv_config->config.router_ssid);
@@ -779,15 +765,6 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         MDF_LOGD("Whitelist, number: %d", g_recv_config->whitelist_size / 6);
 
                         for (int i = 0; i < g_recv_config->whitelist_size / 6; i++) {
-                            /**
-                            * @brief Compatible with previous version
-                            *        Convert mac address from bt to sta
-                            */
-                            if (event == ESP_BLUFI_EVENT_RECV_USERNAME) {
-                                uint8_t *mac = g_recv_config->whitelist_data[i].addr;
-                                *((int *)(mac + 2)) = htonl(htonl(*((int *)(mac + 2))) - 2);
-                            }
-
                             MDF_LOGD("count: %d, data:" MACSTR,
                                      i, MAC2STR((g_recv_config->whitelist_data + i)->addr));
                         }

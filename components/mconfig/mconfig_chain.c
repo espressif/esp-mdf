@@ -227,14 +227,16 @@ static void mconfig_chain_master_task(void *arg)
         ret = mespnow_write(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, espnow_data,
                             (MCONFIG_RSA_CIPHERTEXT_SIZE - MCONFIG_RSA_PLAINTEXT_MAX_SIZE) + sizeof(mconfig_chain_data_t), portMAX_DELAY);
         ESP_ERROR_CHECK(mespnow_del_peer(src_addr));
-        MDF_ERROR_CONTINUE(ret != ESP_OK, "<%s> mespnow_write AES key & config", mdf_err_to_name(ret));
 
+        if (ret != ESP_OK) {
+            MDF_LOGD("<%s> mespnow_write AES key & config", mdf_err_to_name(ret));
+            continue;
+        }
 
         /**
          * @brief 5. Send network configuration information
          */
 #ifdef CONFIG_MCONFIG_WHITELIST_ENABLE
-
 
         int retry_count = MCONFIG_CHAIN_SEND_RETRY_NUM;
         uint8_t *whitelist_compress_data = NULL;
@@ -303,7 +305,7 @@ static bool scan_mesh_device(uint8_t *bssid, int8_t *rssi)
             channel = channel % 13 + 1;
 
             if (esp_wifi_set_channel(channel, second) != ESP_OK) {
-                MDF_LOGW("channel: %d, second: %d", channel, second);
+                MDF_LOGW("esp_wifi_set_channel, channel: %d, second: %d", channel, second);
             }
         }
 
@@ -368,8 +370,16 @@ static void mconfig_chain_slave_task(void *arg)
          */
         ESP_ERROR_CHECK(mespnow_add_peer(ESP_IF_WIFI_STA, dest_addr, NULL));
 
-        /**< Remove headers and footers to reduce data length */
+        /**
+         * @brief Clean up the receive buffer of ESP-NOW
+         */
+        do {
+            espnow_size = MESPNOW_PAYLOAD_LEN;
+            ret = mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, dest_addr,
+                               espnow_data, &espnow_size, 0);
+        } while (ret == MDF_OK);
 
+        /**< Remove headers and footers to reduce data length */
         memset(espnow_data, 0, MESPNOW_PAYLOAD_LEN);
         memcpy(espnow_data, pubkey_pem + strlen(PEM_BEGIN_PUBLIC_KEY),
                MCONFIG_RSA_PUBKEY_PEM_DATA_SIZE);
@@ -380,7 +390,12 @@ static void mconfig_chain_slave_task(void *arg)
                             espnow_data, espnow_size, portMAX_DELAY);
 
         ESP_ERROR_CHECK(mespnow_del_peer(dest_addr));
-        MDF_ERROR_CONTINUE(ret != ESP_OK, "<%s> mespnow_write", mdf_err_to_name(ret));
+
+        if (ret != MDF_OK) {
+            MDF_LOGD("<%s> mespnow_write", mdf_err_to_name(ret));
+            vTaskDelay(500 / portTICK_RATE_MS);
+            continue;
+        }
 
         /**
          * @brief 3. Receive network configuration information
@@ -391,7 +406,7 @@ static void mconfig_chain_slave_task(void *arg)
                            espnow_data, &espnow_size, 1000 / portTICK_RATE_MS);
 
         if (ret != ESP_OK || espnow_size != (MCONFIG_RSA_CIPHERTEXT_SIZE - MCONFIG_RSA_PLAINTEXT_MAX_SIZE) + sizeof(mconfig_chain_data_t)) {
-            MDF_LOGW("<%s> mespnow_read", mdf_err_to_name(ret));
+            MDF_LOGD("<%s> mespnow_read", mdf_err_to_name(ret));
             ESP_ERROR_CHECK(mespnow_del_peer(dest_addr));
             continue;
         }
@@ -425,18 +440,23 @@ static void mconfig_chain_slave_task(void *arg)
         mz_ulong whitelist_size          = mconfig_data->whitelist_size;
         mz_ulong whitelist_compress_size = 0;
         uint8_t *whitelist_compress_data = MDF_MALLOC(mconfig_data->whitelist_size + 64);
+        uint8_t src_addr[ESP_NOW_ETH_ALEN] = {0};
 
         do {
             whitelist_compress_size = mconfig_data->whitelist_size + 64;
-            ret = mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, dest_addr, whitelist_compress_data,
-                               (size_t *)&whitelist_compress_size, 3000 / portTICK_RATE_MS);
-        } while (ret != ESP_OK && ret != ESP_ERR_TIMEOUT && --retry_count);
+            ret = mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, whitelist_compress_data,
+                               (size_t *)&whitelist_compress_size, 10000 / portTICK_RATE_MS);
+
+            if (ret == MDF_ERR_TIMEOUT) {
+                break;
+            }
+        } while ((ret != ESP_OK || memcmp(src_addr, dest_addr, ESP_NOW_ETH_ALEN)) && --retry_count);
 
         ESP_ERROR_CHECK(mespnow_del_peer(dest_addr));
 
         if (ret != ESP_OK) {
             MDF_FREE(whitelist_compress_data);
-            MDF_LOGW("<%s> Failed to receive whitelist", mdf_err_to_name(ret));
+            MDF_LOGD("<%s> Failed to receive whitelist", mdf_err_to_name(ret));
             continue;
         }
 
@@ -450,7 +470,8 @@ static void mconfig_chain_slave_task(void *arg)
         mconfig_data->whitelist_size = whitelist_size;
 
         MDF_FREE(whitelist_compress_data);
-        MDF_ERROR_CONTINUE(ret != MZ_OK, "<%s> Failed to uncompress whitelist", mz_error(ret));
+        MDF_ERROR_CONTINUE(ret != MZ_OK, "<%s> Failed to uncompress whitelist, whitelist_size: %d, src_addr: " MACSTR ", dest_addr: " MACSTR,
+                           mz_error(ret), (int)whitelist_compress_size,  MAC2STR(src_addr), MAC2STR(dest_addr));
 
 #endif /**< CONFIG_MCONFIG_WHITELIST_ENABLE */
 
