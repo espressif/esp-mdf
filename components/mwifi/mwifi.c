@@ -901,7 +901,7 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
             if (data_type->communicate == MWIFI_COMMUNICATE_UNICAST) {
                 addrs_num  = esp_mesh_get_routing_table_size();
                 tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
-                ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)addrs_list,
+                ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)tmp_addrs,
                                 addrs_num * sizeof(mesh_addr_t), (int *)&addrs_num));
 
                 if (MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
