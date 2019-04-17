@@ -898,27 +898,27 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
 
     if (data_type->communicate == MWIFI_COMMUNICATE_UNICAST) {
         if (MWIFI_ADDR_IS_ANY(addrs_list) || MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
-            if (data_type->communicate == MWIFI_COMMUNICATE_UNICAST) {
-                addrs_num  = esp_mesh_get_routing_table_size();
-                tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
-                ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)tmp_addrs,
-                                addrs_num * sizeof(mesh_addr_t), (int *)&addrs_num));
+            addrs_num  = esp_mesh_get_routing_table_size();
+            tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
+            ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)tmp_addrs,
+                            addrs_num * sizeof(mesh_addr_t), (int *)&addrs_num));
 
-                if (MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
-                    uint8_t root_mac[6] = {0x0};
-                    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, root_mac));
-                    addrs_remove((mesh_addr_t *)tmp_addrs, &addrs_num, (mesh_addr_t *)root_mac);
-                    MDF_ERROR_GOTO(addrs_num > 2048 || addrs_num <= 0, EXIT, "dest_addrs_num: %d", addrs_num);
-                }
+            if (MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
+                uint8_t root_mac[6] = {0x0};
+                ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, root_mac));
+                addrs_remove((mesh_addr_t *)tmp_addrs, &addrs_num, (mesh_addr_t *)root_mac);
+                MDF_ERROR_GOTO(addrs_num > 2048 || addrs_num <= 0, EXIT, "dest_addrs_num: %d", addrs_num);
             }
+
+            addrs_list = tmp_addrs;
         }
 
         for (int i = 0; i < addrs_num; ++i) {
             MDF_LOGD("count: %d, dest_addr: " MACSTR" mesh_data.size: %d, data: %.*s",
-                     i, MAC2STR(tmp_addrs + 6 * i), mesh_data.size, mesh_data.size, mesh_data.data);
-            ret = mwifi_subcontract_write((mesh_addr_t *)tmp_addrs + i, &mesh_data, data_flag, &mesh_opt);
+                     i, MAC2STR(addrs_list + 6 * i), mesh_data.size, mesh_data.size, mesh_data.data);
+            ret = mwifi_subcontract_write((mesh_addr_t *)addrs_list + i, &mesh_data, data_flag, &mesh_opt);
             MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
-                            mdf_err_to_name(ret), MAC2STR(tmp_addrs));
+                            mdf_err_to_name(ret), MAC2STR(addrs_list));
         }
     } else if (data_type->communicate == MWIFI_COMMUNICATE_MULTICAST) {
         tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
