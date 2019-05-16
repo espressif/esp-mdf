@@ -31,7 +31,9 @@
 extern "C" {
 #endif
 
-#define MDF_SPACE_NAME "ESP-MDF"
+#define MDF_SPACE_NAME              "ESP-MDF"
+#define MDF_MWIFI_INIT_CONFIG_KEY   "init_config"
+#define MDF_MWIFI_CONFIG_KEY        "ap_config"
 
 /**
  * @brief Initialize the default NVS partition
