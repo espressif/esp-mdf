@@ -60,6 +60,8 @@
 #include "mdf_event_loop.h"
 #include "mdf_info_store.h"
 
+#define MCOMMON_ESPRESSIF_ID        (0x02E5) /**< Espressif Incorporated */
+
 #ifdef __cplusplus
 extern "C" {
 #endif /**< _cplusplus */

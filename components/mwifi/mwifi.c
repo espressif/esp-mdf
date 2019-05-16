@@ -137,8 +137,8 @@ mdf_err_t mwifi_init(mwifi_init_config_t *config)
 
     MDF_LOGI("esp-mdf version: %s", mdf_get_version());
 
-    g_init_config = MDF_MALLOC(sizeof(mwifi_init_config_t));
-    g_ap_config   = MDF_MALLOC(sizeof(mwifi_config_t));
+    g_init_config = MDF_CALLOC(1, sizeof(mwifi_init_config_t));
+    g_ap_config   = MDF_CALLOC(1, sizeof(mwifi_config_t));
 
     memcpy(g_init_config, config, sizeof(mwifi_init_config_t));
     g_mwifi_inited_flag = true;
