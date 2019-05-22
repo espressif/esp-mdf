@@ -422,7 +422,8 @@ static mdf_err_t mconfig_blufi_adv_start()
 
 static mdf_err_t mconfig_blufi_adv_config()
 {
-    mdf_err_t ret = MDF_OK;
+    mdf_err_t ret   = MDF_OK;
+    size_t name_len = strlen(g_blufi_cfg.name);
 
     blufi_adv_manufacturer_data_t manufacturer_data = {
         .company_id = g_blufi_cfg.company_id,
@@ -441,10 +442,8 @@ static mdf_err_t mconfig_blufi_adv_config()
     };
 
     esp_ble_adv_data_t scan_rsp_data = {
-        .set_scan_rsp        = g_blufi_cfg.custom_size ? true : false,
-        .include_name        = true,
-        .min_interval        = 0x100,
-        .max_interval        = 0x100,
+        .set_scan_rsp        = g_blufi_cfg.custom_size || name_len > 10 ? true : false,
+        .include_name        = name_len > 10 ? false : true,
         .manufacturer_len    = sizeof(blufi_adv_manufacturer_data_t),
         .p_manufacturer_data = (uint8_t *) &manufacturer_data,
         .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
@@ -452,13 +451,22 @@ static mdf_err_t mconfig_blufi_adv_config()
 
     ESP_ERROR_CHECK(esp_read_mac(manufacturer_data.sta_addr, ESP_MAC_WIFI_STA));
 
-    if (scan_rsp_data.set_scan_rsp) {
+    ret = esp_ble_gap_set_device_name(g_blufi_cfg.name);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_set_device_name");
+
+    if (name_len > 10) {
+        esp_ble_adv_data_t scan_req_data = {
+            .set_scan_rsp = false,
+            .include_name = true,
+            .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
+        };
+
+        ret = esp_ble_gap_config_adv_data(&scan_req_data);
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data");
+    } else if (scan_rsp_data.set_scan_rsp) {
         ret = esp_ble_gap_config_adv_data_raw(g_blufi_cfg.custom_data, g_blufi_cfg.custom_size);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data_raw");
     }
-
-    ret = esp_ble_gap_set_device_name(g_blufi_cfg.name);
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_set_device_name");
 
     ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data");

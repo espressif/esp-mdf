@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#define MCONFIG_BLUFI_NAME_SIZE                  (11) /**< Contains the ending character */
+#define MCONFIG_BLUFI_NAME_SIZE                  (28) /**< Contains the ending character */
 #define MCONFIG_BLUFI_CUSTOM_SIZE                (31) /**< BLE broadcast data packets have a valid length of up to 31 bytes */
 
 #ifndef CONFIG_BLUFI_BROADCAST_OUI
@@ -55,7 +55,8 @@ extern "C" {
  * @brief Bluetooth configuration network related configuration
  */
 typedef struct {
-    char name[MCONFIG_BLUFI_NAME_SIZE];             /**< Local device & peripheral name */
+    char name[MCONFIG_BLUFI_NAME_SIZE];             /**< Local device & peripheral name,
+                                                         If the length of name is greater than 10 bytes, it will overwrite custom_data, and custom_data will not be available.*/
     uint16_t company_id;                            /**< Company Identifiers (https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers) */
     uint16_t tid;                                   /**< Type of device */
     uint8_t custom_size;                            /**< Custom data size */
