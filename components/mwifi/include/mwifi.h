@@ -84,6 +84,7 @@ extern "C" {
 #define MDF_ERR_MWIFI_DISCONNECTED              (MDF_ERR_MWIFI_BASE + 7)  /**< Disconnected with parent on station interface */
 #define MDF_ERR_MWIFI_NO_CONFIG                 (MDF_ERR_MWIFI_BASE + 8)  /**< Router not configured */
 #define MDF_ERR_MWIFI_NO_FOUND                  (MDF_ERR_MWIFI_BASE + 9)  /**< Routes or devices not found */
+#define MDF_ERR_MWIFI_NO_ROOT                   (MDF_ERR_MWIFI_BASE + 10)  /**< Routes or devices not found */
 
 /**
  * @brief enumerated list of Mwifi event id
@@ -196,7 +197,7 @@ typedef struct {
         /**< .xon_qsize             =*/ CONFIG_MWIFI_XON_QSIZE, \
         /**< .retransmit_enable     =*/ CONFIG_MWIFI_RETRANSMIT_ENABLE, \
         /**< .data_drop_enable      =*/ CONFIG_MWIFI_DATA_DROP_ENABLE, \
-    };
+    }
 
 /**
  * @brief Mwifi AP configuration
@@ -535,6 +536,28 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
                       + builtin_types_compatible_p(data, uint8_t *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
                       + builtin_types_compatible_p(data, char **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL \
                       + builtin_types_compatible_p(data, uint8_t **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL)
+
+/**
+ * @brief      Post the toDS state to the mesh stack, Usually used to notify the child node, whether the root is successfully connected to the server
+ *
+ * @attention  This API is only for the root.
+ *
+ * @param[in]  status  this state represents whether the root is able to access external IP network
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_FAIL
+ */
+mdf_err_t mwifi_post_root_status(bool status);
+
+/**
+ * @brief      Get the toDS state from the mesh stack, Whether the root is successfully connected to the server
+ *
+ * @return
+ *    - true
+ *    - flase
+ */
+bool mwifi_get_root_status();
 
 #ifdef __cplusplus
 }

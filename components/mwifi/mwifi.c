@@ -45,6 +45,8 @@ static bool mwifi_connected_flag = false;
 static bool g_mwifi_started_flag = false;
 static mwifi_config_t *g_ap_config        = NULL;
 static mwifi_init_config_t *g_init_config = NULL;
+static bool g_rootless_flag                       = false;
+static mesh_event_toDS_state_t g_toDs_status_flag = false;
 
 bool mwifi_is_started()
 {
@@ -54,6 +56,17 @@ bool mwifi_is_started()
 bool mwifi_is_connected()
 {
     return mwifi_connected_flag;
+}
+
+mdf_err_t mwifi_post_root_status(bool status)
+{
+    g_toDs_status_flag = status;
+    return esp_mesh_post_toDS_state(status);
+}
+
+bool mwifi_get_root_status()
+{
+    return g_toDs_status_flag;
 }
 
 static void esp_mesh_event_cb(mesh_event_t event)
@@ -69,6 +82,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
             if (esp_mesh_is_root()) {
                 tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+                g_rootless_flag = false;
             } else {
                 tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
             }
@@ -120,6 +134,21 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_LOGI("Routing table is changed by removing leave children remove_num: %d, total_num: %d",
                      event.info.routing_table.rt_size_change,
                      event.info.routing_table.rt_size_new);
+            break;
+
+        case MESH_EVENT_TODS_STATE:
+            MDF_LOGI("State represents: %d", g_toDs_status_flag);
+            g_toDs_status_flag = event.info.toDS_state;
+            break;
+
+        case MESH_EVENT_NETWORK_STATE:
+            g_rootless_flag = event.info.network_state.is_rootless;
+            g_toDs_status_flag = s_evet_info.toDS_state = MESH_TODS_UNREACHABLE;
+
+            MDF_LOGI("Network state: %s", g_rootless_flag ? "root_less" : "root_connect");
+
+            memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
+            mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info);
             break;
 
         default:
@@ -578,8 +607,14 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     uint8_t *compress_data = NULL;
     uint8_t root_addr[]    = MWIFI_ADDR_ROOT;
     uint8_t empty_addr[]   = MWIFI_ADDR_NONE;
-    bool to_root = !dest_addrs || !memcmp(dest_addrs, root_addr, MWIFI_ADDR_LEN) ? true : false;
-    dest_addrs   = !dest_addrs ? root_addr : dest_addrs;
+
+    /**
+     * @brief  If the destination address is NULL, it is received by the mwifi_root_read of the root node.
+     *         If the destination address is MWIFI_ADDR_ROOT, it is received by the mwifi_read of the root node.
+     */
+    bool to_root = !dest_addrs ? true : false;
+    dest_addrs   = dest_addrs && !memcmp(dest_addrs, root_addr, MWIFI_ADDR_LEN) ? empty_addr : dest_addrs;
+    dest_addrs   = to_root ? root_addr : dest_addrs;
 
     mwifi_data_head_t data_head = {0x0};
     mesh_data_t mesh_data       = {
@@ -599,6 +634,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     data_flag = (!block) ? data_flag | MESH_DATA_NONBLOCK : data_flag;
     data_head.transmit_self = true;
     memcpy(&data_head.type, data_type, sizeof(mwifi_data_type_t));
+    MDF_ERROR_CHECK(to_root && g_rootless_flag, MDF_ERR_MWIFI_NO_ROOT, "Current network has no root");
 
     /**
      * @brief data compression
@@ -621,7 +657,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
         }
     }
 
-    if (data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
+    if (!to_root && data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
         MDF_FREE(compress_data);
         compress_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
         memcpy(compress_data, dest_addrs, MWIFI_ADDR_LEN);
@@ -631,7 +667,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
         mesh_data.data = compress_data;
         data_head.transmit_num = 1;
         data_head.transmit_all = true;
-        dest_addrs = empty_addr;;
+        dest_addrs = empty_addr;
     }
 
     data_head.total_size_hight = mesh_data.size >> 12;
