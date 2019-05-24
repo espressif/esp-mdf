@@ -1,6 +1,6 @@
 # ESP-MESH Development Framework [[中文]](./README_cn.md)
 
-[![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.com/projects/espressif-esp-mdf/badge/?version=latest)](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest)
 
 ESP-MDF, or Espressif Mesh Development Framework, is a development framework for [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html), a networking protocol built on top of the Wi-Fi protocol. ESP-MDF is based on the [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview) chip.
 
