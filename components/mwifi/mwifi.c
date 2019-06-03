@@ -1097,3 +1097,14 @@ EXIT:
     MDF_FREE(recv_data);
     return ret;
 }
+
+int8_t mwifi_get_parent_rssi()
+{
+    mdf_err_t ret           = MDF_FAIL;
+    mesh_assoc_t mesh_assoc = {0x0};
+
+    ret = esp_wifi_vnd_mesh_get(&mesh_assoc);
+    MDF_ERROR_CHECK(ret != MDF_OK, -120, "Get mesh networking IE");
+
+    return esp_mesh_is_root() ? mesh_assoc.router_rssi : mesh_assoc.rssi;
+}

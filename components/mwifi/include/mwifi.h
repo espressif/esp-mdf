@@ -559,6 +559,13 @@ mdf_err_t mwifi_post_root_status(bool status);
  */
 bool mwifi_get_root_status();
 
+/**
+ * @brief     Get the RSSI of the parent node
+ *
+ * @return    RSSI of the parent
+ */
+int8_t mwifi_get_parent_rssi();
+
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */
