@@ -48,7 +48,8 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     /**< If g_upgrade_config->status has been created and
          once again upgrade the same name bin, just return MDF_OK */
     if (!memcmp(g_upgrade_config->status.name, status->name,
-                sizeof(g_upgrade_config->status.name))) {
+                sizeof(g_upgrade_config->status.name))
+            && g_upgrade_config->status.total_size == status->total_size) {
         goto EXIT;
     }
 

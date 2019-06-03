@@ -182,7 +182,9 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
     MDF_FREE(result->requested_addr);
 
     while (xQueueReceive(g_upgrade_config->queue, &q_data, CONFIG_MUPGRADE_WAIT_RESPONSE_TIMEOUT / portTICK_RATE_MS)) {
-        if (((mupgrade_status_t *)q_data->data)->written_size == ((mupgrade_status_t *)q_data->data)->total_size) {
+        mupgrade_status_t *status = (mupgrade_status_t *)q_data->data;
+
+        if (status->written_size == status->total_size) {
             ret = addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
             MDF_ERROR_CONTINUE(ret != true, "The device has been removed from the list waiting for the upgrade");
 
@@ -367,7 +369,9 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
                 MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Read data from Flash", mdf_err_to_name(ret));
 
                 for (mupgrade_queue_t *q_data = NULL; xQueueReceive(g_upgrade_config->queue, &q_data, 0);) {
-                    if (((mupgrade_status_t *)q_data->data)->written_size == ((mupgrade_status_t *)q_data->data)->total_size) {
+                    mupgrade_status_t *status = (mupgrade_status_t *)q_data->data;
+
+                    if (status->written_size == status->total_size) {
                         ret = addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
                         MDF_ERROR_CONTINUE(ret != true, "The device has been removed from the list waiting for the upgrade");
                         ret = addrs_remove(result->requested_addr, &result->requested_num, q_data->src_addr);
