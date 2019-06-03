@@ -85,8 +85,8 @@ static bool restart_trigger()
 
     mdf_info_load(MUPGRADE_STORE_RESTART_COUNT_KEY, &restart_count, &restart_count_lenght);
 
-    if (reset_reason != POWERON_RESET && reset_reason != RTCWDT_RTC_RESET
-            && SW_CPU_RESET != SW_CPU_RESET) {
+    if (reset_reason != POWERON_RESET && reset_reason != DEEPSLEEP_RESET
+            && SW_CPU_RESET != RTCWDT_BROWN_OUT_RESET) {
         restart_count = 0;
         MDF_LOGW("restart reason: %d", reset_reason);
     }
