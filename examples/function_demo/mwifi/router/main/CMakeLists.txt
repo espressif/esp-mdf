@@ -1,5 +1,5 @@
 
-set(COMPONENT_SRCS "mwifi_example.c")
+set(COMPONENT_SRCS "router_example.c")
 
 set(COMPONENT_ADD_INCLUDEDIRS "")
 

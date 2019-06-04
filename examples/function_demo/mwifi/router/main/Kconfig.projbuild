@@ -19,22 +19,11 @@ config MESH_ID
             Mesh network identification, Nodes with the same mesh ID can
             communicate with each other.
 
-
 config MESH_PASSWORD
     string "Mesh Password"
     default "MESH_PASSWORD"
     help
         Mesh AP password. Password length must be 8 bits smaller than 64 bits,Set to null to not encrypt
-
-config LED_GPIO_NUM
-    int "LED pin GPIO number"
-    range 0 33
-    default 25
-    help
-        There are more enumerations like that
-        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-        They are not shown here to reduce redundant information.
-        @note GPIO34..39 are input mode only.
 
 config SERVER_IP
     string "Server IP address"
