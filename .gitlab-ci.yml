@@ -89,11 +89,17 @@ build_example_mupgrade:
     ARTIFACTS_NAME: "mupgrade"
     EXAMPLE_PATH: "examples/function_demo/mupgrade"
 
-build_example_mwifi:
+build_example_mwifi_router:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mwifi"
-    EXAMPLE_PATH: "examples/function_demo/mwifi"
+    EXAMPLE_PATH: "examples/function_demo/mwifi/router"
+
+build_example_mwifi_norouter:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mwifi"
+    EXAMPLE_PATH: "examples/function_demo/mwifi/no_router"
 
 build_example_mcommon:
   <<: *build_template
