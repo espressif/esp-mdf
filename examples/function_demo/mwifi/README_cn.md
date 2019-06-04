@@ -1,62 +1,20 @@
 [[EN]](./README.md)
 
-# Mwifi 示例
+# Mwifi
 
-## 介绍
+此目录下包含 ESP-MESH 常见组网方式的示例程序：无路由器、有路由器。
 
-本示例将介绍如何基于 `Mwifi` 模块 APIs，实现设备连接远程外部服务器。设备首先通过 ESP-MESH 将所有数据传输到根节点，根节点使用 LWIP 连接远程服务器。
+在 ESP-MESH 组网中，根节点产生有两种方式：
 
-## 硬件准备
+1. 自动选择根节点：根据空闲节点与路由器的信号强度进行选举自动产生
+2. 固定根节点：在代码中固定某个设备为根节点，其余设备为非根节点
 
-1. 至少两块 ESP32 开发板
-2. 一台支持 2.4G 路由器
+根据根节点产生这两种方式，便可简单分为有路由器和无路由器的组网方式。
 
-## 工作流程
+## 无路由器
 
-### 运行 TCP 服务器
+当环境中不存在路由器时，我们只能选择固定根节点方式。可参考 [无路由示例程序](./no_router)
 
-1. 将主机（PC 或手机）连接到路由器
-2. 使用 TCP 测试工具（此工具为任意一个第三方的 TCP 测试软件）来创建 TCP 服务器
+## 有路由器
 
-<div align=center>
-<img src="tcp_server_create.png"  width="800">
-<p> 创建 TCP 服务器 </p>
-</div>
-
-> 注：本示例使用的是安卓[网络测试](https://a.app.qq.com/o/simple.jsp?pkgname=mellow.cyan.nettool)工具
-
-### 配置设备
-
-输入 `make menuconfig`，在 “Example Configuration” 子菜单下，进行配置：
-
-	* 路由器信息：如果您无法获取路由器的信道,请将路由器信道设置为 0，由设备端自动获取
-	* ESP-MESH 网络：密码长度要大于 8 位并小于 64 位，设置为空则不加密
-	* TCP 服务器：主机上运行的 TCP 服务器信息
-	* LED 配置：通过主机控制 GPIO 电平
-
-<div align=center>
-<img src="device_config.png"  width="800">
-<p> 配置设备 </p>
-</div>
-
-### 编译和烧录
-
-Make:
-```shell
-make erase_flash flash -j5 monitor ESPBAUD=921600 ESPPORT=/dev/ttyUSB0
-```
-
-CMake:
-```shell
-idf.py erase_flash flash monitor -b 921600 -p /dev/ttyUSB0
-```
-
-### 运行
-
-1. ESP-MESH 设备每隔三秒将会给 TCP 服务发送当前 LED 的状态
-2. TCP 服务器可以发送命令控制设备 LED 的状态。当目的地址为 `ff:ff:ff:ff:ff:ff` 时，给所有设备发送
-
-<div align=center>
-<img src="tcp_server_send.png"  width="800">
-<p> TCP 服务器 </p>
-</div>
+当环境中存在路由器时，我们可以选择两种方式中的任意一种进行组网。在示例中我们使用自动选择根节点方式。根节点的自动选择涉及所有空闲节点之间基于其与路由器的信号强度的选举过程，所以只能在存在路由器的情况下每个空闲节点将通过 Wi-Fi 信标帧发送其 MAC 地址和路由器 RSSI 值。MAC 地址用于唯一地标识网络中的每个节点，而路由器 RSSI 用于指示节点参考路由器的信号强度。可参考 [有路由示例程序](./router)

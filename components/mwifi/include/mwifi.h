@@ -200,6 +200,18 @@ typedef struct {
     }
 
 /**
+ * @brief Device type
+ */
+typedef enum {
+    MWIFI_MESH_IDLE,    /**< hasn't joined the mesh network yet */
+    MWIFI_MESH_ROOT,    /**< the only sink of the mesh network. Has the ability to access external IP network */
+    MWIFI_MESH_NODE,    /**< intermediate device. Has the ability to forward packets over the mesh network */
+    MWIFI_MESH_LEAF,    /**< has no forwarding ability */
+} node_type_t;
+
+typedef uint8_t mwifi_node_type_t;
+
+/**
  * @brief Mwifi AP configuration
  */
 typedef struct {
@@ -216,12 +228,12 @@ typedef struct {
      */
     uint8_t mesh_id[6];     /**< Mesh network ID. Nodes sharing the same MESH ID can communicate with one another */
     char mesh_password[64]; /**< Password for secure communication between devices in a MESH network */
-    uint8_t mesh_type;      /**< Only MESH_IDLE, MESH_ROOT, MESH_NODE and MESH_LEAF device types are supported.
-                                 Routerless solutions must be configured as MESH_ROOT or MESH_NODE
-                                 MESH_IDLE: The node type is selected by MESH according to the network conditions.
-                                 MESH_ROOT: The Device is the root node
-                                 MESH_NODE: The device is a non-root node and contains intermediate nodes and leaf nodes.
-                                 MESH_LEAF: The device is a leaf node, closes the softap, and is used in a low-power solutions.*/
+    mwifi_node_type_t mesh_type;      /**< Only MWIFI_MESH_IDLE, MWIFI_MESH_ROOT, MWIFI_MESH_NODE and MWIFI_MESH_LEAF device types are supported.
+                                 Routerless solutions must be configured as MWIFI_MESH_ROOT or MWIFI_MESH_NODE
+                                 MWIFI_MESH_IDLE: The node type is selected by MESH according to the network conditions.
+                                 MWIFI_MESH_ROOT: The Device is the root node
+                                 MWIFI_MESH_NODE: The device is a non-root node and contains intermediate nodes and leaf nodes.
+                                 MWIFI_MESH_LEAF: The device is a leaf node, closes the softap, and is used in a low-power solutions.*/
 
     uint8_t channel;        /**< Channel, mesh and router will be on the same channel */
     uint8_t channel_switch_disable; /**< If this value is not set, when "attempt" (mwifi_init_config_t) times is reached, device will change to
@@ -385,7 +397,7 @@ mdf_err_t mwifi_stop(void);
 mdf_err_t mwifi_restart();
 
 /**
- * @brief  wether wifi_mesh is running
+ * @brief  whether wifi_mesh is running
  *
  * @return
  *    - true
@@ -394,7 +406,7 @@ mdf_err_t mwifi_restart();
 bool mwifi_is_started(void);
 
 /**
- * @brief  wether wifi_mesh is disconnected
+ * @brief  Whether the node is already connected to the parent node
  *
  * @return
  *    - true
