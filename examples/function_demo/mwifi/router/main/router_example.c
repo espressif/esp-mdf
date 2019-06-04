@@ -24,49 +24,14 @@
 
 #include "mdf_common.h"
 #include "mwifi.h"
+#include "driver/uart.h"
 
 // #define MEMORY_DEBUG
 
+#define BUF_SIZE (1024)
+
 static int g_sockfd    = -1;
-static const char *TAG = "mwifi_examples";
-
-void tcp_client_write_task(void *arg)
-{
-    mdf_err_t ret = MDF_OK;
-    char *data    = MDF_CALLOC(1, MWIFI_PAYLOAD_LEN);
-    size_t size   = MWIFI_PAYLOAD_LEN;
-    uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
-    mwifi_data_type_t data_type      = {0x0};
-
-    MDF_LOGI("TCP client write task is running");
-
-    while (mwifi_is_connected()) {
-        if (g_sockfd == -1) {
-            vTaskDelay(500 / portTICK_RATE_MS);
-            continue;
-        }
-
-        size = MWIFI_PAYLOAD_LEN - 1;
-        memset(data, 0, MWIFI_PAYLOAD_LEN);
-        ret = mwifi_root_read(src_addr, &data_type, data, &size, portMAX_DELAY);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
-
-        char *json_data = NULL;
-        int json_size   = asprintf(&json_data, "{\"addr\":\"" MACSTR "\",\"data\":%s}",
-                                   MAC2STR(src_addr), data);
-
-        MDF_LOGI("TCP write, size: %d, data: %s", json_size, json_data);
-        ret = write(g_sockfd, json_data, json_size);
-        MDF_FREE(json_data);
-        MDF_ERROR_CONTINUE(ret <= 0, "<%s> TCP write", strerror(errno));
-    }
-
-    MDF_LOGI("TCP client write task is exit");
-
-    close(g_sockfd);
-    MDF_FREE(data);
-    vTaskDelete(NULL);
-}
+static const char *TAG = "router_example";
 
 /**
  * @brief Create a tcp client
@@ -104,11 +69,16 @@ ERR_EXIT:
 
 void tcp_client_read_task(void *arg)
 {
-    mdf_err_t ret = MDF_OK;
-    char *data    = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
-    size_t size   = MWIFI_PAYLOAD_LEN;
+    mdf_err_t ret                     = MDF_OK;
+    char *data                        = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    size_t size                       = MWIFI_PAYLOAD_LEN;
     uint8_t dest_addr[MWIFI_ADDR_LEN] = {0x0};
     mwifi_data_type_t data_type       = {0x0};
+    cJSON *json_root                  = NULL;
+    cJSON *json_addr                  = NULL;
+    cJSON *json_group                 = NULL;
+    cJSON *json_data                  = NULL;
+    cJSON *json_dest_addr             = NULL;
 
     MDF_LOGI("TCP client read task is running");
 
@@ -124,7 +94,7 @@ void tcp_client_read_task(void *arg)
 
         memset(data, 0, MWIFI_PAYLOAD_LEN);
         ret = read(g_sockfd, data, size);
-        MDF_LOGI("TCP read, %d, size: %d, data: %s", g_sockfd, size, data);
+        MDF_LOGD("TCP read, %d, size: %d, data: %s", g_sockfd, size, data);
 
         if (ret <= 0) {
             MDF_LOGW("<%s> TCP read", strerror(errno));
@@ -133,17 +103,24 @@ void tcp_client_read_task(void *arg)
             continue;
         }
 
-        cJSON *pJson = NULL;
-        cJSON *pSub  = NULL;
+        json_root = cJSON_Parse(data);
+        MDF_ERROR_CONTINUE(!json_root, "cJSON_Parse, data format error");
 
-        pJson = cJSON_Parse(data);
-        MDF_ERROR_CONTINUE(!pJson, "cJSON_Parse, data format error");
+        /**
+         * @brief Check if it is a group address. If it is a group address, data_type.group = true.
+         */
+        json_addr = cJSON_GetObjectItem(json_root, "dest_addr");
+        json_group = cJSON_GetObjectItem(json_root, "group");
 
-        pSub = cJSON_GetObjectItem(pJson, "addr");
-
-        if (!pSub) {
-            MDF_LOGW("cJSON_GetObjectItem, Destination address not set");
-            cJSON_Delete(pJson);
+        if (json_addr) {
+            data_type.group = false;
+            json_dest_addr = json_addr;
+        } else if (json_group) {
+            data_type.group = true;
+            json_dest_addr = json_group;
+        } else {
+            MDF_LOGW("Address not found");
+            cJSON_Delete(json_root);
             continue;
         }
 
@@ -152,7 +129,7 @@ void tcp_client_read_task(void *arg)
          */
         do {
             uint32_t mac_data[MWIFI_ADDR_LEN] = {0};
-            sscanf(pSub->valuestring, MACSTR,
+            sscanf(json_dest_addr->valuestring, MACSTR,
                    mac_data, mac_data + 1, mac_data + 2,
                    mac_data + 3, mac_data + 4, mac_data + 5);
 
@@ -161,21 +138,15 @@ void tcp_client_read_task(void *arg)
             }
         } while (0);
 
-        pSub = cJSON_GetObjectItem(pJson, "data");
+        json_data = cJSON_GetObjectItem(json_root, "data");
+        char *send_data = cJSON_PrintUnformatted(json_data);
 
-        if (!pSub) {
-            MDF_LOGW("cJSON_GetObjectItem, Failed to get data");
-            cJSON_Delete(pJson);
-            continue;
-        }
+        ret = mwifi_write(dest_addr, &data_type, send_data, strlen(send_data), true);
+        MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_write", mdf_err_to_name(ret));
 
-        char *json_data = cJSON_PrintUnformatted(pSub);
-
-        ret = mwifi_root_write(dest_addr, 1, &data_type, json_data, strlen(json_data), true);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_write", mdf_err_to_name(ret));
-
-        MDF_FREE(json_data);
-        cJSON_Delete(pJson);
+FREE_MEM:
+        MDF_FREE(send_data);
+        cJSON_Delete(json_root);
     }
 
     MDF_LOGI("TCP client read task is exit");
@@ -186,13 +157,45 @@ void tcp_client_read_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void node_read_task(void *arg)
+void tcp_client_write_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    cJSON *pJson = NULL;
-    cJSON *pSub  = NULL;
-    char *data    = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    char *data    = MDF_CALLOC(1, MWIFI_PAYLOAD_LEN);
     size_t size   = MWIFI_PAYLOAD_LEN;
+    uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
+    mwifi_data_type_t data_type      = {0x0};
+
+    MDF_LOGI("TCP client write task is running");
+
+    while (mwifi_is_connected()) {
+        if (g_sockfd == -1) {
+            vTaskDelay(500 / portTICK_RATE_MS);
+            continue;
+        }
+
+        size = MWIFI_PAYLOAD_LEN - 1;
+        memset(data, 0, MWIFI_PAYLOAD_LEN);
+        ret = mwifi_root_read(src_addr, &data_type, data, &size, portMAX_DELAY);
+        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
+
+        MDF_LOGD("TCP write, size: %d, data: %s", size, data);
+        ret = write(g_sockfd, data, size);
+        MDF_ERROR_CONTINUE(ret <= 0, "<%s> TCP write", strerror(errno));
+    }
+
+    MDF_LOGI("TCP client write task is exit");
+
+    close(g_sockfd);
+    g_sockfd = -1;
+    MDF_FREE(data);
+    vTaskDelete(NULL);
+}
+
+static void node_read_task(void *arg)
+{
+    mdf_err_t ret                    = MDF_OK;
+    char *data                       = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    size_t size                      = MWIFI_PAYLOAD_LEN;
     mwifi_data_type_t data_type      = {0x0};
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
 
@@ -209,21 +212,6 @@ static void node_read_task(void *arg)
         ret = mwifi_read(src_addr, &data_type, data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_read", mdf_err_to_name(ret));
         MDF_LOGD("Node receive: " MACSTR ", size: %d, data: %s", MAC2STR(src_addr), size, data);
-
-        pJson = cJSON_Parse(data);
-        MDF_ERROR_CONTINUE(!pJson, "cJSON_Parse, data format error, data: %s", data);
-
-        pSub = cJSON_GetObjectItem(pJson, "status");
-
-        if (!pSub) {
-            MDF_LOGW("cJSON_GetObjectItem, Destination address not set");
-            cJSON_Delete(pJson);
-            continue;
-        }
-
-        gpio_set_level(CONFIG_LED_GPIO_NUM, pSub->valueint);
-
-        cJSON_Delete(pJson);
     }
 
     MDF_LOGW("Note read task is exit");
@@ -234,13 +222,16 @@ static void node_read_task(void *arg)
 
 static void node_write_task(void *arg)
 {
-    mdf_err_t ret = MDF_OK;
-    int count     = 0;
-    size_t size   = 0;
-    char *data    = NULL;
-    mwifi_data_type_t data_type      = {0x0};
+    size_t size                     = 0;
+    int count                       = 0;
+    char *data                      = NULL;
+    mdf_err_t ret                   = MDF_OK;
+    mwifi_data_type_t data_type     = {0};
+    uint8_t sta_mac[MWIFI_ADDR_LEN] = {0};
 
     MDF_LOGI("NODE task is running");
+
+    esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
 
     for (;;) {
         if (!mwifi_is_connected()) {
@@ -248,8 +239,8 @@ static void node_write_task(void *arg)
             continue;
         }
 
-        size = asprintf(&data, "{\"seq\":%d,\"layer\":%d,\"status\":%d}",
-                        count++, esp_mesh_get_layer(), gpio_get_level(CONFIG_LED_GPIO_NUM));
+        size = asprintf(&data, "{\"src_addr\": \"" MACSTR "\",\"data\": \"Hello TCP Server!\",\"count\": %d}",
+                        MAC2STR(sta_mac), count++);
 
         MDF_LOGD("Node send, size: %d, data: %s", size, data);
         ret = mwifi_write(NULL, &data_type, data, size, true);
@@ -259,6 +250,7 @@ static void node_write_task(void *arg)
         vTaskDelay(3000 / portTICK_RATE_MS);
     }
 
+    MDF_FREE(data);
     MDF_LOGW("NODE task is exit");
 
     vTaskDelete(NULL);
@@ -292,6 +284,7 @@ static void print_system_info_timercb(void *timer)
     }
 
 #ifdef MEMORY_DEBUG
+
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
     }
@@ -387,9 +380,6 @@ void app_main()
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
-    gpio_pad_select_gpio(CONFIG_LED_GPIO_NUM);
-    gpio_set_direction(CONFIG_LED_GPIO_NUM, GPIO_MODE_INPUT_OUTPUT);
-
     /**
      * @brief Initialize wifi mesh.
      */
@@ -398,6 +388,16 @@ void app_main()
     MDF_ERROR_ASSERT(mwifi_init(&cfg));
     MDF_ERROR_ASSERT(mwifi_set_config(&config));
     MDF_ERROR_ASSERT(mwifi_start());
+
+    /**
+     * @brief select/extend a group memebership here
+     *      group id can be a custom address
+     */
+    const uint8_t group_id_list[2][6] = {{0x01, 0x00, 0x5e, 0xae, 0xae, 0xae},
+                                        {0x01, 0x00, 0x5e, 0xae, 0xae, 0xaf}};
+
+    MDF_ERROR_ASSERT(esp_mesh_set_group_id((mesh_addr_t *)group_id_list,
+                                           sizeof(group_id_list) / sizeof(group_id_list[0])));
 
     /**
      * @breif Create handler
