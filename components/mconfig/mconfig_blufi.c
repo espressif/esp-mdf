@@ -172,7 +172,6 @@ EXIT:
 extern void btc_blufi_report_error(esp_blufi_error_state_t state);
 static void mconfig_blufi_dh_negotiate_data_handler(uint8_t *input_data, ssize_t input_len,
         uint8_t **output_data, ssize_t *output_size, bool *need_free)
-
 {
     uint8_t type = input_data[0];
     static size_t s_dh_param_len = 0;
@@ -332,12 +331,6 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
 
             esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
             g_recv_config->config.channel = event->event_info.connected.channel;
-
-            mconfig_queue_write(g_recv_config, 0);
-            MDF_FREE(g_recv_config);
-
-            mconfig_chain_slave_channel_switch_enable();
-            mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_FINISH, NULL);
             break;
 
         case SYSTEM_EVENT_STA_DISCONNECTED: {
@@ -552,8 +545,24 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
 
             mconfig_ble_connect_timer_delete();
 
-            mconfig_blufi_adv_start();
-            MDF_ERROR_BREAK(ret < 0, "<%s> mdf_event_loop_send", mdf_err_to_name(ret));
+            /**
+             * @brief When the mobile APP actively disconnects the Bluetooth connection,
+             *        it is considered that the network is successfully configured.
+             *
+             * @note: If the Bluetooth connection is actively disconnected by the device,
+             *        Bluetooth error will appear on some phones, and Bluetooth needs to
+             *        be restarted to reconfigure the network.
+             */
+            if (g_recv_config && g_recv_config->config.channel) {
+                mconfig_queue_write(g_recv_config, 0);
+                MDF_FREE(g_recv_config);
+
+                mconfig_chain_slave_channel_switch_enable();
+                mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_FINISH, NULL);
+            } else {
+                mconfig_blufi_adv_start();
+                MDF_ERROR_BREAK(ret < 0, "<%s> mdf_event_loop_send", mdf_err_to_name(ret));
+            }
 
             ret = mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_DISCONNECTED, NULL);
             MDF_ERROR_BREAK(ret < 0, "<%s> mdf_event_loop_send", mdf_err_to_name(ret));
