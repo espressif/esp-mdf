@@ -126,14 +126,8 @@ static void root_read_task(void *arg)
     MDF_LOGI("root_read_task is running");
 
     while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
-        if (httpd_data) {
-            MDF_FREE(httpd_data->addrs_list);
-            MDF_FREE(httpd_data->data);
-            MDF_FREE(httpd_data);
-        }
-
         ret = mlink_httpd_read(&httpd_data, portMAX_DELAY);
-        MDF_ERROR_CONTINUE(ret != MDF_OK || !httpd_data, "<%s> mwifi_root_read", mdf_err_to_name(ret));
+        MDF_ERROR_GOTO(ret != MDF_OK || !httpd_data, FREE_MEM, "<%s> mwifi_root_read", mdf_err_to_name(ret));
         MDF_LOGD("Root receive, addrs_num: %d, addrs_list: " MACSTR ", size: %d, data: %.*s",
                  httpd_data->addrs_num, MAC2STR(httpd_data->addrs_list),
                  httpd_data->size, httpd_data->size, httpd_data->data);
@@ -141,7 +135,14 @@ static void root_read_task(void *arg)
         memcpy(&data_type.custom, &httpd_data->type, sizeof(mlink_httpd_type_t));
         ret = mwifi_root_write(httpd_data->addrs_list, httpd_data->addrs_num,
                                &data_type, httpd_data->data, httpd_data->size, true);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_write", mdf_err_to_name(ret));
+        MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_write", mdf_err_to_name(ret));
+
+FREE_MEM:
+        if (httpd_data) {
+            MDF_FREE(httpd_data->addrs_list);
+            MDF_FREE(httpd_data->data);
+            MDF_FREE(httpd_data);
+        }
     }
 
     MDF_LOGW("root_read_task is exit");
@@ -179,9 +180,8 @@ void node_handle_task(void *arg)
 
         if (data_type.upgrade) { // This mesh package contains upgrade data.
             ret = mupgrade_handle(src_addr, data, size);
-            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mupgrade_handle", mdf_err_to_name(ret));
-
-            continue;
+            MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_handle", mdf_err_to_name(ret));
+            goto FREE_MEM;
         }
 
         MDF_LOGI("Node receive, addr: " MACSTR ", size: %d, data: %.*s", MAC2STR(src_addr), size, size, data);
@@ -189,7 +189,7 @@ void node_handle_task(void *arg)
         mlink_httpd_type_t *httpd_type = (mlink_httpd_type_t *)&data_type.custom;
 
         ret = mlink_handle(src_addr, httpd_type, data, size);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_handle", mdf_err_to_name(ret));
+        MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mlink_handle", mdf_err_to_name(ret));
 
         /**
          * @brief If this packet comes from a device on the mesh network, 
@@ -198,7 +198,7 @@ void node_handle_task(void *arg)
         if (httpd_type->from == MLINK_HTTPD_FROM_DEVICE) {
             data_type.protocol = MLINK_PROTO_NOTICE;
             ret = mwifi_write(NULL, &data_type, "status", strlen("status"), true);
-            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_handle", mdf_err_to_name(ret));
+            MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mlink_handle", mdf_err_to_name(ret));
         }
 
 FREE_MEM:
