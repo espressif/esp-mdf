@@ -108,6 +108,8 @@ EXIT:
         response_size += MUPGRADE_PACKET_MAX_NUM / 8;
         ESP_LOG_BUFFER_CHAR_LEVEL(TAG, g_upgrade_config->status.progress_array,
                                   MUPGRADE_PACKET_MAX_NUM / 8, ESP_LOG_VERBOSE);
+    } else if (g_upgrade_config->status.written_size == g_upgrade_config->status.total_size) {
+        mdf_event_loop_send(MDF_EVENT_MUPGRADE_STATUS, (void *)100);
     }
 
     g_upgrade_config->status.type       = MUPGRADE_TYPE_DATA;
@@ -141,6 +143,9 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
             return MDF_ERR_MUPGRADE_NOT_INIT;
         }
     }
+
+    MDF_ERROR_CHECK(packet->seq * MUPGRADE_PACKET_MAX_SIZE > g_upgrade_config->status.total_size,
+                    MDF_ERR_INVALID_ARG, "packet->seq: %d", packet->seq);
 
     /**< Received a duplicate packet */
     if (MUPGRADE_GET_BITS(g_upgrade_config->status.progress_array, packet->seq)) {
