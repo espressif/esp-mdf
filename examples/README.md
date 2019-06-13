@@ -9,6 +9,7 @@ The examples are grouped into subdirectories by category. Each category director
 * `get_started`: contains some very simple examples with minimal functionality.
 * `function_demo`: demonstrates how functions can be used.
 * `development_kit`: provides ESP32-MeshKit and ESP32-Buddy application demos.
+* `maliyun_linkkit`: provides ESP32-MeshKit application demos.
 * `solution`: offers a routerless solution, as well as the solutions for indoor positioning, street light control, etc.
 
 # Using Examples

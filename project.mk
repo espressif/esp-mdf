@@ -5,5 +5,6 @@ CPPFLAGS := -D MDF_VER=\"$(MDF_VER)\"
 
 EXTRA_COMPONENT_DIRS += $(MDF_PATH)/components/
 EXTRA_COMPONENT_DIRS += $(MDF_PATH)/components/third_party
+EXTRA_COMPONENT_DIRS += $(MDF_PATH)/components/third_party/esp-aliyun/components
 
 include $(IDF_PATH)/make/project.mk

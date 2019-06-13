@@ -1,3 +1,6 @@
 [submodule "esp-idf"]
 	path = esp-idf
 	url = https://github.com/espressif/esp-idf.git
+[submodule "components/third_party/esp-aliyun"]
+	path = components/third_party/esp-aliyun
+	url = https://github.com/espressif/esp-aliyun.git
