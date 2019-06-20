@@ -62,12 +62,12 @@ static void root_write_task(void *arg)
 
     while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
         ret = mwifi_root_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_read", mdf_err_to_name(ret));
+        MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
         if (data_type.upgrade) {
             ret = mupgrade_root_handle(src_addr, data, size);
             MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_handle", mdf_err_to_name(ret));
-            continue;
+            goto FREE_MEM;
         }
 
         MDF_LOGD("Root receive, addr: " MACSTR ", size: %d, data: %.*s",
@@ -138,6 +138,7 @@ static void root_read_task(void *arg)
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_write", mdf_err_to_name(ret));
 
 FREE_MEM:
+
         if (httpd_data) {
             MDF_FREE(httpd_data->addrs_list);
             MDF_FREE(httpd_data->data);
@@ -313,11 +314,14 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE: {
             MDF_LOGI("total_num: %d", esp_mesh_get_total_node_num());
 
-            uint8_t sta_mac[MWIFI_ADDR_LEN] = {0x0};
-            MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
+            if (esp_mesh_is_root()) {
+                uint8_t sta_mac[MWIFI_ADDR_LEN] = {0x0};
+                MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
 
-            ret = mlink_notice_write("http", strlen("http"), sta_mac);
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_write", mdf_err_to_name(ret));
+                ret = mlink_notice_write("http", strlen("http"), sta_mac);
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_write", mdf_err_to_name(ret));
+            }
+
             break;
         }
 
@@ -415,7 +419,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             /**
              * @brief Waiting for adjacent packets to be processed, avoiding loops
              */
-            vTaskDelay(50/portTICK_PERIOD_MS);
+            vTaskDelay(50 / portTICK_PERIOD_MS);
 
             /**
              * @brief Trigger handler
