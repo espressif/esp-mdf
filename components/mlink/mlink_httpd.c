@@ -31,6 +31,7 @@
 
 #define MLINK_HTTPD_FIRMWARE_URL_LEN (128)
 #define MLINK_HTTPD_RESP_TIMEROUT_MS (15000)
+#define MLINK_HTTPD_MAX_CONNECT      (CONFIG_LWIP_MAX_SOCKETS - 5)
 
 /**
  * @brief The flag of http chunks
@@ -58,6 +59,9 @@ static const char *TAG                 = "mlink_httpd";
 static httpd_handle_t g_httpd_handle   = NULL;
 static QueueHandle_t g_mlink_queue     = NULL;
 static mlink_connection_t *g_conn_list = NULL;
+
+static void mlink_connection_remove(mlink_connection_t *mlink_conn);
+static mlink_connection_t *mlink_connection_find(uint16_t sockfd);
 
 static mdf_err_t mlink_get_mesh_info(httpd_req_t *req);
 static esp_err_t mlink_device_request(httpd_req_t *req);
@@ -98,19 +102,49 @@ static const httpd_uri_t basic_handlers[] = {
     }
 };
 
+static mdf_err_t mlink_socket_keepalive(int sockfd, int keep_idle, int keep_interval, int keep_count)
+{
+    MDF_PARAM_CHECK(sockfd != -1);
+
+    esp_err_t ret = 0;
+    int keep_alive = 1;
+
+    ret = setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive));
+    MDF_ERROR_CHECK(ret < 0, MDF_FAIL, "setsockopt SO_KEEPALIVE, ret: %d", ret);
+
+    ret = setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_idle, sizeof(keep_idle));
+    MDF_ERROR_CHECK(ret < 0, MDF_FAIL, "setsockopt TCP_KEEPIDLE, ret: %d", ret);
+
+    ret = setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_interval, sizeof(keep_interval));
+    MDF_ERROR_CHECK(ret < 0, MDF_FAIL, "setsockopt TCP_KEEPINTVL, ret: %d", ret);
+
+    ret = setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &keep_count, sizeof(keep_count));
+    MDF_ERROR_CHECK(ret < 0, MDF_FAIL, "setsockopt TCP_KEEPCNT, ret: %d", ret);
+
+    return ESP_OK;
+}
+
 static int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
 {
     MDF_PARAM_CHECK(buf);
+    MDF_PARAM_CHECK(sockfd > 0);
 
     int ret = send(sockfd, buf, buf_len, flags);
-    MDF_ERROR_CHECK(ret < 0, ret, "socket send, sockfd: %d, buf_len: %d", sockfd, buf_len);
+
+    if (ret <= 0) {
+        mlink_connection_t *mlink_conn = mlink_connection_find(sockfd);
+        close(sockfd);
+        mlink_connection_remove(mlink_conn);
+        MDF_LOGW("socket send, err_str: %s, sockfd: %d, buf_len: %d",
+                 strerror(errno), sockfd, buf_len);
+    }
 
     return ret;
 }
 
 static void mlink_connection_remove(mlink_connection_t *mlink_conn)
 {
-    if (mlink_conn) {
+    if (mlink_conn && mlink_conn->timer) {
         xTimerStop(mlink_conn->timer, portMAX_DELAY);
         xTimerDelete(mlink_conn->timer, portMAX_DELAY);
         memset(mlink_conn, 0, sizeof(mlink_connection_t));
@@ -130,12 +164,12 @@ static void mlink_connection_timeout_cb(void *timer)
         chunk_footer = "HTTP/1.1 400 Bad Request\r\n"
                        "Content-Type: application/json\r\n"
                        "Content-Length: 59\r\n\r\n"
-                       "{\"status_code\":-1,\"status_msg\":\"Destination address error\"}";
+                       "{\"status_code\":-1,\"status_msg\":\"Destination address error, No device response\"}";
     }
 
     mlink_conn->flag = MLINK_HTTPD_CHUNKS_DATA;
 
-    MDF_LOGW("Mlink httpd response timeout");
+    MDF_LOGW("Mlink httpd response timeout, sockfd: %d, data: %s", mlink_conn->sockfd, chunk_footer);
 
     if (httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_footer, strlen(chunk_footer), 0) <= 0) {
         MDF_LOGW("<%s> httpd_default_send, sockfd: %d", strerror(errno), mlink_conn->sockfd);
@@ -146,7 +180,7 @@ static void mlink_connection_timeout_cb(void *timer)
 
 static mlink_connection_t *mlink_connection_find(uint16_t sockfd)
 {
-    for (int i = 0; i < CONFIG_LWIP_MAX_SOCKETS; ++i) {
+    for (int i = 0; i < MLINK_HTTPD_MAX_CONNECT; ++i) {
         if (g_conn_list[i].sockfd == sockfd && g_conn_list[i].flag != MLINK_HTTPD_CHUNKS_NONE) {
             return g_conn_list + i;
         }
@@ -158,7 +192,7 @@ static mlink_connection_t *mlink_connection_find(uint16_t sockfd)
 
 static mdf_err_t mlink_connection_add(httpd_req_t *req, uint16_t chunks_num)
 {
-    for (int i = 0; i < CONFIG_LWIP_MAX_SOCKETS; ++i) {
+    for (int i = 0; i < MLINK_HTTPD_MAX_CONNECT; ++i) {
         if (g_conn_list[i].flag == MLINK_HTTPD_CHUNKS_NONE) {
             g_conn_list[i].num    = chunks_num;
             g_conn_list[i].flag   = (chunks_num > 1) ? MLINK_HTTPD_CHUNKS_HEADER : MLINK_HTTPD_CHUNKS_DATA;
@@ -168,6 +202,8 @@ static mdf_err_t mlink_connection_add(httpd_req_t *req, uint16_t chunks_num)
                                                  false, g_conn_list + i, mlink_connection_timeout_cb);
             MDF_ERROR_CHECK(!g_conn_list[i].timer, MDF_FAIL, "xTimerCreate mlink_conn fail");
             xTimerStart(g_conn_list[i].timer, portMAX_DELAY);
+
+            mlink_socket_keepalive(g_conn_list[i].sockfd, 10, 3, 3);
             return MDF_OK;
         }
     }
@@ -246,6 +282,7 @@ static ssize_t mlink_httpd_get_hdr(httpd_req_t *req, const char *field, char **v
 
     if (httpd_req_get_hdr_value_str(req, field, *value, size) != MDF_OK) {
         MDF_LOGD("Get the value string of %s from the request headers", field);
+        MDF_FREE(*value);
         return MDF_FAIL;
     }
 
@@ -775,7 +812,9 @@ mdf_err_t mlink_httpd_write(const mlink_httpd_t *response, TickType_t wait_ticks
         char chunk_size[16] = {0};
         sprintf(chunk_size, "%x\r\n", resp_size);
 
-        xTimerReset(mlink_conn->timer, portMAX_DELAY);
+        if (mlink_conn->timer) {
+            xTimerReset(mlink_conn->timer, portMAX_DELAY);
+        }
 
         MDF_LOGD("send chunk_size, sockfd: %d, data: %s", mlink_conn->sockfd, chunk_size);
         ret = httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_size, strlen(chunk_size), 0);
@@ -859,7 +898,7 @@ mdf_err_t mlink_httpd_start(void)
     /**
      * @brief This check should be a part of http_server
      */
-    config.max_open_sockets = (CONFIG_LWIP_MAX_SOCKETS - 3);
+    config.max_open_sockets = (MLINK_HTTPD_MAX_CONNECT);
 
     MDF_LOGI("Starting server");
     MDF_LOGD("HTTP port         : %d", config.server_port);
@@ -874,7 +913,7 @@ mdf_err_t mlink_httpd_start(void)
     }
 
     if (!g_conn_list) {
-        g_conn_list = MDF_CALLOC(CONFIG_LWIP_MAX_SOCKETS, sizeof(mlink_connection_t));
+        g_conn_list = MDF_CALLOC(MLINK_HTTPD_MAX_CONNECT, sizeof(mlink_connection_t));
     }
 
     ret = httpd_start(&g_httpd_handle, &config);
@@ -902,6 +941,14 @@ mdf_err_t mlink_httpd_stop(void)
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Stops the web server");
     g_httpd_handle = NULL;
     xQueueSend(g_mlink_queue, &mlink_queue_exit, 0);
+
+    if (g_conn_list) {
+        for (int i = 0; i < MLINK_HTTPD_MAX_CONNECT; ++i) {
+            mlink_connection_remove(g_conn_list + i);
+        }
+
+        MDF_FREE(g_conn_list);
+    }
 
     return MDF_OK;
 }

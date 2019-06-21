@@ -28,7 +28,7 @@
 
 #define MLINK_HTTP_SERVER_PORT            (80)
 #define MLINK_NOTICE_UDP_QUEUE_NUM        (10)
-#define MLINK_NOTICE_UDP_RETRY_COUNT      (3)
+#define MLINK_NOTICE_UDP_RETRY_COUNT      (5)
 #define MLINK_NOTICE_SOCKET_INVALID_FD    (-1)
 #define MLINK_NOTICE_UDP_RECV_TIMEROUT_MS (100)
 #define MLINK_NOTICE_UDP_BUF_SIZE         (64)
@@ -236,9 +236,9 @@ static void mlink_notice_udp_task(void *arg)
             MDF_LOGD("Mlink notice udp broadcast, size: %d, data:\n%s", broadcast_msg_size, broadcast_msg_buf);
 
             for (int i = 0, delay_time_ms = 0; i < MLINK_NOTICE_UDP_RETRY_COUNT; ++i, delay_time_ms += delay_time_ms) {
-                vTaskDelay(delay_time_ms);
-                delay_time_ms = (i == 0) ? (50 / portTICK_RATE_MS) : delay_time_ms;
-                delay_time_ms = (delay_time_ms > 200) ? 200 : delay_time_ms;
+                vTaskDelay(delay_time_ms / portTICK_RATE_MS);
+                delay_time_ms = (i == 0) ? 10 : delay_time_ms;
+                delay_time_ms = (delay_time_ms > 50) ? 50 : delay_time_ms;
 
                 struct sockaddr_in broadcast_addr = {
                     .sin_family      = AF_INET,
