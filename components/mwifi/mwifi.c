@@ -409,6 +409,7 @@ mdf_err_t mwifi_set_config(mwifi_config_t *config)
     MDF_PARAM_CHECK(config);
     MDF_PARAM_CHECK(!MWIFI_ADDR_IS_EMPTY(config->mesh_id));
     MDF_PARAM_CHECK(config->channel <= 14);
+    MDF_PARAM_CHECK(strlen(config->router_ssid) || config->mesh_type);
     MDF_PARAM_CHECK(!strlen(config->router_password)
                     || (strlen(config->router_password) >= 8 && strlen(config->router_password) < 64));
     MDF_PARAM_CHECK(!strlen(config->mesh_password)

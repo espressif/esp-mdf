@@ -1,0 +1,18 @@
+menu "MDF Mdebug"
+
+    config MDEBUG_STORE_HISTORY
+        bool "Store command history in flash"
+        default n
+        help
+            Linenoise line editing library provides functions to save and load
+            command history. If this option is enabled, initalizes a FAT filesystem
+            and uses it to store command history.
+
+    config MDEBUG_PARTITION_LABEL
+        string "Store command history partition label"
+        default "storage"
+        depends on MDEBUG_STORE_HISTORY
+        help
+            Store command history partition label.
+
+endmenu
