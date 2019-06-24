@@ -64,6 +64,7 @@ ESP32-MeshKit-Light 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp
 ESP-MESH 是一种基于 Wi-Fi 协议构建的网络协议。ESP-MESH 允许在大的物理区域（室内和室外）上分布的多个设备（以下称为节点）在单个 WLAN（无线局域网）下互连。ESP-MESH 具有自组织和自我修复功能，意味着网络可以自主构建和维护。
 
 Light 工程包含以下功能：
+
  - [构建 ESP-MESH 网络](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#building-a-network)：ESP-MESH 网络构建过程涉及根节点选择，然后逐层形成下游连接，直到所有节点都加入网络。
  - [网络配置](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html#)：目的是将配置信息便捷、高效地传递给 ESP-MESH 设备。
  - [固件升级](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mupgrade.html)：目的是通过断点续传、数据压缩、版本回退和固件检查等机制实现 ESP-MESH 设备高效的升级。
@@ -94,11 +95,11 @@ examples/development_kit/light/
 └── sdkconfig.old /* Previously saved parameters of `make menuconfig` */
 ```
 
- - `light.c`: 包含以下主要的应用代码，这些代码是实现 ESP-MESH 所必需的。
+ - `light.c`：包含以下主要的应用代码，这些代码是实现 ESP-MESH 所必需的。
     - 初始化 Wi-Fi 协议栈
     - 初始化 ESP-MESH 协议栈
     - 初始化 ESP-NOW
-    - 初始化 led 驱动
+    - 初始化 LED 驱动
     - 局域网通信配置
     - 设备关联任务初始化
 
@@ -301,7 +302,7 @@ static mdf_err_t wifi_init()
 
  - `esp_wifi_set_vendor_ie(true, WIFI_VND_IE_TYPE_BEACON, WIFI_VND_IE_ID_1, &ie_data)`：设置 Beacon 包中的 IEEE802.11 供应商特定信息元素用以标识该设备是链式配网主设备
  - `mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, espnow_data, &espnow_size, MCONFIG_CHAIN_EXIT_DELAY / portTICK_RATE_MS)`：接收从设备发来的网络配置请求
- - `mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)`：检测该从设备是否在白名单中，不再白名单中的设备无法加入该 ESP-MESH 网络
+ - `mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)`：检测该从设备是否在白名单中，不在白名单中的设备无法加入该 ESP-MESH 网络
  - `mespnow_write(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, espnow_data, (MCONFIG_RSA_CIPHERTEXT_SIZE - MCONFIG_RSA_PLAINTEXT_MAX_SIZE) + sizeof(mconfig_chain_data_t), portMAX_DELAY)`：向从设备发送加密后的网络配置信息
  - `mespnow_write(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, whitelist_compress_data, whitelist_compress_size, portMAX_DELAY);`：向从设备发送压缩、加密后的白名单列表
 
@@ -319,7 +320,7 @@ static mdf_err_t wifi_init()
 
  - `mlink_trigger_init()`：设备关联模块初始化
  - `xTaskCreate(trigger_handle_task, "trigger_handle", 1024 * 3,  NULL, 1, NULL)`：新建设备关联模块处理任务
- - `mlink_trigger_handle(MLINK_COMMUNICATE_MESH)`：根据当前设备的特征是否满足设置的触发条件进行相应操作,触发条件由 APP 或调用 `mlink_trigger_add()` 进行配置
+ - `mlink_trigger_handle(MLINK_COMMUNICATE_MESH)`：根据当前设备的特征是否满足设置的触发条件进行相应操作，触发条件由 APP 或调用 `mlink_trigger_add()` 进行配置
 
 ##### 5. 初始化 ESP-MESH 协议栈
 
@@ -329,10 +330,10 @@ static mdf_err_t wifi_init()
  - `mwifi_set_config(&ap_config)`：设置 ESP-MESH 配置信息
  - `mwifi_start()`：启动 ESP-MESH
 
-#### 6. 事件处理
+##### 6. 事件处理
 
- - `mdf_event_loop_init(event_loop_cb)`:注册事件回调函数，之后所有的事件将发送到 `event_loop_cb` 函数
- - 不同的事件反映了设备当前所处的不同状态，例如：mesh 组网后，做为根节点的设备得到 IP 地址将触发 `MDF_EVENT_MWIFI_ROOT_GOT_IP` 事件
+ - `mdf_event_loop_init(event_loop_cb)`：注册事件回调函数，之后所有的事件将发送到 `event_loop_cb` 函数
+ - 不同的事件反映了设备当前所处的不同状态，例如：mesh 组网后，作为根节点的设备得到 IP 地址将触发 `MDF_EVENT_MWIFI_ROOT_GOT_IP` 事件
 
 ```
 static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
@@ -411,7 +412,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 }
 ```
 
-#### 7. 节点任务
+##### 7. 节点任务
 
  - `xTaskCreate(request_handle_task, "request_handle", 8 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);`：新建节点数据处理任务
  - `xTaskCreate(root_write_task, "root_write", 4 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_write_task_handle);`：新建根节点向外部 IP 网络转发 ESP-MESH 数据包，根据数据类型向不同的目的地址发送数据包
