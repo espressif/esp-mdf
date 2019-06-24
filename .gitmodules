@@ -4,3 +4,6 @@
 [submodule "components/third_party/esp-aliyun"]
 	path = components/third_party/esp-aliyun
 	url = https://github.com/espressif/esp-aliyun.git
+[submodule "examples/wireless_debug/components/lcd/Adafruit-GFX-Library"]
+	path = examples/wireless_debug/components/lcd/Adafruit-GFX-Library
+	url = https://github.com/adafruit/Adafruit-GFX-Library.git

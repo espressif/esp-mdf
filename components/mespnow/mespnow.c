@@ -81,7 +81,10 @@ static const uint8_t g_oui[MESPNOW_OUI_LEN]                = {0x4E, 0x4F}; /**< 
 
 static EventGroupHandle_t g_event_group                    = NULL;
 static xQueueHandle g_espnow_queue[MESPNOW_TRANS_PIPE_MAX] = {NULL};
-static uint8_t g_espnow_queue_size[MESPNOW_TRANS_PIPE_MAX] = {5, 5, 10, 5};
+static uint8_t g_espnow_queue_size[MESPNOW_TRANS_PIPE_MAX] = {CONFIG_MESPNOW_TRANS_PIPE_DEBUG_QUEUE_SIZE, 
+                                                                CONFIG_MESPNOW_TRANS_PIPE_CONTROL_QUEUE_SIZE, 
+                                                                CONFIG_MESPNOW_TRANS_PIPE_MCONFIG_QUEUE_SIZE, 
+                                                                CONFIG_MESPNOW_TRANS_PIPE_RESERVED_QUEUE_SIZE};
 static uint32_t g_last_magic[MESPNOW_TRANS_PIPE_MAX]       = {0};
 
 static void mespnow_send_cb(const uint8_t *addr, esp_now_send_status_t status)

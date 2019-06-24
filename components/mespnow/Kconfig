@@ -18,4 +18,19 @@ config MESPNOW_LOG_LEVEL
     help
         Config mespnow logging level (0-5).
 
+menu "Mespnow queue size"
+    config MESPNOW_TRANS_PIPE_DEBUG_QUEUE_SIZE
+        int "Mespnow debug pipe queue size"
+        default 5
+    config MESPNOW_TRANS_PIPE_CONTROL_QUEUE_SIZE
+        int "Mespnow control pipe queue size"
+        default 5
+    config MESPNOW_TRANS_PIPE_MCONFIG_QUEUE_SIZE
+        int "Mespnow mconfig pipe queue size"
+        default 10
+    config MESPNOW_TRANS_PIPE_RESERVED_QUEUE_SIZE
+        int "Mespnow reserved pipe queue size"
+        default 5
+endmenu
+
 endmenu

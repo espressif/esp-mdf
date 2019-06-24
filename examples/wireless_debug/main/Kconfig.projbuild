@@ -1,0 +1,79 @@
+menu "Example Configuration"
+
+menu "light driver config"
+config LIGHT_GPIO_RED
+    int "Light red pin GPIO number"
+    range 0 33
+    default 4
+    help
+        There are more enumerations like that
+        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+        They are not shown here to reduce redundant information.
+        @note GPIO34..39 are input mode only.
+
+config LIGHT_GPIO_GREEN
+    int "Light green pin GPIO number"
+    range 0 33
+    default 16
+    help
+        There are more enumerations like that
+        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+        They are not shown here to reduce redundant information.
+        @note GPIO34..39 are input mode only.
+
+config LIGHT_GPIO_BLUE
+    int "Light blue pin GPIO number"
+    range 0 33
+    default 5
+    help
+        There are more enumerations like that
+        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+        They are not shown here to reduce redundant information.
+        @note GPIO34..39 are input mode only.
+
+config LIGHT_GPIO_COLD
+    int "Light cold colors pin GPIO number"
+    range 0 33
+    default 23
+    help
+        There are more enumerations like that
+        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+        They are not shown here to reduce redundant information.
+        @note GPIO34..39 are input mode only.
+
+config LIGHT_GPIO_WARM
+    int "Light warm color pin GPIO number"
+    range 0 33
+    default 19
+    help
+        There are more enumerations like that
+        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+        They are not shown here to reduce redundant information.
+        @note GPIO34..39 are input mode only.
+
+config LIGHT_FADE_PERIOD_MS
+    int "The time from the current color to the next color"
+    default 500
+    help
+        The time from the current color to the next color.
+
+config LIGHT_BLINK_PERIOD_MS
+    int "Period of blinking lights"
+    default 2000
+    help
+        Period of blinking lights.
+endmenu
+
+config LIGHT_VERSION
+    string "Light version"
+    default "1.1.0"
+    help
+        Version of the five-color light
+
+config LIGHT_MEMORY_DEBUG
+    bool "Enable memory debugging"
+    default n
+    help
+        Enable memory debugging.
+
+endmenu
