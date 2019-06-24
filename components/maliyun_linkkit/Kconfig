@@ -1,19 +1,22 @@
-menu "MDF Maliyun"
+menu "MDF support aliyun linkkit"
 
-	config TARGET_PLATFORM_MALIYUN
-    	bool "linkkit mesh enable"
-    	default y
-    	help
-        	linkkit mesh enable.
-    config MALIYUN_NETWORK_ID
-        string "Maliyun network distinguishing ID"
-        default "xxxxxxxxxxxxxxx"
-        help
-            Used to help products that are not available to the manufacturer to form a network under the same router.
+config MESH_SUPPORT_ALIYUN_LINKKIT
+    bool "MDF support aliyun linkkit"
+    default n
+    help
+        MDF support aliyun linkkit.
 
-    config MALIYUN_NETWORK_KEY
-        string "Maliyun network communication key"
-        default "xxxxxxxxxxxxxxx"
-        help
-           Mesh network encryption key, which needs to be paired with MALIYUN_NETWORK_ID. Note: If MALIYUN_NETWORK_ID is the same, MALIYUN_NETWORK_KEY is different, there will be a network failure between devices.
+config MALIYUN_NETWORK_ID
+    string "Maliyun network distinguishing ID"
+    depends on MESH_SUPPORT_ALIYUN_LINKKIT
+    default "xxxxxxxxxxxxxxx"
+    help
+        Used to help products that are not available to the manufacturer to form a network under the same router.
+
+config MALIYUN_NETWORK_KEY
+    string "Maliyun network communication key"
+    depends on MESH_SUPPORT_ALIYUN_LINKKIT
+    default "xxxxxxxxxxxxxxx"
+    help
+        Mesh network encryption key, which needs to be paired with MALIYUN_NETWORK_ID. Note: If MALIYUN_NETWORK_ID is the same, MALIYUN_NETWORK_KEY is different, there will be a network failure between devices.
 endmenu
