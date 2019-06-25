@@ -132,6 +132,7 @@ static void root_read_task(void *arg)
                  httpd_data->addrs_num, MAC2STR(httpd_data->addrs_list),
                  httpd_data->size, httpd_data->size, httpd_data->data);
 
+        data_type.group = httpd_data->group;
         memcpy(&data_type.custom, &httpd_data->type, sizeof(mlink_httpd_type_t));
         ret = mwifi_root_write(httpd_data->addrs_list, httpd_data->addrs_num,
                                &data_type, httpd_data->data, httpd_data->size, true);
@@ -193,7 +194,7 @@ void node_handle_task(void *arg)
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mlink_handle", mdf_err_to_name(ret));
 
         /**
-         * @brief If this packet comes from a device on the mesh network, 
+         * @brief If this packet comes from a device on the mesh network,
          *  it will notify the App that the device's status has changed.
          */
         if (httpd_type->from == MLINK_HTTPD_FROM_DEVICE) {
@@ -231,6 +232,8 @@ static void espnow_to_mwifi_task(void *arg)
             uint8_t *addrs_list = NULL;
             size_t addrs_num    = 0;
             size_t size         = 0;
+            uint32_t type       = 0;
+
             mwifi_data_type_t data_type = {
                 .protocol = MLINK_PROTO_HTTPD,
             };
@@ -243,9 +246,15 @@ static void espnow_to_mwifi_task(void *arg)
 
             memcpy(&data_type.custom, &httpd_type, sizeof(mlink_httpd_type_t));
 
-            ret = mlink_espnow_read(&addrs_list, &addrs_num, &data, &size, portMAX_DELAY);
+            ret = mlink_espnow_read(&addrs_list, &addrs_num, &data, &size, &type, portMAX_DELAY);
             MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_espnow_read", esp_err_to_name(ret));
 
+            /*< Send to yourself if the destination address is empty */
+            if (MWIFI_ADDR_IS_EMPTY(addrs_list) && addrs_num == 1) {
+                esp_wifi_get_mac(ESP_IF_WIFI_STA, addrs_list);
+            }
+
+            data_type.group = (type == MLINK_ESPNOW_COMMUNICATE_GROUP) ? true : false;
             MDF_LOGI("Mlink espnow read data: %.*s", size, data);
 
             for (int i = 0; i < addrs_num; ++i) {

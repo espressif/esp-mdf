@@ -98,6 +98,20 @@ mdf_err_t mconfig_chain_slave_deinit(void);
  */
 mdf_err_t mconfig_chain_master(const mconfig_data_t *config, TickType_t duration_ticks);
 
+
+/**
+ * @brief  Chain Devices with weak rssi are not allowed to join the network.
+ *
+ * @note   If you use it, you must call after `mconfig_chain_master`
+ *
+ * @param  rssi When the device signal strength is less than this value, it will not join the network.
+ *
+ * @return
+ *     - MDF_OK
+ *     - MDF_FAIL
+ */
+mdf_err_t mconfig_chain_filter_rssi(int8_t rssi);
+
 #ifdef __cplusplus
 }
 #endif

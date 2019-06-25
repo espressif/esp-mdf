@@ -475,7 +475,17 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
             return MDF_ERR_TIMEOUT;
         }
 
-        ret = esp_mesh_send(dest_addr, &mesh_data, flag, opt, 1);
+        int retry_count = 3;
+
+        do {
+            ret = esp_mesh_send(dest_addr, &mesh_data, flag, opt, 1);
+
+            if (ret == ESP_ERR_MESH_NO_MEMORY) {
+                MDF_LOGW("<%s> esp_mesh_send", mdf_err_to_name(ret));
+                vTaskDelay(100 / portTICK_PERIOD_MS);
+            }
+        } while(ret == ESP_ERR_MESH_NO_MEMORY && --retry_count);
+
         xSemaphoreGive(s_mwifi_send_lock);
         MDF_ERROR_CHECK(ret != ESP_OK, ret, "Node failed to send packets, dest_addr: " MACSTR
                         ", flag: 0x%02x, opt->type: 0x%02x, opt->len: %d, data->tos: %d, data: %p, size: %d",
@@ -659,16 +669,18 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     }
 
     if (!to_root && data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
-        MDF_FREE(compress_data);
-        compress_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
-        memcpy(compress_data, dest_addrs, MWIFI_ADDR_LEN);
-        memcpy(compress_data + MWIFI_ADDR_LEN, mesh_data.data, mesh_data.size);
+        uint8_t *group_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
+        memcpy(group_data, dest_addrs, MWIFI_ADDR_LEN);
+        memcpy(group_data + MWIFI_ADDR_LEN, mesh_data.data, mesh_data.size);
         mesh_data.tos  = MESH_TOS_P2P;
         mesh_data.size += MWIFI_ADDR_LEN;
-        mesh_data.data = compress_data;
+        mesh_data.data = group_data;
         data_head.transmit_num = 1;
         data_head.transmit_all = true;
         dest_addrs = empty_addr;
+
+        MDF_FREE(compress_data);
+        compress_data = group_data;
     }
 
     data_head.total_size_hight = mesh_data.size >> 12;

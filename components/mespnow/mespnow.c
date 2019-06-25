@@ -140,10 +140,10 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
         mdf_event_loop_send(MDF_EVENT_MESPNOW_RECV, (void *)pipe_tmp);
     }
 
-    /**< If espnow_queue is full, delete the front item */
-    if (!uxQueueSpacesAvailable(espnow_queue)
-            && xQueueReceive(espnow_queue, &espnow_data, 0)) {
-        MDF_FREE(espnow_data);
+    /**< espnow_queue is full */
+    if (!uxQueueSpacesAvailable(espnow_queue)) {
+        MDF_LOGD("espnow_queue is full");
+        return ;
     }
 
     mespnow_queue_data_t *q_data = MDF_MALLOC(sizeof(mespnow_queue_data_t) + size);

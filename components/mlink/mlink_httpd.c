@@ -163,13 +163,16 @@ static void mlink_connection_timeout_cb(void *timer)
     if (mlink_conn->flag != MLINK_HTTPD_CHUNKS_BODY) {
         chunk_footer = "HTTP/1.1 400 Bad Request\r\n"
                        "Content-Type: application/json\r\n"
-                       "Content-Length: 59\r\n\r\n"
+                       "Content-Length: 79\r\n\r\n"
                        "{\"status_code\":-1,\"status_msg\":\"Destination address error, No device response\"}";
     }
 
     mlink_conn->flag = MLINK_HTTPD_CHUNKS_DATA;
 
     MDF_LOGW("Mlink httpd response timeout, sockfd: %d, data: %s", mlink_conn->sockfd, chunk_footer);
+
+    struct timeval timeout = {.tv_sec = 3};
+    setsockopt(mlink_conn->sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
     if (httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_footer, strlen(chunk_footer), 0) <= 0) {
         MDF_LOGW("<%s> httpd_default_send, sockfd: %d", strerror(errno), mlink_conn->sockfd);
@@ -358,12 +361,18 @@ static esp_err_t mlink_device_request(httpd_req_t *req)
 
     MDF_FREE(httpd_hdr_value);
 
-    httpd_hdr_value_len = mlink_httpd_get_hdr(req, "Mesh-Node-Mac", &httpd_hdr_value);
+    httpd_hdr_value_len = mlink_httpd_get_hdr(req, "Mesh-Node-Group", &httpd_hdr_value);
 
-    if (httpd_hdr_value_len <= 0) {
-        MDF_LOGW("Get 'Mesh-Node-Mac' from the request headers");
-        mlink_httpd_resp(req, HTTPD_400, "Must contain the 'Mesh-Node-Mac' field");
-        goto EXIT;
+    if (httpd_hdr_value_len > 0) {
+        httpd_data->group = true;
+    } else {
+        httpd_hdr_value_len = mlink_httpd_get_hdr(req, "Mesh-Node-Mac", &httpd_hdr_value);
+
+        if (httpd_hdr_value_len <= 0) {
+            MDF_LOGW("Get 'Mesh-Node-Mac' from the request headers");
+            mlink_httpd_resp(req, HTTPD_400, "Must contain the 'Mesh-Node-Mac' field");
+            goto EXIT;
+        }
     }
 
     httpd_data->addrs_list = MDF_MALLOC(httpd_hdr_value_len / 2);
