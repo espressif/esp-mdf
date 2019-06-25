@@ -65,6 +65,7 @@ typedef struct {
  */
 typedef struct {
     mlink_httpd_type_t type; /**< Http server data type */
+    bool group;              /**< Send a package as a group */
     size_t addrs_num;        /**< Number of addresses */
     uint8_t *addrs_list;     /**< List of addresses */
     size_t size;             /**< Length of data */

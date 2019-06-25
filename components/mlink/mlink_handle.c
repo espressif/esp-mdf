@@ -212,8 +212,20 @@ mdf_err_t mlink_add_characteristic_handle(mlink_characteristic_func_t get_value_
 {
     MDF_PARAM_CHECK(get_value_func);
 
+    mdf_err_t ret = MDF_OK;
+    uint16_t group_num = 0;
+
     mlink_device_get_value = get_value_func;
     mlink_device_set_value = set_value_func;
+
+    if (mdf_info_load("group_num", &group_num, sizeof(ssize_t)) == MDF_OK) {
+        mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+        mdf_info_load("group_list", group_list, sizeof(mesh_addr_t) * group_num);
+
+        ret = esp_mesh_set_group_id((mesh_addr_t *)group_list, group_num);
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "<%s> Set group ID addresses, group_num: %d",
+                        mdf_err_to_name(ret), group_num);
+    }
 
     return MDF_OK;
 }
@@ -279,6 +291,29 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
     mlink_json_pack(&handle_data->resp_data, "mdf_version", mdf_get_version());
     mlink_json_pack(&handle_data->resp_data, "mlink_trigger", mlink_trigger_is_exist());
     mlink_json_pack(&handle_data->resp_data, "mlink_version", 2);
+    mlink_json_pack(&handle_data->resp_data, "rssi", mwifi_get_parent_rssi());
+    mlink_json_pack(&handle_data->resp_data, "layer", esp_mesh_get_layer());
+
+    uint16_t group_num = esp_mesh_get_group_num();
+
+    if (group_num > 0) {
+        mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+
+        if (esp_mesh_get_group_list(group_list, group_num) == MDF_OK) {
+            char *group_str = NULL;
+            char group_id_str[13] = {0x0};
+
+            for (int i = 0; i < group_num; ++i) {
+                mlink_mac_hex2str(group_list[i].addr, group_id_str);
+                mlink_json_pack(&group_str, "[]", group_id_str);
+            }
+
+            mlink_json_pack(&handle_data->resp_data, "group", group_str);
+            MDF_FREE(group_str);
+        }
+
+        MDF_FREE(group_list);
+    }
 
     for (int i = 0; i < g_device_info->characteristics_num; ++i) {
         char *tmp_str = NULL;
@@ -461,6 +496,8 @@ static mdf_err_t mlink_handle_add_device(mlink_handle_data_t *handle_data)
     int whitelist_num            = 0;
     char **whitelist_json        = NULL;
     uint32_t duration_ms         = 30000;
+    int8_t rssi                  = -120;
+
     mconfig_data_t *mconfig_data = MDF_CALLOC(1, sizeof(mconfig_data_t));
 
     ret = mwifi_get_config(&mconfig_data->config);
@@ -481,12 +518,18 @@ static mdf_err_t mlink_handle_add_device(mlink_handle_data_t *handle_data)
 
     for (int i = 0; i < whitelist_num && i < CONFIG_MWIFI_CAPACITY_NUM; ++i) {
         mlink_mac_str2hex(whitelist_json[i], (mconfig_data->whitelist_data + i)->addr);
+        MDF_FREE(whitelist_json[i]);
     }
 
     mlink_json_parse(handle_data->req_data, "timeout", &duration_ms);
+
     ret = mconfig_chain_master(mconfig_data, duration_ms / portTICK_RATE_MS);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Sending network configuration information to the devices",
                    mdf_err_to_name(ret));
+
+    if (mlink_json_parse(handle_data->req_data, "rssi", &rssi) == MDF_OK) {
+        mconfig_chain_filter_rssi(rssi);
+    }
 
 EXIT:
     MDF_FREE(mconfig_data);
@@ -612,6 +655,117 @@ static mdf_err_t mlink_handle_set_config(mlink_handle_data_t *handle_data)
     return ESP_OK;
 }
 
+static mdf_err_t mlink_handle_set_group(mlink_handle_data_t *handle_data)
+{
+    mdf_err_t ret     = ESP_OK;
+    ssize_t group_num = 0;
+    char **group_json  = NULL;
+    uint8_t group_id[6] = {0x0};
+
+    ret = mlink_json_parse(handle_data->req_data, "group", &group_num);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
+
+    group_json = MDF_CALLOC(group_num, sizeof(char *));
+    ret = mlink_json_parse(handle_data->req_data, "group", group_json);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
+
+    for (int i = 0; i < group_num && i < CONFIG_MWIFI_CAPACITY_NUM; ++i) {
+        mlink_mac_str2hex(group_json[i], group_id);
+        MDF_FREE(group_json[i]);
+        MDF_LOGV("group_id: " MACSTR, MAC2STR(group_id));
+
+        ret = esp_mesh_set_group_id((mesh_addr_t *)group_id, 1);
+        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> Set group ID addresses, group_id:" MACSTR,
+                           mdf_err_to_name(ret), MAC2STR(group_id));
+    }
+
+    do {
+        ssize_t group_num = esp_mesh_get_group_num();
+        mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+        esp_mesh_get_group_list(group_list, group_num);
+        mdf_info_save("group_num", &group_num, sizeof(ssize_t));
+        mdf_info_save("group_list", group_list, sizeof(mesh_addr_t) * group_num);
+    } while (0);
+
+EXIT:
+
+    MDF_FREE(group_json);
+
+    return ret;
+}
+
+static mdf_err_t mlink_handle_get_group(mlink_handle_data_t *handle_data)
+{
+    uint16_t group_num = esp_mesh_get_group_num();
+
+    if (group_num) {
+        mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+
+        if (esp_mesh_get_group_list(group_list, group_num) == MDF_OK) {
+            char *group_str = NULL;
+            char group_id_str[13] = {0x0};
+
+            for (int i = 0; i < group_num; ++i) {
+                mlink_mac_hex2str(group_list[i].addr, group_id_str);
+                mlink_json_pack(&group_str, "[]", group_id_str);
+            }
+
+            mlink_json_pack(&handle_data->resp_data, "group", group_str);
+            MDF_FREE(group_str);
+        }
+
+        MDF_FREE(group_list);
+    }
+
+    handle_data->resp_size = strlen(handle_data->resp_data);
+
+    return ESP_OK;
+}
+
+static mdf_err_t mlink_handle_remove_group(mlink_handle_data_t *handle_data)
+{
+    mdf_err_t ret     = ESP_OK;
+    ssize_t group_num = 0;
+    char **group_json  = NULL;
+    uint8_t group_id[6] = {0x0};
+
+    ret = mlink_json_parse(handle_data->req_data, "group", &group_num);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
+
+    group_json = MDF_CALLOC(group_num, sizeof(char *));
+    ret = mlink_json_parse(handle_data->req_data, "group", group_json);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
+
+    for (int i = 0; i < group_num && i < CONFIG_MWIFI_CAPACITY_NUM; ++i) {
+        mlink_mac_str2hex(group_json[i], group_id);
+        MDF_FREE(group_json[i]);
+
+        ret = esp_mesh_delete_group_id((mesh_addr_t *)group_id, 1);
+        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> Set group ID addresses, group_id:" MACSTR,
+                           mdf_err_to_name(ret), MAC2STR(group_id));
+    }
+
+    do {
+        ssize_t group_num = esp_mesh_get_group_num();
+
+        if (group_num > 0) {
+            mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+            esp_mesh_get_group_list(group_list, group_num);
+            mdf_info_save("group_num", &group_num, sizeof(ssize_t));
+            mdf_info_save("group_list", group_list, sizeof(mesh_addr_t) * group_num);
+        } else {
+            mdf_info_erase("group_num");
+            mdf_info_erase("group_list");
+        }
+    } while (0);
+
+EXIT:
+
+    MDF_FREE(group_json);
+
+    return ret;
+}
+
 static mlink_handle_t g_handles_list[MLINK_HANDLES_MAX_SIZE] = {
     {"reset",            mlink_handle_system_reset},
     {"reboot",           mlink_handle_system_reboot},
@@ -625,6 +779,9 @@ static mlink_handle_t g_handles_list[MLINK_HANDLES_MAX_SIZE] = {
     {"set_ota_fallback", mlink_handle_set_ota_fallback},
     {"get_mesh_config",  mlink_handle_get_config},
     {"set_mesh_config",  mlink_handle_set_config},
+    {"set_group",        mlink_handle_set_group},
+    {"get_group",        mlink_handle_get_group},
+    {"remove_group",     mlink_handle_remove_group},
     {NULL,              NULL},
 };
 

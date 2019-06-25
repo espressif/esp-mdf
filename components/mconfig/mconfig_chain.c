@@ -61,6 +61,7 @@ static SemaphoreHandle_t g_chain_slave_exit_sem = NULL;
 
 static uint32_t g_chain_master_duration_ticks          = 0;
 static SemaphoreHandle_t g_chain_master_exit_sem       = NULL;
+static int8_t g_filter_rssi                            = -120;
 
 static const uint8_t MDF_VENDOR_OUI[3] = {0x18, 0xFE, 0x34};
 static const uint8_t MCONFIG_AES_CFB_IV[MCONFIG_AES_KEY_LEN] = {
@@ -180,9 +181,11 @@ static void mconfig_chain_master_task(void *arg)
             continue;
         }
 
+        int8_t rssi = espnow_data[MCONFIG_RSA_PUBKEY_PEM_DATA_SIZE];
+
         esp_wifi_set_vendor_ie(false, WIFI_VND_IE_TYPE_BEACON, WIFI_VND_IE_ID_1, &ie_data);
         vendor_ie_flag = true;
-        MDF_LOGI("Add device addr: " MACSTR, MAC2STR(src_addr));
+        MDF_LOGI("Add device, rssi: %d, addr: " MACSTR, rssi, MAC2STR(src_addr));
 
         /**
          * @brief 3. Verify that the device is a forged device
@@ -192,7 +195,7 @@ static void mconfig_chain_master_task(void *arg)
         sprintf(pubkey_pem, PEM_BEGIN_PUBLIC_KEY "%s" PEM_END_PUBLIC_KEY, espnow_data);
         MDF_LOGV("pubkey_pem: %s", pubkey_pem);
 
-        if (!mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)) {
+        if (rssi < g_filter_rssi || !mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)) {
             MDF_LOGD("this device("MACSTR") is not on the whitelist of the device configuration network device",
                      MAC2STR(src_addr));
             continue;
@@ -326,7 +329,7 @@ static bool scan_mesh_device(uint8_t *bssid, int8_t *rssi)
         }
     }
 
-    return true;
+    return *rssi < g_filter_rssi ? false : true;
 }
 
 static void mconfig_chain_slave_task(void *arg)
@@ -577,9 +580,17 @@ mdf_err_t mconfig_chain_master(const mconfig_data_t *mconfig_data, TickType_t du
     mconfig_chain_data_t *chain_data = MDF_MALLOC(chain_size);
     memcpy(&chain_data->mconfig_data, mconfig_data, sizeof(mconfig_data_t) + mconfig_data->whitelist_size);
     g_chain_master_duration_ticks = duration_ticks;
+    g_filter_rssi = -120;
 
     xTaskCreatePinnedToCore(mconfig_chain_master_task, "mconfig_chain_master", 8 * 1024,
                             chain_data, CONFIG_MDF_TASK_DEFAULT_PRIOTY,
                             NULL, CONFIG_MDF_TASK_PINNED_TO_CORE);
+    return MDF_OK;
+}
+
+mdf_err_t mconfig_chain_filter_rssi(int8_t rssi)
+{
+    g_filter_rssi = rssi;
+
     return MDF_OK;
 }

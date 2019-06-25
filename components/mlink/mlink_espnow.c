@@ -41,8 +41,8 @@ typedef struct {
     char data[0];        /**< Pointer of data */
 } mlink_espnow_t;
 
-mdf_err_t mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, const void *data,
-                             size_t size, TickType_t wait_ticks)
+mdf_err_t __mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, const void *data,
+                               size_t size, uint32_t type, TickType_t wait_ticks)
 {
     MDF_PARAM_CHECK(data);
     MDF_PARAM_CHECK(addrs_list);
@@ -57,6 +57,12 @@ mdf_err_t mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, const 
     memcpy(espnow_data->data, data, size);
     memcpy(espnow_data->data + size, addrs_list, addrs_num * ESP_NOW_ETH_ALEN);
 
+    if (!type) {
+        memset(&espnow_data->type, 0, sizeof(espnow_data->type));
+    } else {
+        espnow_data->type = type;
+    }
+
     ret = mespnow_write(MESPNOW_TRANS_PIPE_CONTROL, g_espnow_config.parent_bssid,
                         espnow_data, espnow_size, wait_ticks);
     MDF_FREE(espnow_data);
@@ -65,8 +71,8 @@ mdf_err_t mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, const 
     return ret;
 }
 
-mdf_err_t mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t **data,
-                            size_t *size, TickType_t wait_ticks)
+mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t **data,
+                              size_t *size, uint32_t *type, TickType_t wait_ticks)
 {
     MDF_PARAM_CHECK(size);
     MDF_PARAM_CHECK(data);
@@ -83,12 +89,17 @@ mdf_err_t mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t **d
     mlink_espnow_t *espnow_data = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN);
     ret = mespnow_read(MESPNOW_TRANS_PIPE_CONTROL, src_addr,
                        espnow_data, &espnow_size, wait_ticks);
-    MDF_ERROR_GOTO(ret < 0, EXIT, "mespnow_read");
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "mespnow_read");
 
     *size = espnow_data->size;
     *data = MDF_MALLOC(espnow_data->size);
     *addrs_num  = espnow_data->addrs_num;
     *addrs_list = MDF_MALLOC(*addrs_num * ESP_NOW_ETH_ALEN);
+
+    if (type) {
+        *type = espnow_data->type;
+    }
+
     memcpy(*data, espnow_data->data, espnow_data->size);
     memcpy(*addrs_list, espnow_data->data + *size, *addrs_num * ESP_NOW_ETH_ALEN);
 
