@@ -332,6 +332,10 @@ mdf_err_t mwifi_start()
         ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(WIFI_AUTH_OPEN));
     }
 
+#ifndef CONFIG_MWIFI_MESH_IE_ENABLE
+    mesh_config.crypto_funcs = NULL;
+#endif /*< CONFIG_MWIFI_MESH_IE_ENABLE */
+
     ESP_ERROR_CHECK(esp_mesh_set_config(&mesh_config));
 
     return esp_mesh_start();
@@ -484,7 +488,7 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
                 MDF_LOGW("<%s> esp_mesh_send", mdf_err_to_name(ret));
                 vTaskDelay(100 / portTICK_PERIOD_MS);
             }
-        } while(ret == ESP_ERR_MESH_NO_MEMORY && --retry_count);
+        } while (ret == ESP_ERR_MESH_NO_MEMORY && --retry_count);
 
         xSemaphoreGive(s_mwifi_send_lock);
         MDF_ERROR_CHECK(ret != ESP_OK, ret, "Node failed to send packets, dest_addr: " MACSTR

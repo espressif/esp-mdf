@@ -46,8 +46,8 @@ endmenu
 menu "Capacity config"
 config MWIFI_CAPACITY_NUM
     int "Mesh network capacity"
-    range 1 300
-    default 256
+    range 1 512
+    default 1024
     help
         Network capacity, defining max number of devices allowed in the mesh network.
 
@@ -134,7 +134,7 @@ endmenu
 menu "Transmission config"
 config MWIFI_XON_QSIZE
     int "The number of mesh buffer queues"
-    default 64
+    default 32
     help
         The number of mesh buffer queues.
 
@@ -149,6 +149,13 @@ config MWIFI_DATA_DROP_ENABLE
     default y
     help
         If a root is changed, enable the new root to drop the previous packet
+
+config MWIFI_MESH_IE_ENABLE
+    bool "Enable mesh IE encryption"
+    default y
+    help
+        If you use wifi receiver to get 802.11 packet analysis,
+        you need to disable mesh IE encryption. mesh IE encryption is not compatible with unencrypted versions.
 
 endmenu
 
