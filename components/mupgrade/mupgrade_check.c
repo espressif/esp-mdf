@@ -26,7 +26,11 @@
 
 #include "mupgrade.h"
 
-#define MUPGRADE_FIRMWARE_FLAG           "** MUPGRADE_FIRMWARE_FLAG **"
+#ifndef CONFIG_MUPGRADE_FIRMWARE_FLAG
+#define CONFIG_MUPGRADE_FIRMWARE_FLAG   "** MUPGRADE_FIRMWARE_FLAG **"
+#endif
+
+#define MUPGRADE_FIRMWARE_FLAG           CONFIG_MUPGRADE_FIRMWARE_FLAG
 #define MUPGRADE_FIRMWARE_FLAG_SIZE      32
 #define MUPGRADE_STORE_RESTART_COUNT_KEY "mupgrade_count"
 
@@ -83,17 +87,17 @@ static bool restart_trigger()
     uint32_t restart_count_lenght = sizeof(uint32_t);
     RESET_REASON reset_reason     = rtc_get_reset_reason(0);
 
-    mdf_info_load(MUPGRADE_STORE_RESTART_COUNT_KEY, &restart_count, &restart_count_lenght);
-
-    if (reset_reason != POWERON_RESET && reset_reason != DEEPSLEEP_RESET
-            && SW_CPU_RESET != RTCWDT_BROWN_OUT_RESET) {
-        restart_count = 0;
-        MDF_LOGW("restart reason: %d", reset_reason);
+    if (reset_reason == POWERON_RESET || reset_reason == RTCWDT_RTC_RESET
+            || reset_reason == DEEPSLEEP_RESET || reset_reason == RTCWDT_BROWN_OUT_RESET) {
+        restart_count = 1;
+    } else {
+        mdf_info_load(MUPGRADE_STORE_RESTART_COUNT_KEY, &restart_count, &restart_count_lenght);
+        restart_count++;
+        MDF_LOGW("restart reason: %d, count: %d", reset_reason, restart_count);
     }
 
     /**< If the device restarts within the instruction time,
     the event_mdoe value will be incremented by one */
-    restart_count++;
     ret = mdf_info_save(MUPGRADE_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
     MDF_ERROR_CHECK(ret != ESP_OK, false, "Save the number of restarts within the set time");
 

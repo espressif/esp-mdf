@@ -1,10 +1,10 @@
 menu "MDF Mupgrade"
 
 config MUPGRADE_RETRY_COUNT
-    int "Maximum length of a single packet transmitted"
+    int "Number of times the firmware failed to retry"
     default 10
     help
-        Maximum length of a single packet transmitted
+        Number of times the firmware failed to retry
 
 config MUPGRADE_WAIT_RESPONSE_TIMEOUT
     int "Timeout waiting for a response (ms)"
@@ -24,6 +24,13 @@ config MUPGRADE_FIRMWARE_CHECK
     default n
     help
        Check if the Mupgrade module is included.
+
+config MUPGRADE_FIRMWARE_FLAG
+    string "Check if this identifier is included in the firmware"
+    default "** MUPGRADE_FIRMWARE_FLAG **"
+    depends on MUPGRADE_FIRMWARE_CHECK
+    help
+       Check if this identifier is included in the firmware.
 
 config MUPGRADE_VERSION_FALLBACK_RESTART
     bool "Fall back to the previous version"
