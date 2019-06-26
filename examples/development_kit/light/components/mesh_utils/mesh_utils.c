@@ -32,7 +32,7 @@
 #define DEVICE_RESTART_TIMEOUT_MS                   (3000)
 #define DEVICE_STORE_RESTART_COUNT_KEY              "restart_count"
 
-static const char *TAG                  = "mesh_utils";
+static const char *TAG = "mesh_utils";
 
 void restart_count_erase_timercb(void *timer)
 {
@@ -50,14 +50,26 @@ void restart_count_erase_timercb(void *timer)
 
 int restart_count_get()
 {
-    mdf_err_t ret          = MDF_OK;
-    TimerHandle_t timer    = NULL;
-    uint32_t restart_count = 0;
+    mdf_err_t ret              = MDF_OK;
+    static TimerHandle_t timer = NULL;
+    uint32_t restart_count     = 0;
+    RESET_REASON reset_reason  = rtc_get_reset_reason(0);
+    mdf_info_load(DEVICE_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
+
+    if (timer) {
+        return restart_count;
+    }
 
     /**< If the device restarts within the instruction time,
          the event_mdoe value will be incremented by one */
-    mdf_info_load(DEVICE_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
-    restart_count++;
+    if (reset_reason == POWERON_RESET || reset_reason == RTCWDT_RTC_RESET) {
+        restart_count++;
+        MDF_LOGD("restart count: %d", restart_count);
+    } else {
+        restart_count = 1;
+        MDF_LOGW("restart reason: %d", reset_reason);
+    }
+
     ret = mdf_info_save(DEVICE_STORE_RESTART_COUNT_KEY, &restart_count, sizeof(uint32_t));
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Save the number of restarts within the set time");
 
@@ -141,8 +153,8 @@ void show_system_info_timercb(void *timer)
     esp_wifi_get_channel(&primary, &second);
     esp_mesh_get_parent_bssid(&parent_bssid);
 
-    MDF_LOGI("System information, channel: %d, layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR
-             ", parent rssi: %d, node num: %d, free heap: %u", primary,
+    MDF_LOGI("System information, channel: [%d/%d], layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR
+             ", parent rssi: %d, node num: %d, free heap: %u", primary, second,
              esp_mesh_get_layer(), MAC2STR(sta_mac), MAC2STR(parent_bssid.addr),
              mwifi_get_parent_rssi(), esp_mesh_get_total_node_num(), esp_get_free_heap_size());
 
@@ -207,12 +219,6 @@ mdf_err_t get_network_config(mwifi_init_config_t *init_config, mwifi_config_t *a
 
     memcpy(ap_config, &mconfig_data->config, sizeof(mwifi_config_t));
     memcpy(init_config, &mconfig_data->init_config, sizeof(mwifi_init_config_t));
-
-    /**
-     * @brief Save configuration information to nvs flash.
-     */
-    mdf_info_save(MDF_MWIFI_INIT_CONFIG_KEY, init_config, sizeof(mwifi_init_config_t));
-    mdf_info_save(MDF_MWIFI_CONFIG_KEY, ap_config, sizeof(mwifi_config_t));
 
     /**
      * @brief Switch to network configuration chain master mode to configure the network for other devices(slave), according to the white list.
