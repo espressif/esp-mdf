@@ -65,7 +65,7 @@ mdf_err_t sdcard_init()
         // .allocation_unit_size = 16 * 1024
     };
 
-    MDF_LOGW("free heap: %d", esp_get_free_heap_size());
+    MDF_LOGD("free heap: %d", esp_get_free_heap_size());
 
     // initialize SD card and mount FAT filesystem.
     ret = esp_vfs_fat_sdmmc_mount(SDCARD_BASE_PATH, &host,
@@ -131,22 +131,6 @@ esp_err_t sdcard_rename_file(const char *file_name_old, const char *file_name_ne
                     file_name_old, file_name_new);
 
     return ESP_OK;
-}
-
-
-static ssize_t file_size(char *file_name)
-{
-    char file_path[SDCARD_FILE_NAME_MAX_LEN] = {0};
-    sprintf(file_path, SDCARD_BASE_PATH "/%s", file_name);
-
-    FILE *fp = fopen(file_path, "r");
-    MDF_ERROR_CHECK(!fp, -1, "file open failed");
-
-    fseek(fp, 0L, SEEK_END);
-    ssize_t size = ftell(fp);
-
-    fclose(fp);
-    return size;
 }
 
 esp_err_t sdcard_list_file(const char *file_name)
