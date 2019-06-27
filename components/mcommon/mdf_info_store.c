@@ -71,7 +71,8 @@ esp_err_t mdf_info_erase(const char *key)
     nvs_commit(handle);
     nvs_close(handle);
 
-    MDF_ERROR_CHECK(ret != ESP_OK, ret, "Erase key-value pair, key: %s", key);
+    MDF_ERROR_CHECK(ret != ESP_OK && ret != ESP_ERR_NVS_NOT_FOUND,
+                    ret, "Erase key-value pair, key: %s", key);
 
     return ESP_OK;
 }

@@ -45,9 +45,11 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 
         case SYSTEM_EVENT_STA_DISCONNECTED:
             MDF_LOGW("ESP32 station disconnected from AP");
-            if(!mwifi_is_started()){
+
+            if (!mwifi_is_started()) {
                 esp_wifi_connect();
             }
+
             break;
 
         default:
@@ -64,7 +66,6 @@ static mdf_err_t wifi_init()
 {
     mdf_err_t ret          = nvs_flash_init();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    wifi_config_t wifi_config = {0x0};
 
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         MDF_ERROR_ASSERT(nvs_flash_erase());
@@ -81,18 +82,6 @@ static mdf_err_t wifi_init()
     MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
     MDF_ERROR_ASSERT(esp_wifi_start());
 
-    if (mdf_info_load("wifi_config", &wifi_config, sizeof(wifi_config_t)) == MDF_OK) {
-        if (strlen((char *)wifi_config.sta.ssid)) {
-            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-            ESP_ERROR_CHECK(esp_wifi_connect());
-        } else {
-            ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
-            MDF_LOGI("Set primary/secondary channel of ESP32, channel: %d", wifi_config.sta.channel);
-        }
-    } else {
-        MDF_LOGW("Wifi is not configured, please set it first");
-    }
-
     return MDF_OK;
 }
 
@@ -104,6 +93,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 void app_main()
 {
     mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
+    wifi_config_t wifi_config = {0x0};
 
     /**
      * @brief Set the log level for serial port printing.
@@ -158,4 +148,16 @@ void app_main()
     MDF_LOGI(" |  4. Use other commands to get the status       |");
     MDF_LOGI(" |                                                |");
     MDF_LOGI(" ==================================================\n");
+
+    if (mdf_info_load("wifi_config", &wifi_config, sizeof(wifi_config_t)) == MDF_OK) {
+        if (strlen((char *)wifi_config.sta.ssid)) {
+            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+            ESP_ERROR_CHECK(esp_wifi_connect());
+        } else {
+            ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
+            MDF_LOGI("Set primary/secondary channel of ESP32, channel: %d", wifi_config.sta.channel);
+        }
+    } else {
+        MDF_LOGW("Wifi is not configured, please set it first");
+    }
 }

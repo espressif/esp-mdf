@@ -426,7 +426,7 @@ void mwifi_print_config();
  *               calls this function is greater than 8KB.
  *            2. When sending data to the root node, if the destination address
  *               is NULL, the root node receives it using mwifi_root_read(). If
- *               the destination address is the mac address of the root node, the
+ *               the destination address is the mac address of the root node or MWIFI_ADDR_ROOT, the
  *               root node receives it using mwifi_read()
  *
  * @param  dest_addrs The address of the final destination of the packet

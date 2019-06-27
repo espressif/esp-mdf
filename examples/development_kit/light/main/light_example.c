@@ -30,6 +30,8 @@
 #include "mespnow.h"
 #include "mconfig_blufi.h"
 #include "mconfig_chain.h"
+#include "mdebug_console.h"
+#include "mdebug_espnow.h"
 
 #include "light_driver.h"
 #include "light_handle.h"
@@ -38,14 +40,12 @@
 
 #define LIGHT_TID                     (1)
 #define LIGHT_NAME                    "light"
+#define LIGHT_RESTART_COUNT_FALLBACK  (10)
 #define LIGHT_RESTART_COUNT_RESET     (3)
 
-#define EVENT_GROUP_TRIGGER_RECV     BIT0
-
-static const char *TAG                          = "light";
-static TaskHandle_t g_root_write_task_handle    = NULL;
-static TaskHandle_t g_root_read_task_handle     = NULL;
-static EventGroupHandle_t g_event_group_trigger = NULL;
+static const char *TAG                       = "light";
+static TaskHandle_t g_root_write_task_handle = NULL;
+static TaskHandle_t g_root_read_task_handle  = NULL;
 
 /**
  * @brief Read data from mesh network, forward data to extern IP network by http or udp.
@@ -172,7 +172,7 @@ void node_handle_task(void *arg)
 
     while (true) {
         if (!mwifi_is_connected()) {
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(100));
             continue;
         }
 
@@ -216,57 +216,44 @@ FREE_MEM:
  */
 static void espnow_to_mwifi_task(void *arg)
 {
-    mdf_err_t ret = MDF_OK;
+    mdf_err_t ret       = MDF_OK;
+    uint8_t *data       = NULL;
+    uint8_t *addrs_list = NULL;
+    size_t addrs_num    = 0;
+    size_t size         = 0;
+    uint32_t type       = 0;
 
-    if (!g_event_group_trigger) {
-        g_event_group_trigger = xEventGroupCreate();
-    }
+    mwifi_data_type_t data_type = {
+        .protocol = MLINK_PROTO_HTTPD,
+    };
 
-    while (true) {
-        EventBits_t uxBits = xEventGroupWaitBits(g_event_group_trigger,
-                             EVENT_GROUP_TRIGGER_RECV,
-                             pdTRUE, pdFALSE, portMAX_DELAY);
+    mlink_httpd_type_t httpd_type = {
+        .format = MLINK_HTTPD_FORMAT_JSON,
+        .from   = MLINK_HTTPD_FROM_DEVICE,
+        .resp   = false,
+    };
 
-        if (uxBits & EVENT_GROUP_TRIGGER_RECV) {
-            uint8_t *data       = NULL;
-            uint8_t *addrs_list = NULL;
-            size_t addrs_num    = 0;
-            size_t size         = 0;
-            uint32_t type       = 0;
+    memcpy(&data_type.custom, &httpd_type, sizeof(mlink_httpd_type_t));
 
-            mwifi_data_type_t data_type = {
-                .protocol = MLINK_PROTO_HTTPD,
-            };
-
-            mlink_httpd_type_t httpd_type = {
-                .format = MLINK_HTTPD_FORMAT_JSON,
-                .from   = MLINK_HTTPD_FROM_DEVICE,
-                .resp   = false,
-            };
-
-            memcpy(&data_type.custom, &httpd_type, sizeof(mlink_httpd_type_t));
-
-            ret = mlink_espnow_read(&addrs_list, &addrs_num, &data, &size, &type, portMAX_DELAY);
-            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mlink_espnow_read", esp_err_to_name(ret));
-
-            /*< Send to yourself if the destination address is empty */
-            if (MWIFI_ADDR_IS_EMPTY(addrs_list) && addrs_num == 1) {
-                esp_wifi_get_mac(ESP_IF_WIFI_STA, addrs_list);
-            }
-
-            data_type.group = (type == MLINK_ESPNOW_COMMUNICATE_GROUP) ? true : false;
-            MDF_LOGI("Mlink espnow read data: %.*s", size, data);
-
-            for (int i = 0; i < addrs_num; ++i) {
-                ret = mwifi_write(addrs_list  + 6 * i, &data_type, data, size, true);
-                MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
-            }
-
-            MDF_FREE(data);
-            MDF_FREE(addrs_list);
+    while (mlink_espnow_read(&addrs_list, &addrs_num, &data, &size, &type, portMAX_DELAY) == MDF_OK) {
+        /*< Send to yourself if the destination address is empty */
+        if (MWIFI_ADDR_IS_EMPTY(addrs_list) && addrs_num == 1) {
+            esp_wifi_get_mac(ESP_IF_WIFI_STA, addrs_list);
         }
+
+        data_type.group = (type == MLINK_ESPNOW_COMMUNICATE_GROUP) ? true : false;
+        MDF_LOGI("Mlink espnow read data: %.*s", size, data);
+
+        for (int i = 0; i < addrs_num; ++i) {
+            ret = mwifi_write(addrs_list  + 6 * i, &data_type, data, size, true);
+            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
+        }
+
+        MDF_FREE(data);
+        MDF_FREE(addrs_list);
     }
 
+    MDF_LOGW("espnow_to_mwifi_task is exit");
     vTaskDelete(NULL);
 }
 
@@ -387,7 +374,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_MUPGRADE_STARTED:
             MDF_LOGI("Enter upgrade mode");
             light_driver_breath_start(0, 0, 128); /**< blue blink */
-            vTaskDelay(3000 / portTICK_RATE_MS);
+            vTaskDelay(pdMS_TO_TICKS(3000));
             light_driver_breath_stop();
             break;
 
@@ -421,27 +408,16 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             break;
 
         case MDF_EVENT_MLINK_SET_STATUS:
-            if (!g_event_group_trigger) {
-                g_event_group_trigger = xEventGroupCreate();
-            }
-
             /**
              * @brief Waiting for adjacent packets to be processed, avoiding loops
              */
-            vTaskDelay(50 / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(50));
 
             /**
              * @brief Trigger handler
              */
             ret = mlink_trigger_handle(MLINK_COMMUNICATE_MESH);
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_trigger_handle", mdf_err_to_name(ret));
-
-            break;
-
-        case MDF_EVENT_MESPNOW_RECV:
-            if ((int)ctx == MESPNOW_TRANS_PIPE_CONTROL) {
-                xEventGroupSetBits(g_event_group_trigger, EVENT_GROUP_TRIGGER_RECV);
-            }
 
             break;
 
@@ -483,7 +459,10 @@ void app_main()
     /**
      * @brief Continuous power off and restart more than three times to reset the device
      */
-    if (restart_count_get() >= LIGHT_RESTART_COUNT_RESET) {
+    if (restart_count_get() >= LIGHT_RESTART_COUNT_FALLBACK) {
+        mupgrade_version_fallback();
+        MDF_LOGW("Fall back to the previous version");
+    } else if (restart_count_get() >= LIGHT_RESTART_COUNT_RESET) {
         MDF_LOGW("Erase information saved in flash");
         mdf_info_erase(MDF_SPACE_NAME);
     }
@@ -496,6 +475,15 @@ void app_main()
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
+
+    /**
+     * @brief Add debug function, you can use serial command and wireless debugging
+     */
+    /*< Waiting above log print complete, avoid bad data in terminal */
+    vTaskDelay(pdMS_TO_TICKS(50));
+    MDF_ERROR_ASSERT(mdebug_console_init());
+    MDF_ERROR_ASSERT(mdebug_espnow_init());
+    mdebug_cmd_register_common();
 
     /**
      * @brief Light driver initialization
@@ -521,6 +509,12 @@ void app_main()
         MDF_LOGI("mconfig, ssid: %s, password: %s, mesh_id: " MACSTR,
                  ap_config.router_ssid, ap_config.router_password,
                  MAC2STR(ap_config.mesh_id));
+
+        /**
+         * @brief Save configuration information to nvs flash.
+         */
+        mdf_info_save("init_config", &init_config, sizeof(mwifi_init_config_t));
+        mdf_info_save("ap_config", &ap_config, sizeof(mwifi_config_t));
     }
 
     /**
@@ -538,7 +532,7 @@ void app_main()
      *          3.add characteristic handle for get/set value of characteristic.
      */
     MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
-    snprintf(name, sizeof(name), "light_%02x%02x", sta_mac[4], sta_mac[5]);
+    snprintf(name, sizeof(name), LIGHT_NAME "_%02x%02x", sta_mac[4], sta_mac[5]);
     MDF_ERROR_ASSERT(mlink_add_device(LIGHT_TID, name, CONFIG_LIGHT_VERSION));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_STATUS, "on", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 3, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(LIGHT_CID_HUE, "hue", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RWT, 0, 360, 1));
@@ -574,6 +568,12 @@ void app_main()
     MDF_ERROR_ASSERT(mwifi_start());
 
     /**
+     * @brief Add a default group for the meshkit_button to control all devices
+     */
+    const uint8_t default_group_id[6] = {LIGHT_TID};
+    esp_mesh_set_group_id((mesh_addr_t *)default_group_id, 1);
+
+    /**
      * @brief Handling data between wifi mesh devices.
      */
     xTaskCreate(node_handle_task, "node_handle", 8 * 1024,
@@ -582,7 +582,7 @@ void app_main()
     /**
      * @brief Periodically print system information.
      */
-    TimerHandle_t timer = xTimerCreate("show_system_info", 10000 / portTICK_RATE_MS,
+    TimerHandle_t timer = xTimerCreate("show_system_info", pdMS_TO_TICKS(10000),
                                        true, NULL, show_system_info_timercb);
     xTimerStart(timer, 0);
 }
