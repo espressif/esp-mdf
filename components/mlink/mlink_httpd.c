@@ -124,6 +124,21 @@ static mdf_err_t mlink_socket_keepalive(int sockfd, int keep_idle, int keep_inte
     return ESP_OK;
 }
 
+static bool mlink_socket_iswritable(int sockfd)
+{
+    fd_set write_fds;
+    struct timeval timeout = {0, 0};
+
+    FD_ZERO(&write_fds);
+    FD_SET(sockfd, &write_fds);
+
+    if (select(sockfd + 1, NULL, &write_fds, NULL, &timeout) <= 0) {
+        return false;
+    }
+
+    return true;
+}
+
 static int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
 {
     MDF_PARAM_CHECK(buf);
@@ -169,15 +184,15 @@ static void mlink_connection_timeout_cb(void *timer)
 
     mlink_conn->flag = MLINK_HTTPD_CHUNKS_DATA;
 
-    MDF_LOGW("Mlink httpd response timeout, sockfd: %d, data: %s", mlink_conn->sockfd, chunk_footer);
+   if(mlink_socket_iswritable(mlink_conn->sockfd)){
+        if (httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_footer, strlen(chunk_footer), 0) <= 0) {
+            MDF_LOGW("<%s> httpd_default_send, sockfd: %d", strerror(errno), mlink_conn->sockfd);
+        }
 
-    struct timeval timeout = {.tv_sec = 3};
-    setsockopt(mlink_conn->sockfd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-
-    if (httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_footer, strlen(chunk_footer), 0) <= 0) {
-        MDF_LOGW("<%s> httpd_default_send, sockfd: %d", strerror(errno), mlink_conn->sockfd);
+        MDF_LOGW("Mlink httpd response timeout, sockfd: %d, data: %s", mlink_conn->sockfd, chunk_footer);
     }
 
+    close(mlink_conn->sockfd);
     mlink_connection_remove(mlink_conn);
 }
 
