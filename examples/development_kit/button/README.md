@@ -61,6 +61,16 @@ For more details on how to establish an ESP-MESH network, please refer to [ESP32
 
 ### 2. Networking process
 
+You can configure the network in either of the following two ways:
+
+#### Proximity automatic configuration network
+
+After the ESP32-MeshKit-Button is close to the ESP32-MeshKit-Light, press and hold any button for 5 seconds. The LED flashes green, indicating that the device has completed the distribution and setting the default associated event.
+
+>Note: If you need to modify the default association event, please connect Mini USB and use APP to modify
+
+#### APP Configuring the network
+
 * Plug a Mini USB connector into your ESP32-MeshKit-Button. You can reset the device by long pressing any two buttons simultaneously for 5 seconds. LEDs will start slowly flashing yellow, signalling that the device has entered Network Configuration mode;
 
 * App shows the prompt, tap `Add the device to the mesh network`;

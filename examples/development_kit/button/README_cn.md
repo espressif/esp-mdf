@@ -54,6 +54,16 @@ ESP32-MeshKit-Button 开发板硬件资源主要包括：
 
 ### 2. 操作流程
 
+可以通过下面两种方式中的任意一种进行配网
+
+#### 靠一靠 配网
+
+将 ESP32-MeshKit-Button 靠近 ESP32-MeshKit-Light 后, 长按任意一个按键 5 秒, LED 绿色闪烁, 表明设备已经完成配网和设置完成默认的关联事件
+
+> 注: 如果需要修改默认的关联事件,请连接 Mini USB 并使用 APP 进行修改
+
+#### APP 配网
+
 * 将 ESP32-MeshKit-Button 连接 Mini USB，LED 黄色闪烁，表明设备已进入配网状态。若设备需要重新配网，同时长按任意两个键 5 秒将重置设备；
 
 * 根据 ESP-MESH App 提示，点击`加入网络`将设备添加到 Mesh 网络；
@@ -70,6 +80,7 @@ ESP32-MeshKit-Button 开发板硬件资源主要包括：
         <td ><img src="docs/_static/zh_CN/device_add.png" width="300"><p align=center>配网成功</p></td>
     </tr>
 </table>
+
 
 ### 3. 关联
 

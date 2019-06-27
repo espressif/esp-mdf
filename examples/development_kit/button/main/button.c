@@ -45,6 +45,8 @@
 #define BUTTON_MESH_INIT_CONFIG_STORE_KEY "init_config"
 #define BUTTON_MESH_AP_CONFIG_STORE_KEY   "ap_config"
 
+#define CONFIG_NETWORK_FILTER_RSSI        -55
+
 /**
  * @brief The value of the cid corresponding to each attribute of the key
  */
@@ -121,47 +123,6 @@ static void show_system_info_timercb(void *timer)
     mdf_mem_print_record();
 
 #endif /**< CONFIG_BUTTON_MEMORY_DEBUG */
-}
-
-static mdf_err_t button_get_network_config(mwifi_init_config_t *init_config, mwifi_config_t *ap_config)
-{
-    MDF_PARAM_CHECK(init_config);
-    MDF_PARAM_CHECK(ap_config);
-
-    mconfig_data_t *mconfig_data        = NULL;
-    mconfig_blufi_config_t blufi_config = {
-        .company_id = 0x02E5, /**< Espressif Incorporated */
-        .tid        = BUTTON_TID,
-        .only_beacon = true,
-    };
-
-    MDF_ERROR_ASSERT(mconfig_chain_slave_init());
-
-    /**
-     * @brief Switch to master mode to configure the network for other devices
-     */
-    uint8_t sta_mac[6] = {0};
-    MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
-    sprintf(blufi_config.name, "button%02x%02x", sta_mac[4], sta_mac[5]);
-    MDF_LOGI("BLE name: %s", blufi_config.name);
-
-    MDF_ERROR_ASSERT(mconfig_blufi_init(&blufi_config));
-    MDF_ERROR_ASSERT(mconfig_queue_read(&mconfig_data, portMAX_DELAY));
-    MDF_ERROR_ASSERT(mconfig_chain_slave_deinit());
-    MDF_ERROR_ASSERT(mconfig_blufi_deinit());
-
-    memcpy(ap_config, &mconfig_data->config, sizeof(mwifi_config_t));
-    memcpy(init_config, &mconfig_data->init_config, sizeof(mwifi_init_config_t));
-
-    ap_config->mesh_type = MESH_LEAF;
-
-    mdf_info_save(BUTTON_MESH_INIT_CONFIG_STORE_KEY, init_config, sizeof(mwifi_init_config_t));
-    mdf_info_save(BUTTON_MESH_AP_CONFIG_STORE_KEY, ap_config, sizeof(mwifi_config_t));
-
-
-    MDF_FREE(mconfig_data);
-
-    return MDF_OK;
 }
 
 static void button_led_show_key_release()
@@ -336,10 +297,6 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_BUTTON_KEY_EXCEPTION:
             MDF_LOGW("Erase information saved in flash and system restart");
 
-            if (event == MDF_EVENT_BUTTON_KEY_EXCEPTION && !mwifi_is_started()) {
-                break;
-            }
-
             ret = mdf_info_erase(MDF_SPACE_NAME);
             MDF_ERROR_BREAK(ret != 0, "Erase the information");
 
@@ -402,15 +359,40 @@ static mdf_err_t button_mesh_mode()
     mwifi_config_t ap_config        = {0x0};
     mwifi_init_config_t init_config = {0x0};
 
+    MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
+    snprintf(name, sizeof(name), "button_%02x%02x", sta_mac[4], sta_mac[5]);
+
     /**
      * @brief Indicate the status of the device by means of a button
      */
     if (mdf_info_load(BUTTON_MESH_INIT_CONFIG_STORE_KEY, &init_config, sizeof(mwifi_init_config_t)) != MDF_OK
             || mdf_info_load(BUTTON_MESH_AP_CONFIG_STORE_KEY, &ap_config, sizeof(mwifi_config_t)) != MDF_OK) {
-        MDF_ERROR_ASSERT(button_get_network_config(&init_config, &ap_config));
+
+        mconfig_data_t *mconfig_data        = NULL;
+        mconfig_blufi_config_t blufi_config = {
+            .company_id = 0x02E5, /**< Espressif Incorporated */
+            .tid        = BUTTON_TID,
+            .only_beacon = true,
+        };
+
+        strcpy(blufi_config.name, name);
+        MDF_ERROR_ASSERT(mconfig_chain_slave_init());
+        MDF_ERROR_ASSERT(mconfig_blufi_init(&blufi_config));
+        MDF_ERROR_ASSERT(mconfig_queue_read(&mconfig_data, portMAX_DELAY));
+        MDF_ERROR_ASSERT(mconfig_chain_slave_deinit());
+        MDF_ERROR_ASSERT(mconfig_blufi_deinit());
+
+        memcpy(&ap_config, &mconfig_data->config, sizeof(mwifi_config_t));
+        memcpy(&init_config, &mconfig_data->init_config, sizeof(mwifi_init_config_t));
+        MDF_FREE(mconfig_data);
+
         MDF_LOGI("mconfig, ssid: %s, password: %s, mesh_id: " MACSTR,
                  ap_config.router_ssid, ap_config.router_password,
                  MAC2STR(ap_config.mesh_id));
+
+        ap_config.mesh_type = MESH_LEAF;
+        mdf_info_save(BUTTON_MESH_INIT_CONFIG_STORE_KEY, &init_config, sizeof(mwifi_init_config_t));
+        mdf_info_save(BUTTON_MESH_AP_CONFIG_STORE_KEY, &ap_config, sizeof(mwifi_config_t));
     }
 
     esp_bt_controller_mem_release(ESP_BT_MODE_BLE);
@@ -418,14 +400,13 @@ static mdf_err_t button_mesh_mode()
     /**
      * @brief Configure MLink (LAN communication module)
      */
-    MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
-    snprintf(name, sizeof(name), "button_%02x%02x", sta_mac[4], sta_mac[5]);
+
     MDF_ERROR_ASSERT(mlink_add_device(BUTTON_TID, name, CONFIG_BUTTON_VERSION));
 
-    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY0, "key_0", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 1, 5));
-    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY1, "key_1", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 1, 5));
-    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY2, "key_2", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 1, 5));
-    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY3, "key_3", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 1, 5));
+    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY0, "key_0", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 3, 1));
+    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY1, "key_1", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 3, 1));
+    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY2, "key_2", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 3, 1));
+    MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_KEY3, "key_3", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_RT, 0, 3, 1));
     MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_BATTERY_STATUS, "battery_status", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_READ, 0, 1, 100));
     MDF_ERROR_ASSERT(mlink_add_characteristic(BUTTON_CID_BATTERY_VOLTAGE, "battery_voltage", CHARACTERISTIC_FORMAT_INT, CHARACTERISTIC_PERMS_READ, 0, 1, 100));
     MDF_ERROR_ASSERT(mlink_add_characteristic_handle(mlink_get_value, NULL));
@@ -455,6 +436,7 @@ static mdf_err_t button_mesh_mode()
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> Data transmission failed", mdf_err_to_name(ret));
     }
 
+    MDF_ERROR_ASSERT(mwifi_deinit());
     return MDF_OK;
 }
 
@@ -465,14 +447,13 @@ static mdf_err_t button_espnow_mode()
 
     esp_bt_controller_mem_release(ESP_BT_MODE_BLE);
 
-    ret = mdf_info_load(BUTTON_ESPNOW_CONFIG_STORE_KEY, &espnow_config, sizeof(mlink_espnow_config_t));
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Device network event is not configured");
+    if (mdf_info_load(BUTTON_ESPNOW_CONFIG_STORE_KEY, &espnow_config, sizeof(mlink_espnow_config_t)) == MDF_OK) {
+        ret = mlink_trigger_is_exist();
+        MDF_ERROR_CHECK(ret != true, MDF_FAIL, "Device association event is not configured");
 
-    ret = mlink_trigger_is_exist();
-    MDF_ERROR_CHECK(ret != true, MDF_FAIL, "Device association event is not configured");
-
-    ret = mlink_espnow_init(&espnow_config);
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "mlink_espnow_init");
+        ret = mlink_espnow_init(&espnow_config);
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "mlink_espnow_init");
+    }
 
     MDF_ERROR_ASSERT(mlink_add_characteristic_handle(mlink_get_value, NULL));
 
@@ -486,7 +467,96 @@ static mdf_err_t button_espnow_mode()
             continue;
         }
 
-        if (mlink_trigger_handle(MLINK_COMMUNICATE_ESPNOW) != MDF_OK) {
+        if ((uxBits & EVENT_GROUP_BUTTON_KEY_LONG_PUSH)
+                && mdf_info_load(BUTTON_ESPNOW_CONFIG_STORE_KEY, &espnow_config, sizeof(mlink_espnow_config_t)) != MDF_OK) {
+            mwifi_config_t ap_config        = {0x0};
+            mwifi_init_config_t init_config = {0x0};
+            char *add_device = NULL;
+            uint8_t dest_addr[6] = {0x0};
+
+            espnow_config.channel = 1;
+            memset(espnow_config.parent_bssid, 0xff, 6);
+            mlink_espnow_init(&espnow_config);
+
+            /**
+             * @brief Send a command to let meshkit_light enter mconfig_master mode
+             */
+            esp_wifi_get_mac(ESP_IF_WIFI_STA, dest_addr);
+            asprintf(&add_device, "{\"request\":\"add_device\",\"whitelist\":[\"%02x%02x%02x%02x%02x%02x\"],\"rssi\":%d,\"delay\":%d}",
+                     MAC2STR(dest_addr), CONFIG_NETWORK_FILTER_RSSI, 30000);
+
+
+            mdf_event_loop_delay_send(MDF_EVENT_MLINK_SYSTEM_REBOOT, NULL, 15000 / portTICK_RATE_MS);
+
+            for (uint8_t channel = 0; channel < 13; channel++) {
+                memset(dest_addr, 0x0, 6);
+
+                for (int i = 0; i < 3; ++i) {
+                    mlink_espnow_write(dest_addr, 1, add_device, strlen(add_device),
+                                       MLINK_ESPNOW_COMMUNICATE_UNICAST, portMAX_DELAY);
+                }
+
+                esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+            }
+
+            MDF_FREE(add_device);
+
+            /**
+             * @brief Waiting for device configuration network
+             */
+            mconfig_data_t *mconfig_data = NULL;
+            MDF_ERROR_ASSERT(mconfig_chain_slave_init());
+            MDF_ERROR_ASSERT(mconfig_queue_read(&mconfig_data, portMAX_DELAY));
+            MDF_ERROR_ASSERT(mconfig_chain_slave_deinit());
+
+            memcpy(&ap_config, &mconfig_data->config, sizeof(mwifi_config_t));
+            memcpy(&init_config, &mconfig_data->init_config, sizeof(mwifi_init_config_t));
+            ap_config.mesh_type = MESH_LEAF;
+
+            button_driver_led_set_rgb(0, 255, 0);   /**< green */
+            MDF_LOGI("mconfig, ssid: %s, password: %s, mesh_id: " MACSTR,
+                     ap_config.router_ssid, ap_config.router_password,
+                     MAC2STR(ap_config.mesh_id));
+
+            mdf_info_save(BUTTON_MESH_INIT_CONFIG_STORE_KEY, &init_config, sizeof(mwifi_init_config_t));
+            mdf_info_save(BUTTON_MESH_AP_CONFIG_STORE_KEY, &ap_config, sizeof(mwifi_config_t));
+            MDF_FREE(mconfig_data);
+
+            /**
+             * @brief Add default trigger event control meshkit_light
+             */
+            if (!mlink_trigger_is_exist()) {
+                const char *default_trigger_list[8] = {
+                    "{\"name\":\"switch\",\"trigger_cid\":0,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":1},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":0,\"value\":2}]}}",
+                    "{\"name\":\"hue\",\"trigger_cid\":2,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":1},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":0,\"value\":3}]}}",
+                    "{\"name\":\"night\",\"trigger_cid\":1,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":1},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":4,\"value\":0},{\"cid\":5,\"value\":5}]}}",
+                    "{\"name\":\"increase\",\"trigger_cid\":1,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":2},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":6,\"value\":8}]}}",
+                    "{\"name\":\"increase_stop\",\"trigger_cid\":1,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":3},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":6,\"value\":0}]}}",
+                    "{\"name\":\"bright\",\"trigger_cid\":3,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":1},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":4,\"value\":100},{\"cid\":5,\"value\":100}]}}",
+                    "{\"name\":\"decrease\",\"trigger_cid\":3,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":2},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":6,\"value\":9}]}}",
+                    "{\"name\":\"decrease_stop\",\"trigger_cid\":3,\"trigger_content\":{\"request\":\"linkage\"},\"trigger_compare\":{\"==\":3},\"execute_mac\":[\"010000000000\"],\"communicate_type\":\"group\",\"execute_content\":{\"request\":\"set_status\",\"characteristics\":[{\"cid\":6,\"value\":0}]}}",
+                };
+
+                for (int i = 0; i < 8; ++i) {
+                    mlink_trigger_add(default_trigger_list[i]);
+                }
+            }
+
+            /**
+             * @brief Connect to mesh to get the parent node
+             */
+            MDF_ERROR_ASSERT(mwifi_init(&init_config));
+            MDF_ERROR_ASSERT(mwifi_set_config(&ap_config));
+            MDF_ERROR_ASSERT(mwifi_start());
+            EventBits_t uxBits = xEventGroupWaitBits(g_event_group_trigger,
+                                 EVENT_GROUP_BUTTON_MESH_CONNECTED,
+                                 pdTRUE, pdFALSE, 10000 / portTICK_RATE_MS);
+            MDF_ERROR_CHECK(!uxBits, MDF_ERR_TIMEOUT, "xEventGroupWaitBits");
+
+            xEventGroupWaitBits(g_event_group_trigger, EVENT_GROUP_BUTTON_KEY_RELEASE,
+                                pdTRUE, pdFALSE, 5000 / portTICK_RATE_MS);
+            MDF_ERROR_ASSERT(mwifi_deinit());
+        } else if (mlink_trigger_handle(MLINK_COMMUNICATE_ESPNOW) != MDF_OK) {
             MDF_LOGW("Data transmission failed");
             button_key_reset_status();
 
@@ -505,8 +575,9 @@ static mdf_err_t button_espnow_mode()
                 MDF_ERROR_ASSERT(mwifi_start());
                 EventBits_t uxBits = xEventGroupWaitBits(g_event_group_trigger,
                                      EVENT_GROUP_BUTTON_MESH_CONNECTED,
-                                     pdTRUE, pdFALSE, 10000 / portTICK_RATE_MS);
+                                     pdTRUE, pdFALSE, 15000 / portTICK_RATE_MS);
                 MDF_ERROR_CHECK(!uxBits, MDF_ERR_TIMEOUT, "xEventGroupWaitBits");
+                MDF_ERROR_ASSERT(mwifi_deinit());
             }
         }
 
