@@ -28,6 +28,7 @@
 
 static const char *TAG = "mupgrade_node";
 static mupgrade_config_t *g_upgrade_config = NULL;
+static bool g_upgrade_finished_flag        = false;
 
 static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
 {
@@ -48,11 +49,12 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     /**< If g_upgrade_config->status has been created and
          once again upgrade the same name bin, just return MDF_OK */
     if (!memcmp(g_upgrade_config->status.name, status->name,
-                sizeof(g_upgrade_config->status.name))
+                 sizeof(g_upgrade_config->status.name))
             && g_upgrade_config->status.total_size == status->total_size) {
         goto EXIT;
     }
 
+    memset(g_upgrade_config, 0, sizeof(mupgrade_config_t));
     memcpy(&g_upgrade_config->status, status, sizeof(mupgrade_status_t));
     memset(&g_upgrade_config->status.progress_array, 0, MUPGRADE_PACKET_MAX_NUM / 8);
     g_upgrade_config->status.written_size = 0;
@@ -61,6 +63,9 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
         const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
         ret = esp_ota_set_boot_partition(update_partition);
         MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "esp_ota_set_boot_partition");
+        g_upgrade_finished_flag = true;
+
+        mdf_event_loop_send(MDF_EVENT_MUPGRADE_STARTED, NULL);
 
         g_upgrade_config->status.written_size = g_upgrade_config->status.total_size;
         memset(g_upgrade_config->status.progress_array, 0xff, MUPGRADE_PACKET_MAX_NUM / 8);
@@ -70,6 +75,7 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
         goto EXIT;
     }
 
+    g_upgrade_finished_flag = false;
     const esp_partition_t *running = esp_ota_get_running_partition();
     const esp_partition_t *update  = esp_ota_get_next_update_partition(NULL);
 
@@ -112,8 +118,12 @@ EXIT:
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_STATUS, (void *)100);
     }
 
-    g_upgrade_config->status.type       = MUPGRADE_TYPE_DATA;
-    g_upgrade_config->status.error_code = ret;
+    g_upgrade_config->status.type = MUPGRADE_TYPE_DATA;
+
+    if (g_upgrade_config->status.error_code != MDF_ERR_MUPGRADE_STOP) {
+        g_upgrade_config->status.error_code = ret;
+    }
+
     MDF_LOGD("Response mupgrade status, written_size: %d, response_size: %d",
              g_upgrade_config->status.written_size, response_size);
     ret = mwifi_write(NULL, &data_type, &g_upgrade_config->status, response_size, true);
@@ -142,6 +152,21 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
             MDF_LOGW("Upgrade configuration is not initialized");
             return MDF_ERR_MUPGRADE_NOT_INIT;
         }
+    }
+
+    if (g_upgrade_config->status.error_code == MDF_ERR_MUPGRADE_STOP) {
+        mwifi_data_type_t data_type = {
+            .upgrade = true
+        };
+        g_upgrade_config->status.type         = MUPGRADE_TYPE_DATA;
+        g_upgrade_config->status.written_size = 0;
+        memset(&g_upgrade_config->status.progress_array, 0, MUPGRADE_PACKET_MAX_NUM / 8);
+        mdf_info_erase(MUPGRADE_STORE_CONFIG_KEY);
+
+        ret = mwifi_write(NULL, &data_type, &g_upgrade_config->status, sizeof(mupgrade_status_t), true);
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "mwifi_write");
+
+        return MDF_OK;
     }
 
     MDF_ERROR_CHECK(packet->seq * MUPGRADE_PACKET_MAX_SIZE > g_upgrade_config->status.total_size,
@@ -197,6 +222,7 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
                         MDF_ERR_MUPGRADE_FIRMWARE_INVALID, "esp_ota_set_boot_partition");
 
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_FINISH, NULL);
+        g_upgrade_finished_flag = true;
 
         mwifi_data_type_t data_type = {.upgrade = true,};
         ret = mwifi_write(NULL, &data_type, &g_upgrade_config->status, sizeof(mupgrade_status_t), true);
@@ -240,6 +266,35 @@ mdf_err_t mupgrade_get_status(mupgrade_status_t *status)
     MDF_ERROR_CHECK(!g_upgrade_config, MDF_ERR_NOT_SUPPORTED, "Mupgrade firmware is not initialized");
 
     memcpy(status, &g_upgrade_config->status, sizeof(mupgrade_status_t));
+
+    return MDF_OK;
+}
+
+mdf_err_t mupgrade_stop()
+{
+    mdf_err_t ret = MDF_OK;
+    mwifi_data_type_t data_type = {
+        .upgrade = true
+    };
+
+    if (!g_upgrade_config) {
+        return MDF_OK;
+    }
+
+    if (g_upgrade_finished_flag) {
+        const esp_partition_t *running = esp_ota_get_running_partition();
+        ret = esp_ota_set_boot_partition(running);
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ota_set_boot_partition");
+    }
+
+    g_upgrade_config->status.type       = MUPGRADE_TYPE_DATA;
+    g_upgrade_config->status.error_code = MDF_ERR_MUPGRADE_STOP;
+    g_upgrade_config->status.written_size = 0;
+    memset(&g_upgrade_config->status.progress_array, 0, MUPGRADE_PACKET_MAX_NUM / 8);
+    mdf_info_erase(MUPGRADE_STORE_CONFIG_KEY);
+
+    ret = mwifi_write(NULL, &data_type, &g_upgrade_config->status, sizeof(mupgrade_status_t), true);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "mwifi_write");
 
     return MDF_OK;
 }
