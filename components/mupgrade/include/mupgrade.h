@@ -47,6 +47,7 @@ extern "C" {
 #define MDF_ERR_MUPGRADE_DEVICE_NO_EXIST     (MDF_ERR_MUPGRADE_BASE + 7) /**< The device that needs to be upgraded does not exist */
 #define MDF_ERR_MUPGRADE_SEND_PACKET_LOSS    (MDF_ERR_MUPGRADE_BASE + 8) /**< Request device upgrade status failed */
 #define MDF_ERR_MUPGRADE_NOT_INIT            (MDF_ERR_MUPGRADE_BASE + 9) /**< Upgrade configuration is not initialized */
+#define MDF_ERR_MUPGRADE_STOP                (MDF_ERR_MUPGRADE_BASE + 10) /**< Upgrade configuration is not initialized */
 
 /**
  * @brief enumerated list OF MDF event id
@@ -54,7 +55,8 @@ extern "C" {
 #define MDF_EVENT_MUPGRADE_STARTED           (MDF_EVENT_MUPGRADE_BASE + 1) /**< The device starts to upgrade */
 #define MDF_EVENT_MUPGRADE_STATUS            (MDF_EVENT_MUPGRADE_BASE + 2) /**< Proactively report progress */
 #define MDF_EVENT_MUPGRADE_FINISH            (MDF_EVENT_MUPGRADE_BASE + 3) /**< The upgrade is complete and the new firmware will run after the reboot */
-#define MDF_EVENT_MUPGRADE_STOPED            (MDF_EVENT_MUPGRADE_BASE + 4) /**< The device stop to upgrade */
+#define MDF_EVENT_MUPGRADE_STOPED            (MDF_EVENT_MUPGRADE_BASE + 4) /**< Stop upgrading */
+#define MDF_EVENT_MUPGRADE_FIRMWARE_DOWNLOAD (MDF_EVENT_MUPGRADE_BASE + 5) /**< Start firmware write flash  */
 
 /**
  * @brief Firmware subcontract upgrade
@@ -266,6 +268,15 @@ mdf_err_t mupgrade_get_status(mupgrade_status_t *status);
  *    - MDF_FAIL
  */
 mdf_err_t mupgrade_version_fallback();
+
+/**
+ * @brief Stop upgrading
+ *
+ * @return
+ *    - MDF_OK
+ *    - MDF_FAIL
+ */
+mdf_err_t mupgrade_stop();
 
 #ifdef __cplusplus
 }

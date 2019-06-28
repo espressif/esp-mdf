@@ -83,7 +83,7 @@ mdf_err_t mupgrade_firmware_download(const void *data, size_t size)
                     g_upgrade_config->status.error_code, "mupgrade_firmware_init");
 
     if (g_upgrade_config->status.written_size == 0) {
-        mdf_event_loop_send(MDF_EVENT_MUPGRADE_STARTED, NULL);
+        mdf_event_loop_send(MDF_EVENT_MUPGRADE_FIRMWARE_DOWNLOAD, NULL);
     }
 
     g_upgrade_config->status.error_code = esp_ota_write(g_upgrade_config->handle, data, size);
@@ -185,14 +185,19 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
         mupgrade_status_t *status = (mupgrade_status_t *)q_data->data;
 
         if (status->written_size == status->total_size) {
-            ret = addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
-            MDF_ERROR_CONTINUE(ret != true, "The device has been removed from the list waiting for the upgrade");
+            if (!addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr)) {
+                MDF_LOGW("The device has been removed from the list waiting for the upgrade");
+                MDF_FREE(q_data);
+                continue;
+            }
 
             result->successed_num++;
             result->successed_addr = MDF_REALLOC(result->successed_addr,
                                                  result->successed_num * MWIFI_ADDR_LEN);
             memcpy(result->successed_addr + (result->successed_num - 1) * MWIFI_ADDR_LEN,
                    q_data->src_addr, MWIFI_ADDR_LEN);
+        } else if (status->error_code == MDF_ERR_MUPGRADE_STOP) {
+            addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
         }
 
         MDF_FREE(q_data);
@@ -229,6 +234,13 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
             response_status = (mupgrade_status_t *)q_data->data;
             ret = (response_status->error_code != MDF_OK) ? response_status->error_code : MDF_OK;
 
+            if (response_status->error_code == MDF_ERR_MUPGRADE_STOP) {
+                addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
+                addrs_remove(request_addrs, &request_num, q_data->src_addr);
+                MDF_FREE(q_data);
+                continue;
+            }
+
             MDF_LOGD("Response, src_addr: " MACSTR ", request_num: %d, total_size: %d, written_size: %d, error_code: %s",
                      MAC2STR(q_data->src_addr), request_num, response_status->total_size,
                      response_status->written_size, mdf_err_to_name(response_status->error_code));
@@ -250,8 +262,11 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
             if (response_status->written_size == 0) {
                 memset(progress_array, 0x0, MUPGRADE_PACKET_MAX_NUM / 8);
             } else if (response_status->written_size == response_status->total_size) {
-                ret = addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
-                MDF_ERROR_CONTINUE(ret != true, "The device has been removed from the list waiting for the upgrade");
+                if (!addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr)) {
+                    MDF_LOGW("The device has been removed from the list waiting for the upgrade");
+                    MDF_FREE(q_data);
+                    continue;
+                }
 
                 result->successed_num++;
                 result->successed_addr = MDF_REALLOC(result->successed_addr,
@@ -382,6 +397,9 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
                                                              result->successed_num * MWIFI_ADDR_LEN);
                         memcpy(result->successed_addr + (result->successed_num - 1) * MWIFI_ADDR_LEN,
                                q_data->src_addr, MWIFI_ADDR_LEN);
+                    } else if (status->error_code == MDF_ERR_MUPGRADE_STOP) {
+                        addrs_remove(result->unfinished_addr, &result->unfinished_num, q_data->src_addr);
+                        addrs_remove(result->requested_addr, &result->requested_num, q_data->src_addr);
                     }
 
                     MDF_FREE(q_data);
