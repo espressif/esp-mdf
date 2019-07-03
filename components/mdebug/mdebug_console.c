@@ -54,7 +54,7 @@ static mdf_err_t initialize_filesystem()
         .format_if_mount_failed = true
     };
 
-    /* Initialize FAT filesystem in SPI flash and register it in VFS */
+    /**< Initialize FAT filesystem in SPI flash and register it in VFS */
     ret = esp_vfs_fat_spiflash_mount(MOUNT_PATH, CONFIG_MDEBUG_PARTITION_LABEL,
                                      &mount_config, &wl_handle);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Failed to mount FATFS");
@@ -66,15 +66,15 @@ static mdf_err_t initialize_filesystem()
 
 static void initialize_console()
 {
-    /* Disable buffering on stdin */
+    /**< Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
 
-    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+    /**< Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
-    /* Move the caret to the beginning of the next line on '\n' */
+    /**< Move the caret to the beginning of the next line on '\n' */
     esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
 
-    /* Configure UART. Note that REF_TICK is used so that the baud rate remains
+    /**< Configure UART. Note that REF_TICK is used so that the baud rate remains
      * correct while APB frequency is changing in light sleep mode. */
     const uart_config_t uart_config = {
         .baud_rate    = CONFIG_CONSOLE_UART_BAUDRATE,
@@ -85,13 +85,13 @@ static void initialize_console()
     };
     ESP_ERROR_CHECK(uart_param_config(CONFIG_CONSOLE_UART_NUM, &uart_config));
 
-    /* Install UART driver for interrupt-driven reads and writes */
+    /**< Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK(uart_driver_install(CONFIG_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));
 
-    /* Tell VFS to use UART driver */
+    /**< Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
 
-    /* Initialize the console */
+    /**< Initialize the console */
     esp_console_config_t console_config = {
         .max_cmdline_args   = 8,
         .max_cmdline_length = 256,
@@ -101,20 +101,20 @@ static void initialize_console()
     };
     ESP_ERROR_CHECK(esp_console_init(&console_config));
 
-    /* Configure linenoise line completion library */
-    /* Enable multiline editing. If not set, long commands will scroll within
+    /**< Configure linenoise line completion library */
+    /**< Enable multiline editing. If not set, long commands will scroll within
      * single line. */
     linenoiseSetMultiLine(1);
 
-    /* Tell linenoise where to get command completions and hints */
+    /**< Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);
     linenoiseSetHintsCallback((linenoiseHintsCallback*) &esp_console_get_hint);
 
-    /* Set command history size */
+    /**< Set command history size */
     linenoiseHistorySetMaxLen(100);
 
 #if CONFIG_MDEBUG_STORE_HISTORY
-    /* Load command history from filesystem */
+    /**< Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_PATH);
 #endif /**< CONFIG_MDEBUG_STORE_HISTORY */
 }
@@ -130,20 +130,20 @@ static void console_handle_task(void *arg)
          * The line is returned when ENTER is pressed. */
         line = linenoise(prompt);
 
-        /* Ignore empty lines */
+        /**< Ignore empty lines */
         if (line == NULL) {
             continue;
         }
 
-        /* Add the command to the history */
+        /**< Add the command to the history */
         linenoiseHistoryAdd(line);
 
 #if CONFIG_MDEBUG_STORE_HISTORY
-        /* Save command history to filesystem */
+        /**< Save command history to filesystem */
         linenoiseHistorySave(HISTORY_PATH);
 #endif
 
-        /* Try to run the command */
+        /**< Try to run the command */
         err = esp_console_run(line, &ret);
 
         if (err == ESP_ERR_NOT_FOUND) {
@@ -157,7 +157,7 @@ static void console_handle_task(void *arg)
             MDF_LOGW("<%s> Internal error", esp_err_to_name(err));
         }
 
-        /* linenoise allocates line buffer on the heap, so need to free it */
+        /**< linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
 
@@ -174,15 +174,15 @@ mdf_err_t mdebug_console_init()
     initialize_console();
     g_running_flag = true;
 
-    /* Register help commands */
+    /**< Register help commands */
     esp_console_register_help_command();
 
-    /* Prompt to be printed before each line.
+    /**< Prompt to be printed before each line.
      * This can be customized, made dynamic, etc. */
 #if CONFIG_LOG_COLORS
     prompt = LOG_COLOR_I "mdf> " LOG_RESET_COLOR;
 #else
-    /* Since the terminal doesn't support escape sequences,
+    /**< Since the terminal doesn't support escape sequences,
      * don't use color codes in the prompt. */
     prompt = "mdf> ";
 #endif /**<  CONFIG_LOG_COLORS */
@@ -192,8 +192,8 @@ mdf_err_t mdebug_console_init()
            "Use UP/DOWN arrows to navigate through command history.\n"
            "Press TAB when typing command name to auto-complete.\n\n");
 
-    /* Figure out if the terminal supports escape sequences */
-    if (linenoiseProbe()) { /* zero indicates success */
+    /**< Figure out if the terminal supports escape sequences */
+    if (linenoiseProbe()) { /**< zero indicates success */
         MDF_LOGW("Your terminal application does not support escape sequences.\n"
                  "Line editing and history features are disabled.\n"
                  "On Windows, try using Putty instead.\n");

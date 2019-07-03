@@ -35,6 +35,8 @@ esp_err_t mdf_info_init()
         esp_err_t ret = nvs_flash_init();
 
         if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+            // NVS partition was truncated and needs to be erased
+            // Retry nvs_flash_init
             ESP_ERROR_CHECK(nvs_flash_erase());
             ret = nvs_flash_init();
         }
@@ -54,8 +56,10 @@ esp_err_t mdf_info_erase(const char *key)
     esp_err_t ret    = ESP_OK;
     nvs_handle handle = 0;
 
+    /**< Initialize the default NVS partition */
     mdf_info_init();
 
+    /**< Open non-volatile storage with a given namespace from the default NVS partition */
     ret = nvs_open(MDF_SPACE_NAME, NVS_READWRITE, &handle);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Open non-volatile storage");
 
@@ -68,7 +72,10 @@ esp_err_t mdf_info_erase(const char *key)
         ret = nvs_erase_key(handle, key);
     }
 
+    /**< Write any pending changes to non-volatile storage */
     nvs_commit(handle);
+
+    /**< Close the storage handle and free any allocated resources */
     nvs_close(handle);
 
     MDF_ERROR_CHECK(ret != ESP_OK && ret != ESP_ERR_NVS_NOT_FOUND,
@@ -86,13 +93,20 @@ esp_err_t mdf_info_save(const char *key, const void *value, size_t length)
     esp_err_t ret     = ESP_OK;
     nvs_handle handle = 0;
 
+    /**< Initialize the default NVS partition */
     mdf_info_init();
 
+    /**< Open non-volatile storage with a given namespace from the default NVS partition */
     ret = nvs_open(MDF_SPACE_NAME, NVS_READWRITE, &handle);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Open non-volatile storage");
 
+    /**< set variable length binary value for given key */
     ret = nvs_set_blob(handle, key, value, length);
+
+    /**< Write any pending changes to non-volatile storage */
     nvs_commit(handle);
+
+    /**< Close the storage handle and free any allocated resources */
     nvs_close(handle);
 
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Set value for given key, key: %s", key);
@@ -122,12 +136,17 @@ esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t typ
 
     MDF_PARAM_CHECK(*length > 0);
 
+    /**< Initialize the default NVS partition */
     mdf_info_init();
 
+    /**< Open non-volatile storage with a given namespace from the default NVS partition */
     ret = nvs_open(MDF_SPACE_NAME, NVS_READWRITE, &handle);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Open non-volatile storage");
 
+    /**< get variable length binary value for given key */
     ret = nvs_get_blob(handle, key, value, length);
+
+    /**< Close the storage handle and free any allocated resources */
     nvs_close(handle);
 
     if (ret == ESP_ERR_NVS_NOT_FOUND) {

@@ -37,9 +37,9 @@
  * @brief The data type of the characteristic value
  */
 typedef union {
-    char *value_string;  /* The item's string */
-    int value_int;       /* writing to value int is DEPRECATED*/
-    double value_double; /* The item's number*/
+    char *value_string;  /**< The item's string */
+    int value_int;       /**< writing to value int is DEPRECATED*/
+    double value_double; /**< The item's number*/
 } characteristic_value_t;
 
 /**

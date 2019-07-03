@@ -57,8 +57,8 @@
  * @brief Data format for communication between two devices
  */
 typedef struct {
-    uint8_t oui[MESPNOW_OUI_LEN];    /**< Use oui to filter unwanted espnow package */
-    uint8_t pipe;                    /**< Mespnow packet type */
+    uint8_t oui[MESPNOW_OUI_LEN];    /**< Use oui to filter unexpect espnow package */
+    uint8_t pipe;                    /**< Mespnow data stream pipe */
     uint8_t crc;                     /**< Value that is in little endian */
     uint8_t seq;                     /**< Sequence of espnow package when sending or receiving multiple package */
     uint8_t size;                    /**< The length of this packet of data */
@@ -68,7 +68,7 @@ typedef struct {
 } __attribute__((packed)) mespnow_head_data_t;
 
 /**
- * @brief Receive packet type in queued
+ * @brief Receive data packet temporarily store in queue
  */
 typedef struct {
     uint8_t addr[ESP_NOW_ETH_ALEN]; /**< source MAC address  */
@@ -87,6 +87,7 @@ static uint8_t g_espnow_queue_size[MESPNOW_TRANS_PIPE_MAX] = {CONFIG_MESPNOW_TRA
                                                                 CONFIG_MESPNOW_TRANS_PIPE_RESERVED_QUEUE_SIZE};
 static uint32_t g_last_magic[MESPNOW_TRANS_PIPE_MAX]       = {0};
 
+/**< callback function of sending ESPNOW data */
 static void mespnow_send_cb(const uint8_t *addr, esp_now_send_status_t status)
 {
     if (!addr) {
@@ -101,6 +102,7 @@ static void mespnow_send_cb(const uint8_t *addr, esp_now_send_status_t status)
     }
 }
 
+/**< callback function of receiving ESPNOW data */
 static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
 {
     if (!addr || !data || size < sizeof(mespnow_head_data_t)) {
@@ -116,6 +118,7 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
         return;
     }
 
+    /**< filter unexpect espnow package */
     if (memcmp(espnow_data->oui, g_oui, MESPNOW_OUI_LEN)) {
         MDF_LOGD("Receive cb data fail");
         return; /**< mdf espnow oui field err */
@@ -133,10 +136,15 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
         return;
     }
 
+    /**
+     * @brief Received data packet store in special queue
+     */
     espnow_queue = g_espnow_queue[espnow_data->pipe];
 
     if (espnow_data->seq == 0 && espnow_data->pipe != MESPNOW_TRANS_PIPE_DEBUG) {
         int pipe_tmp = espnow_data->pipe;
+
+        /**< Send MDF_EVENT_MESPNOW_RECV event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MESPNOW_RECV, (void *)pipe_tmp);
     }
 
@@ -160,6 +168,7 @@ mdf_err_t mespnow_add_peer(wifi_interface_t ifx, const uint8_t *addr, const uint
 {
     MDF_PARAM_CHECK(addr);
 
+    /**< If peer exists, delete a peer from peer list */
     if (esp_now_is_peer_exist(addr)) {
         mdf_err_t ret = esp_now_del_peer(addr);
         MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_now_del_peer fail, ret: %d", ret);
@@ -181,6 +190,7 @@ mdf_err_t mespnow_add_peer(wifi_interface_t ifx, const uint8_t *addr, const uint
     peer.ifidx = ifx;
     memcpy(peer.peer_addr, addr, ESP_NOW_ETH_ALEN);
 
+    /**< Add a peer to peer list */
     ret = esp_now_add_peer(&peer);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Add a peer to peer list fail");
 
@@ -193,6 +203,7 @@ mdf_err_t mespnow_del_peer(const uint8_t *addr)
 
     mdf_err_t ret = MDF_OK;
 
+    /**< If peer exists, delete a peer from peer list */
     if (esp_now_is_peer_exist(addr)) {
         ret = esp_now_del_peer(addr);
         MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_now_del_peer fail, ret: %d", ret);
@@ -221,6 +232,7 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
         s_send_lock = xSemaphoreCreateMutex();
     }
 
+    /**< Wait for other tasks to be sent before send ESP-NOW data */
     if (xSemaphoreTake(s_send_lock, wait_ticks) != pdPASS) {
         return MDF_ERR_TIMEOUT;
     }
@@ -245,10 +257,12 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
         xEventGroupClearBits(g_event_group, SEND_CB_OK | SEND_CB_FAIL);
 
         do {
+            /**< Send ESPNOW data */
             ret = esp_now_send(dest_addr, (uint8_t *)espnow_data,
                                espnow_data->size + sizeof(mespnow_head_data_t));
             MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_now_send", mdf_err_to_name(ret));
 
+            /**< Waiting send complete ack from mac layer */
             uxBits = xEventGroupWaitBits(g_event_group, SEND_CB_OK | SEND_CB_FAIL,
                                          pdTRUE, pdFALSE, write_ticks);
 
@@ -270,11 +284,15 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
 
     if (espnow_data->pipe != MESPNOW_TRANS_PIPE_DEBUG) {
         int pipe_tmp = espnow_data->pipe;
+
+        /**< Send MDF_EVENT_MESPNOW_SEND event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MESPNOW_SEND, (void *)pipe_tmp);
     }
 
 EXIT:
     MDF_FREE(espnow_data);
+
+    /**< ESP-NOW send completed, release send lock */
     xSemaphoreGive(s_send_lock);
 
     return ret;
@@ -291,6 +309,10 @@ mdf_err_t mespnow_read(mespnow_trans_pipe_e pipe, uint8_t *src_addr,
 
     mespnow_head_data_t *espnow_data = NULL;
     mespnow_queue_data_t *q_data     = NULL;
+
+    /**
+     * @brief Receive data packet from special queue
+     */
     xQueueHandle espnow_queue       = g_espnow_queue[pipe];
     uint32_t start_ticks            = xTaskGetTickCount();
     ssize_t read_size               = 0;
@@ -374,6 +396,7 @@ mdf_err_t mespnow_deinit(void)
     vEventGroupDelete(g_event_group);
     g_event_group = NULL;
 
+    /**< De-initialize ESPNOW function */
     ESP_ERROR_CHECK(esp_now_unregister_recv_cb());
     ESP_ERROR_CHECK(esp_now_unregister_send_cb());
     ESP_ERROR_CHECK(esp_now_deinit());
@@ -393,12 +416,14 @@ mdf_err_t mespnow_init()
     g_event_group = xEventGroupCreate();
     MDF_ERROR_CHECK(!g_event_group, ESP_FAIL, "Create event group fail");
 
+    /**< Create MESPNOW_TRANS_PIPE_MAX queue to distinguish data and temporarily store */
     for (int i = 0; i < MESPNOW_TRANS_PIPE_MAX; ++i) {
         g_espnow_queue[i] = xQueueCreate(g_espnow_queue_size[i],
                                          sizeof(mespnow_head_data_t *));
         MDF_ERROR_CHECK(!g_espnow_queue[i], ESP_FAIL, "Create espnow debug queue fail");
     }
 
+    /**< Initialize ESPNOW function */
     ESP_ERROR_CHECK(esp_now_init());
     ESP_ERROR_CHECK(esp_now_register_send_cb(mespnow_send_cb));
     ESP_ERROR_CHECK(esp_now_register_recv_cb(mespnow_recv_cb));

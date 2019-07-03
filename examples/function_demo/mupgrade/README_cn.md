@@ -6,6 +6,8 @@
 
 本示例将介绍如何快速使用 `Mupgrade` 进行 ESP-MESH 设备的升级。
 
+[Mesh Upgrade 介绍](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html)
+
 ## 工作流程
 
 ### 步骤 1：连接到路由器
@@ -95,3 +97,7 @@ idf.py erase_flash flash
 ### errors “ota_begin error err = 0x104”
 
 如果您遇到此项报错，请检查分区表中配置的（及实际的）flash 分区大小是否满足要求。默认的“双 OTA 分区”分区表仅提供 4 MB flash 分区。若 flash 分区大小不能满足 OTA 升级要求，您可以创建自定义分区表 CSV （查看 components/partition_table），并在 menuconfig 中进行配置。
+
+## 注意
+
+为了让更多的节点加入到mesh网络中进行固件升级，在示例中我们将在 10 秒后开始进行固件升级。

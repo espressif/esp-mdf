@@ -75,6 +75,10 @@ typedef mdf_err_t (*mdf_event_loop_cb_t)(mdf_event_loop_t event, void *ctx);
 
 /**
  * @brief  Initialize event loop, create the event handler and task
+ * 
+ * @attention   Because all the callbacks are dispatched from the same task,
+ *              it is recommended to only do the minimal possible amount of work from the callback itself,
+ *              posting an event to a lower priority task using a queue instead.
  *
  * @param  cb Application specified event callback, it can be modified by call mdf_event_loop_set
  *
