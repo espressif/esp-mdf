@@ -80,6 +80,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_LOGI("Parent is connected");
             mwifi_connected_flag = true;
 
+            /**< Start DHCP client on station interface for root node */
             if (esp_mesh_is_root()) {
                 tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
                 g_rootless_flag = false;
@@ -112,6 +113,10 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_LOGI("MESH is started");
             s_disconnected_count = 0;
             g_mwifi_started_flag = true;
+
+            /** stop DHCP server on softAP interface
+             * stop DHCP client on station interface
+             */
             tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
             tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
             break;
@@ -120,6 +125,10 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_LOGI("MESH is stopped");
             g_mwifi_started_flag = false;
             mwifi_connected_flag = false;
+
+            /** stop DHCP server on softAP interface
+             * stop DHCP client on station interface
+             */
             tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
             tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
             break;
@@ -155,6 +164,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
             break;
     }
 
+    /**< Send event to the event handler */
     memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
     mdf_event_loop_send(event.id, &s_evet_info);
 }
@@ -172,6 +182,7 @@ mdf_err_t mwifi_init(mwifi_init_config_t *config)
     memcpy(g_init_config, config, sizeof(mwifi_init_config_t));
     g_mwifi_inited_flag = true;
 
+    /**< Mesh initialization */
     return esp_mesh_init();
 }
 
@@ -251,14 +262,27 @@ mdf_err_t mwifi_start()
     mesh_attempts_t attempts           = {0};
     mesh_switch_parent_t switch_parent = {0};
 
+    /** Mesh initialization
+     *  - Check whether Wi-Fi is started.
+     *  - Initialize mesh global variables with default values.
+     */
     ESP_ERROR_CHECK(esp_mesh_init());
 
     switch (ap_config->mesh_type) {
         case MESH_ROOT:
+            /** Designate device type over the mesh network
+             *  - MESH_ROOT: designates the root node for a mesh network
+             *  - MESH_LEAF: designates a device as a standalone Wi-Fi station
+             */
             ESP_ERROR_CHECK(esp_mesh_set_type(MESH_ROOT));
             break;
 
         case MESH_NODE:
+            /** Enable network Fixed Root Setting
+             *  - Enabling fixed root disables automatic election of the root node via voting.
+             *  - All devices in the network shall use the same Fixed Root Setting (enabled or disabled).
+             *  - If Fixed Root is enabled, users should make sure a root node is designated for the network.
+             */
             ESP_ERROR_CHECK(esp_mesh_fix_root(true));
             break;
 
@@ -273,10 +297,16 @@ mdf_err_t mwifi_start()
             break;
     }
 
+    /**< Set mesh event callback. */
     mesh_config.event_cb = esp_mesh_event_cb;
 
     /**
      * @brief Mesh root configuration
+     *  - Set attempts for mesh self-organized networking
+     *  - Set vote percentage threshold for approval of being a root
+     *      - During the networking, only obtaining vote percentage reaches this threshold, the device could be a root.
+     *  - Set delay time before starting root healing
+     *  - Set whether allow more than one root existing in one network
      */
     attempts.vote       = init_config->vote_max_count;
     attempts.scan       = init_config->scan_min_count;
@@ -289,6 +319,9 @@ mdf_err_t mwifi_start()
 
     /**
      * @brief Mesh network capacity configuration
+     *  - Set network max layer value (max:25, default:25)
+     *      - Network max layer limits the max hop count.
+     *  - Set mesh network capacity (max:1000, default:300)
      */
     mesh_config.mesh_ap.max_connection = init_config->max_connection;
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(init_config->max_layer));
@@ -296,6 +329,13 @@ mdf_err_t mwifi_start()
 
     /**
      * @brief Mesh network stability configuration
+     *  - Set parameters for parent switch
+     *  - Set mesh softAP associate expired time (default:10 seconds)
+     *      - If mesh softAP hasn't received any data from an associated child within this time,
+     *              mesh softAP will take this child inactive and disassociate it.
+     *      - If mesh softAP is encrypted, this value should be set a greater value, such as 30 seconds.
+     *  - Set mesh softAP beacon interval
+     *  - Set passive scan time
      */
     switch_parent.duration_ms  = init_config->monitor_duration_ms;
     switch_parent.backoff_rssi = init_config->backoff_rssi;
@@ -309,11 +349,19 @@ mdf_err_t mwifi_start()
 
     /**
      * @brief Mesh network data transmission configuration
+     *  - Set the number of queue
      */
     ESP_ERROR_CHECK(esp_mesh_set_xon_qsize(init_config->xon_qsize));
 
     /**
      * @brief mwifi AP configuration
+     *  - Set mesh softAP authentication mode
+     *  - Set mesh stack configuration
+     *      - Use MESH_INIT_CONFIG_DEFAULT() to initialize the default values, mesh IE is encrypted by default.
+     *      - Mesh network is established on a fixed channel (1-14).
+     *      - Mesh event callback is mandatory.
+     *      - Mesh ID is an identifier of an MBSS. Nodes with the same mesh ID can communicate with each other.
+     *      - Regarding to the router configuration, if the router is hidden, BSSID field is mandatory.
      */
     mesh_config.channel              = ap_config->channel;
     mesh_config.allow_channel_switch = !ap_config->channel_switch_disable;
@@ -338,6 +386,7 @@ mdf_err_t mwifi_start()
 
     ESP_ERROR_CHECK(esp_mesh_set_config(&mesh_config));
 
+    /**< Start mesh network. */
     return esp_mesh_start();
 }
 
@@ -470,11 +519,15 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
         s_mwifi_send_lock = xSemaphoreCreateMutex();
     }
 
+    /** Fragmenting packets for transmission
+     *  - The maximum length allowed for each ESP-MESH packet is MWIFI_PAYLOAD_LEN
+     */
     for (int unwritten_size = data->size; unwritten_size > 0;
             unwritten_size -= MWIFI_PAYLOAD_LEN) {
         data_head->magic = esp_random();
         mesh_data.size   = MIN(unwritten_size, MWIFI_PAYLOAD_LEN);
 
+        /**< Wait for other tasks to be sent before send ESP-MESH data */
         if (!xSemaphoreTake(s_mwifi_send_lock, wait_ticks)) {
             return MDF_ERR_TIMEOUT;
         }
@@ -482,6 +535,7 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
         int retry_count = 3;
 
         do {
+            /**< Send a packet over the mesh network */
             ret = esp_mesh_send(dest_addr, &mesh_data, flag, opt, 1);
 
             if (ret == ESP_ERR_MESH_NO_MEMORY) {
@@ -490,6 +544,8 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
             }
         } while (ret == ESP_ERR_MESH_NO_MEMORY && --retry_count);
 
+        
+        /**< ESP-MESH send completed, release send lock */
         xSemaphoreGive(s_mwifi_send_lock);
         MDF_ERROR_CHECK(ret != ESP_OK, ret, "Node failed to send packets, dest_addr: " MACSTR
                         ", flag: 0x%02x, opt->type: 0x%02x, opt->len: %d, data->tos: %d, data: %p, size: %d",
@@ -513,6 +569,10 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
     uint8_t *transmit_data = NULL;
     mwifi_data_head_t *data_head = (mwifi_data_head_t *)mesh_opt->val;
 
+    /**
+     * @brief If the address designation is all nodes or other nodes except the root in the mesh network,
+     *  transmit_all should be true to send data to all downstream nodes of the node.
+     */
     if (MWIFI_ADDR_IS_ANY(addrs_list->addr) || MWIFI_ADDR_IS_BROADCAST(addrs_list->addr)) {
         data_head->transmit_all = true;
     }
@@ -520,20 +580,30 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
     if (g_ap_config->mesh_type == MESH_LEAF) {
         sta.num = 0;
     } else {
+        /**< Get STAs associated with soft-AP */
         ESP_ERROR_CHECK(esp_wifi_ap_get_sta_list(&sta));
     }
 
+    /**
+     * @brief Determine whether there is a destination device in the downstream node of the node.
+     */
     for (int i = 0; i < sta.num && addrs_num > 0; ++i) {
         mesh_addr_t *child_addr = (mesh_addr_t *)&sta.sta[i].mac;
         MDF_LOGV("data_head->transmit_all: %d, child_addr: " MACSTR,
                  data_head->transmit_all, MAC2STR(child_addr->addr));
 
+        /**
+         * @brief If the packet not send to all nodes in the mesh network,
+         *  find out if there is a destination device in the downstream node of the node and
+         *  remove all downstream nodes from the address list.
+         */
         if (!data_head->transmit_all) {
             int subnet_num           = 0;
             mesh_addr_t *subnet_addr = NULL;
             data_head->transmit_self = addrs_remove(addrs_list, &addrs_num, child_addr);
             data_head->transmit_num  = 0;
 
+            /**< Get the number of nodes in the subnet of a specific child */
             ret = esp_mesh_get_subnet_nodes_num(child_addr, &subnet_num);
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Get the number of nodes in the subnet of a specific child", mdf_err_to_name(ret));
             transmit_data = MDF_REALLOC(transmit_data, mesh_data->size + subnet_num * MWIFI_ADDR_LEN);
@@ -541,6 +611,7 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
             MDF_LOGV("subnet_num: %d", subnet_num);
 
             if (subnet_num) {
+                /**< Get nodes in the subnet of a specific child */
                 subnet_addr = MDF_MALLOC(subnet_num * sizeof(mesh_addr_t));
                 ESP_ERROR_CHECK(esp_mesh_get_subnet_nodes_list(child_addr, subnet_addr, subnet_num));
             }
@@ -557,6 +628,9 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
             MDF_FREE(subnet_addr);
         }
 
+        /**
+         * @brief Send data to child nodes.
+         */
         if (data_head->transmit_num || data_head->transmit_self || data_head->transmit_all) {
             mesh_data_t tmp_data = {0x0};
 
@@ -572,6 +646,7 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
             MDF_LOGV("mesh_data->size: %d, transmit_num: %d, child_addr: " MACSTR,
                      mesh_data->size, data_head->transmit_num, MAC2STR(child_addr->addr));
 
+            /**< Fragmenting packets for transmission */
             ret = mwifi_subcontract_write(child_addr, &tmp_data, data_flag, mesh_opt);
             MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
                             mdf_err_to_name(ret), MAC2STR(child_addr->addr));
@@ -599,6 +674,8 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
 
     for (int i = 0; i < addrs_num && !data_head->transmit_all; ++i) {
         data_head->transmit_self = true;
+
+        /**< Fragmenting packets for transmission */
         ret = mwifi_subcontract_write(addrs_list + i, mesh_data, data_flag, mesh_opt);
         MDF_ERROR_CONTINUE(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
                            mdf_err_to_name(ret), MAC2STR((addrs_list + i)->addr));
@@ -643,6 +720,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
         .type = MESH_OPT_RECV_DS_ADDR,
     };
 
+    /**< flag  bitmap for data sent */
     data_flag = (to_root) ? MESH_DATA_TODS : MESH_DATA_P2P;
     data_flag = (data_type->communicate == MWIFI_COMMUNICATE_BROADCAST) ? data_flag | MESH_DATA_GROUP : data_flag;
     data_flag = (g_init_config->data_drop_enable) ? data_flag | MESH_DATA_DROP : data_flag;
@@ -672,6 +750,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
         }
     }
 
+    /**< Send a package as a group */
     if (!to_root && data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
         uint8_t *group_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
         memcpy(group_data, dest_addrs, MWIFI_ADDR_LEN);
@@ -690,6 +769,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     data_head.total_size_hight = mesh_data.size >> 12;
     data_head.total_size_low   = mesh_data.size & 0xFFF;
 
+    /**< Fragmenting packets for transmission */
     ret = mwifi_subcontract_write((mesh_addr_t *)dest_addrs, &mesh_data, data_flag, &mesh_opt);
     MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Node failed to send packets, data_flag: 0x%x, dest_mac: " MACSTR,
                    mdf_err_to_name(ret), data_flag, MAC2STR(dest_addrs));
@@ -743,6 +823,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
 
             MDF_LOGV("wait_ticks: %d, start_ticks: %d, recv_ticks: %d", wait_ticks, start_ticks, recv_ticks);
 
+            /**< Receive a packet targeted to self over the mesh network */
             ret = esp_mesh_recv((mesh_addr_t *)src_addr, &mesh_data, recv_ticks * portTICK_RATE_MS,
                                 &data_flag, &mesh_opt, 1);
             MDF_LOGV("esp_mesh_recv, src_addr: " MACSTR ", size: %d, data: %.*s",
@@ -796,6 +877,9 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
         mesh_data.data = recv_data;
         mesh_data.size = recv_size;
 
+        /**
+         * @brief Existing data needs to be forwarded
+         */
         if (data_head.transmit_num || data_head.transmit_all) {
             mesh_addr_t *transmit_addr       = NULL;
             size_t transmit_num              = data_head.transmit_num;
@@ -814,12 +898,16 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             MDF_LOGV("Data forwarding, size: %d, recv_size: %d, flag: %d, transmit_num: %d, data: %.*s",
                      mesh_data.size, recv_size, data_flag, data_head.transmit_num, mesh_data.size, mesh_data.data);
 
+            /**< Multicast forwarding */
             ret = mwifi_transmit_write(transmit_addr, transmit_num, &mesh_data,
                                        data_flag, &mesh_opt);
             MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> mwifi_root_write, size: %d",
                            mdf_err_to_name(ret), mesh_data.size);
         }
 
+        /**
+         * @brief If this data typde is group and my is in this destination group, receive this data.
+         */
         if (data_head.type.group && data_head.type.communicate != MWIFI_COMMUNICATE_BROADCAST) {
             if (esp_mesh_is_my_group((mesh_addr_t *)mesh_data.data)) {
                 mesh_data.data += MWIFI_ADDR_LEN;
@@ -915,6 +1003,9 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
     data_flag = (!block) ? data_flag | MESH_DATA_NONBLOCK : data_flag;
     memcpy(&data_head.type, data_type, sizeof(mwifi_data_type_t));
 
+    /**
+     * @brief If destination adress is group address, will forward to each device in address list.
+     */
     if (data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
         for (int i = 0; i < addrs_num; ++i) {
             MDF_LOGD("count: %d, dest_addr: " MACSTR ", mesh_data.size: %d, data: %.*s",
@@ -950,6 +1041,10 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
     }
 
     if (data_type->communicate == MWIFI_COMMUNICATE_UNICAST) {
+
+        /**
+         * @brief If destination adress is any device or other device expect root, get all nodes adress.
+         */
         if (MWIFI_ADDR_IS_ANY(addrs_list) || MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
             addrs_num  = esp_mesh_get_routing_table_size();
             tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
@@ -966,9 +1061,14 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
             addrs_list = tmp_addrs;
         }
 
+        /**
+         * @brief Send each device by p2p
+         */
         for (int i = 0; i < addrs_num; ++i) {
             MDF_LOGD("count: %d, dest_addr: " MACSTR" mesh_data.size: %d, data: %.*s",
                      i, MAC2STR(addrs_list + 6 * i), mesh_data.size, mesh_data.size, mesh_data.data);
+
+            /**< Fragmenting packets for transmission */
             ret = mwifi_subcontract_write((mesh_addr_t *)addrs_list + i, &mesh_data, data_flag, &mesh_opt);
             MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Root node failed to send packets, dest_mac: "MACSTR,
                             mdf_err_to_name(ret), MAC2STR(addrs_list));
@@ -978,10 +1078,14 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
         memcpy(tmp_addrs, addrs_list, addrs_num * sizeof(mesh_addr_t));
         MDF_LOGD("addrs_num: %d, addrs_list: " MACSTR ", mesh_data.size: %d",
                  addrs_num, MAC2STR(tmp_addrs), mesh_data.size);
+
+        /**< Multicast forwarding */
         ret = mwifi_transmit_write((mesh_addr_t *)tmp_addrs, addrs_num, &mesh_data,
                                    data_flag, &mesh_opt);
         MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Mwifi_transmit_write");
     } else if (data_type->communicate == MWIFI_COMMUNICATE_BROADCAST && addrs_num == 1) {
+
+        /**< Fragmenting packets for transmission */
         ret = mwifi_subcontract_write((mesh_addr_t *)addrs_list, &mesh_data, data_flag, &mesh_opt);
         MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Root node failed to send packets, dest_mac: " MACSTR,
                        mdf_err_to_name(ret), MAC2STR(addrs_list));
@@ -1034,6 +1138,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
 
         MDF_LOGV("wait_ticks: %d, start_ticks: %d, recv_ticks: %d", wait_ticks, start_ticks, recv_ticks);
 
+        /**< Receive a packet targeted to external IP network */
         ret = esp_mesh_recv_toDS((mesh_addr_t *)src_addr, &dest_addr,
                                  &mesh_data, recv_ticks * portTICK_RATE_MS, &data_flag, &mesh_opt, 1);
 

@@ -69,6 +69,7 @@ static const uint8_t MCONFIG_AES_CFB_IV[MCONFIG_AES_KEY_LEN] = {
     0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 };
 
+/**< RX callback function in the promiscuous mode. */
 static void wifi_sniffer_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
 {
     if (type != WIFI_PKT_MGMT) {
@@ -155,6 +156,7 @@ static void mconfig_chain_master_task(void *arg)
 
     MDF_LOGI("Start send network configured");
 
+    /**< Send MDF_EVENT_MCONFIG_CHAIN_MASTER_STARTED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MCONFIG_CHAIN_MASTER_STARTED, NULL);
     mbedtls_aes_init(&aes_ctx);
 
@@ -237,7 +239,7 @@ static void mconfig_chain_master_task(void *arg)
         }
 
         /**
-         * @brief 5. Send network configuration information
+         * @brief 5. Send device whitelist information
          */
 #ifdef CONFIG_MCONFIG_WHITELIST_ENABLE
 
@@ -285,6 +287,7 @@ static void mconfig_chain_master_task(void *arg)
     mbedtls_aes_free(&aes_ctx);
     g_chain_master_duration_ticks = 0;
 
+    /**< Send MDF_EVENT_MCONFIG_CHAIN_MASTER_STOPED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MCONFIG_CHAIN_MASTER_STOPED, NULL);
 
     if (g_chain_master_exit_sem) {
@@ -294,6 +297,7 @@ static void mconfig_chain_master_task(void *arg)
     vTaskDelete(NULL);
 }
 
+/**< Find the mesh device that has configured the network。 */
 static bool scan_mesh_device(uint8_t *bssid, int8_t *rssi)
 {
     uint8_t channel               = 1;
@@ -433,7 +437,7 @@ static void mconfig_chain_slave_task(void *arg)
         MDF_ERROR_CONTINUE(ret != ESP_OK, "mbedtls_aes_crypt_cfb128, ret: 0x%x", -ret);
 
         /**
-         * @brief 4. Receive device whitelist
+         * @brief 4. Receive device whitelist information
          */
 #ifdef CONFIG_MCONFIG_WHITELIST_ENABLE
 
@@ -486,6 +490,7 @@ static void mconfig_chain_slave_task(void *arg)
         ret = mconfig_queue_write(&chain_data->mconfig_data, 0);
         MDF_ERROR_CONTINUE(ret != ESP_OK, "mconfig_queue_write failed, ret: %d", ret);
 
+        /**< Send MDF_EVENT_MCONFIG_CHAIN_FINISH event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MCONFIG_CHAIN_FINISH, NULL);
         break;
     }
@@ -509,6 +514,7 @@ mdf_err_t mconfig_chain_slave_channel_switch_disable()
 {
     g_switch_channel_flag = false;
 
+    /**< Send MDF_EVENT_MCONFIG_CHAIN_SLAVE_STOPED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MCONFIG_CHAIN_SLAVE_STOPED, NULL);
 
     return MDF_OK;
@@ -518,6 +524,7 @@ mdf_err_t mconfig_chain_slave_channel_switch_enable()
 {
     g_switch_channel_flag = true;
 
+    /**< Send MDF_EVENT_MCONFIG_CHAIN_SLAVE_STARTED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MCONFIG_CHAIN_SLAVE_STARTED, NULL);
 
     return MDF_OK;
@@ -535,7 +542,9 @@ mdf_err_t mconfig_chain_slave_init()
 
     g_chain_slave_flag = true;
 
+    /**< Enable slave to switch wifi channel. */
     mconfig_chain_slave_channel_switch_enable();
+
     xTaskCreatePinnedToCore(mconfig_chain_slave_task, "mconfig_chain_slave", 4 * 1024,
                             NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL, CONFIG_MDF_TASK_PINNED_TO_CORE);
 
@@ -585,6 +594,7 @@ mdf_err_t mconfig_chain_master(const mconfig_data_t *mconfig_data, TickType_t du
     xTaskCreatePinnedToCore(mconfig_chain_master_task, "mconfig_chain_master", 8 * 1024,
                             chain_data, CONFIG_MDF_TASK_DEFAULT_PRIOTY,
                             NULL, CONFIG_MDF_TASK_PINNED_TO_CORE);
+
     return MDF_OK;
 }
 

@@ -60,6 +60,8 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     g_upgrade_config->status.written_size = 0;
 
     if (esp_mesh_get_type() == MESH_ROOT) {
+
+        /**< Configure OTA data for a new boot partition */
         const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
         ret = esp_ota_set_boot_partition(update_partition);
         MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "esp_ota_set_boot_partition");
@@ -70,12 +72,15 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
         g_upgrade_config->status.written_size = g_upgrade_config->status.total_size;
         memset(g_upgrade_config->status.progress_array, 0xff, MUPGRADE_PACKET_MAX_NUM / 8);
 
+        /**< Send MDF_EVENT_MUPGRADE_FINISH event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_FINISH, NULL);
         MDF_LOGI("MESH_ROOT update finish");
         goto EXIT;
     }
 
     g_upgrade_finished_flag = false;
+    /**< Get partition info of currently running app
+    Return the next OTA app partition which should be written with a new firmware.*/
     const esp_partition_t *running = esp_ota_get_running_partition();
     const esp_partition_t *update  = esp_ota_get_next_update_partition(NULL);
 
@@ -95,16 +100,19 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     uint32_t assoc_expire = esp_mesh_get_ap_assoc_expire();
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(60));
 
+    /**< Commence an OTA update writing to the specified partition. */
     ret = esp_ota_begin(update, g_upgrade_config->status.total_size, &g_upgrade_config->handle);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "esp_ota_begin failed");
 
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(assoc_expire));
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "mupgrade_start, ret: %d", ret);
 
+    /**< Save upgrade infomation to flash. */
     ret = mdf_info_save(MUPGRADE_STORE_CONFIG_KEY, g_upgrade_config,
                         sizeof(mupgrade_status_t) + MUPGRADE_PACKET_MAX_NUM / 8);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "info_store_save, ret: %d", ret);
 
+    /**< Send MDF_EVENT_MUPGRADE_STARTED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MUPGRADE_STARTED, NULL);
 
 EXIT:
@@ -145,6 +153,7 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
         g_upgrade_config->start_time = xTaskGetTickCount();
         g_upgrade_config->partition  = esp_ota_get_next_update_partition(NULL);
 
+        /**< Get upgrade infomation to flash. */
         ret = mdf_info_load(MUPGRADE_STORE_CONFIG_KEY, g_upgrade_config, &config_size);
 
         if (ret != MDF_OK) {
@@ -178,6 +187,7 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
         return MDF_OK;
     }
 
+    /**< Write firmware data to the update partition */
     ret = esp_partition_write(g_upgrade_config->partition, packet->seq * MUPGRADE_PACKET_MAX_SIZE,
                               packet->data, packet->size);
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_ERR_MUPGRADE_FIRMWARE_DOWNLOAD,
@@ -201,6 +211,8 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
 
         mdf_info_save(MUPGRADE_STORE_CONFIG_KEY, g_upgrade_config,
                       sizeof(mupgrade_status_t) + MUPGRADE_PACKET_MAX_NUM / 8);
+
+        /**< Send MDF_EVENT_MUPGRADE_STATUS event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_STATUS, (void *)written_percentage);
     }
 
@@ -221,9 +233,11 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
         MDF_ERROR_CHECK(g_upgrade_config->status.error_code != MDF_OK,
                         MDF_ERR_MUPGRADE_FIRMWARE_INVALID, "esp_ota_set_boot_partition");
 
+        /**< Send MDF_EVENT_MUPGRADE_FINISH event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_FINISH, NULL);
         g_upgrade_finished_flag = true;
 
+        /**< Response firmware upgrade status to root node. */
         mwifi_data_type_t data_type = {.upgrade = true,};
         ret = mwifi_write(NULL, &data_type, &g_upgrade_config->status, sizeof(mupgrade_status_t), true);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "Send the status of the upgrade to the root");

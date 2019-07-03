@@ -6,6 +6,8 @@
 
 It introduces a quick way to use `Mupgrade` to upgrade ESP-MESH devices.
 
+[Mesh Upgrade Introduction](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html)
+
 ## Process
 
 ### Step 1: Connect to the router
@@ -95,3 +97,7 @@ When the example starts up, it will print "Starting OTA example..." then:
 ### errors “ota_begin error err = 0x104”
 
 If you see this error then check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table only works with 4 MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (look in components/partition_table) and configure it in menuconfig.
+
+## Note
+
+In order to allow more nodes to join the mesh network for firmware upgrade, in the example we will start the firmware upgrade after 10 seconds.

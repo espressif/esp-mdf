@@ -63,6 +63,7 @@ mdf_err_t __mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, cons
         espnow_data->type = type;
     }
 
+    /**< write date package to espnow. */
     ret = mespnow_write(MESPNOW_TRANS_PIPE_CONTROL, g_espnow_config.parent_bssid,
                         espnow_data, espnow_size, wait_ticks);
     MDF_FREE(espnow_data);
@@ -87,6 +88,8 @@ mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t *
     *addrs_num = 0;
 
     mlink_espnow_t *espnow_data = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN);
+
+    /**< read data from espnow */
     ret = mespnow_read(MESPNOW_TRANS_PIPE_CONTROL, src_addr,
                        espnow_data, &espnow_size, wait_ticks);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "mespnow_read");
@@ -118,7 +121,7 @@ mdf_err_t mlink_espnow_init(mlink_espnow_config_t *config)
     ret = mespnow_init();
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mespnow_init");
 
-    /* espnow need to set the channel */
+    /**< espnow need to set the channel */
     ESP_ERROR_CHECK(esp_wifi_set_channel(config->channel, second));
     ESP_ERROR_CHECK(mespnow_add_peer(ESP_IF_WIFI_STA, config->parent_bssid, NULL));
     memcpy(&g_espnow_config, config, sizeof(mlink_espnow_config_t));

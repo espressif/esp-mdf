@@ -35,7 +35,7 @@ static void root_read_task(void *arg)
     mwifi_data_type_t data_type      = {0};
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0};
 
-    MDF_LOGI("ROOT read task is running");
+    MDF_LOGI("Root read task is running");
 
     while (mwifi_is_connected()) {
         size = MWIFI_PAYLOAD_LEN;
@@ -43,7 +43,7 @@ static void root_read_task(void *arg)
         ret = mwifi_root_read(src_addr, &data_type, data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_recv", mdf_err_to_name(ret));
 
-        if (data_type.upgrade) {
+        if (data_type.upgrade) { // This mesh package contains upgrade data.
             ret = mupgrade_root_handle(src_addr, data, size);
             MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mupgrade_root_handle", mdf_err_to_name(ret));
         } else {
@@ -52,12 +52,15 @@ static void root_read_task(void *arg)
         }
     }
 
-    MDF_LOGW("ROOT read task is exit");
+    MDF_LOGW("Root read task is exit");
 
     MDF_FREE(data);
     vTaskDelete(NULL);
 }
 
+/**
+ * @brief Handling data between wifi mesh devices.
+ */
 static void node_read_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
@@ -66,7 +69,7 @@ static void node_read_task(void *arg)
     mwifi_data_type_t data_type      = {0x0};
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0};
 
-    MDF_LOGI("NODE read task is running");
+    MDF_LOGI("Node read task is running");
 
     while (mwifi_is_connected()) {
         size = MWIFI_PAYLOAD_LEN;
@@ -74,13 +77,16 @@ static void node_read_task(void *arg)
         ret = mwifi_read(src_addr, &data_type, data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_root_recv", mdf_err_to_name(ret));
 
-        if (data_type.upgrade) {
+        if (data_type.upgrade) { // This mesh package contains upgrade data.
             ret = mupgrade_handle(src_addr, data, size);
             MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mupgrade_handle", mdf_err_to_name(ret));
         } else {
             MDF_LOGI("Receive [ROOT] addr: " MACSTR ", size: %d, data: %s",
                      MAC2STR(src_addr), size, data);
 
+            /**
+             * @brief Finally, the node receives a restart notification. Restart it yourself..
+             */
             if (!strcmp(data, "restart")) {
                 MDF_LOGI("Restart the version of the switching device");
                 MDF_LOGW("The device will restart after 3 seconds");
@@ -90,7 +96,7 @@ static void node_read_task(void *arg)
         }
     }
 
-    MDF_LOGW("NODE read task is exit");
+    MDF_LOGW("Node read task is exit");
 
     MDF_FREE(data);
     vTaskDelete(NULL);
@@ -113,6 +119,12 @@ static void ota_task()
     // uint8_t dest_addr[][MWIFI_ADDR_LEN] = {{0x1, 0x1, 0x1, 0x1, 0x1, 0x1}, {0x2, 0x2, 0x2, 0x2, 0x2, 0x2},};
     uint8_t dest_addr[][MWIFI_ADDR_LEN] = {MWIFI_ADDR_ANY};
 
+    /**
+     * @brief In order to allow more nodes to join the mesh network for firmware upgrade, 
+     *      in the example we will start the firmware upgrade after 30 seconds.
+     */
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+
     esp_http_client_config_t config = {
         .url            = CONFIG_FIRMWARE_UPGRADE_URL,
         .transport_type = HTTP_TRANSPORT_UNKNOWN,
@@ -128,6 +140,9 @@ static void ota_task()
 
     MDF_LOGI("Open HTTP connection: %s", CONFIG_FIRMWARE_UPGRADE_URL);
 
+    /**
+     * @brief First, the firmware is obtained from the http server and stored on the root node.
+     */
     do {
         ret = esp_http_client_open(client, 0);
 
@@ -163,6 +178,7 @@ static void ota_task()
         MDF_ERROR_GOTO(size < 0, EXIT, "<%s> Read data from http stream", mdf_err_to_name(ret));
 
         if (size > 0) {
+            /* @brief  Write firmware to flash */
             ret = mupgrade_firmware_download(data, size);
             MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Write firmware to flash, size: %d, data: %.*s",
                            mdf_err_to_name(ret), size, size, data);
