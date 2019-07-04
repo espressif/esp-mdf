@@ -1,63 +1,63 @@
 menu "MDF Mupgrade"
 
-config MUPGRADE_RETRY_COUNT
-    int "Number of times the firmware failed to retry"
-    default 10
-    help
-        Number of times the firmware failed to retry
+    config MUPGRADE_RETRY_COUNT
+        int "Number of times the firmware failed to retry"
+        default 10
+        help
+            Number of times the firmware failed to retry
 
-config MUPGRADE_WAIT_RESPONSE_TIMEOUT
-    int "Timeout waiting for a response (ms)"
-    default 3000
-    help
-        Timeout period for requesting an upgrade status waiting for a response
+    config MUPGRADE_WAIT_RESPONSE_TIMEOUT
+        int "Timeout waiting for a response (ms)"
+        default 3000
+        help
+            Timeout period for requesting an upgrade status waiting for a response
 
-config MUPGRADE_STATUS_REPORT_INTERVAL
-    int "The interval at which the upgrade progress is actively reported"
-    range 1 100
-    default 10
-    help
-        The interval at which the upgrade progress is actively reported
+    config MUPGRADE_STATUS_REPORT_INTERVAL
+        int "The interval at which the upgrade progress is actively reported"
+        range 1 100
+        default 10
+        help
+            The interval at which the upgrade progress is actively reported
 
-config MUPGRADE_FIRMWARE_CHECK
-    bool "Check if the Mupgrade module is included"
-    default n
-    help
-       Check if the Mupgrade module is included.
+    config MUPGRADE_FIRMWARE_CHECK
+        bool "Check if the Mupgrade module is included"
+        default n
+        help
+        Check if the Mupgrade module is included.
 
-config MUPGRADE_FIRMWARE_FLAG
-    string "Check if this identifier is included in the firmware"
-    default "** MUPGRADE_FIRMWARE_FLAG **"
-    depends on MUPGRADE_FIRMWARE_CHECK
-    help
-       Check if this identifier is included in the firmware.
+    config MUPGRADE_FIRMWARE_FLAG
+        string "Check if this identifier is included in the firmware"
+        default "** MUPGRADE_FIRMWARE_FLAG **"
+        depends on MUPGRADE_FIRMWARE_CHECK
+        help
+        Check if this identifier is included in the firmware.
 
-config MUPGRADE_VERSION_FALLBACK_RESTART
-    bool "Fall back to the previous version"
-    default y
-    help
-       If there is a factory partition, it will switch to the factory partition.
+    config MUPGRADE_VERSION_FALLBACK_RESTART
+        bool "Fall back to the previous version"
+        default y
+        help
+        If there is a factory partition, it will switch to the factory partition.
 
-config MUPGRADE_RESTART_COUNT
-    int "How many times to restart continuously"
-    default 10
-    depends on MUPGRADE_VERSION_FALLBACK_RESTART
-    help
-       How many times to restart continuously.
+    config MUPGRADE_RESTART_COUNT
+        int "How many times to restart continuously"
+        default 10
+        depends on MUPGRADE_VERSION_FALLBACK_RESTART
+        help
+        How many times to restart continuously.
 
-config MUPGRADE_RESTART_TIMEOUT
-    int "Continuous restart interval(ms)"
-    default 5000
-    depends on MUPGRADE_VERSION_FALLBACK_RESTART
-    help
-       Continuous restart interval.
+    config MUPGRADE_RESTART_TIMEOUT
+        int "Continuous restart interval(ms)"
+        default 5000
+        depends on MUPGRADE_VERSION_FALLBACK_RESTART
+        help
+        Continuous restart interval.
 
-config MUPGRADE_VERSION_FALLBACK_FACTORY
-    bool "If there is a factory partition, fall back to the factory version"
-    default y
-    depends on MUPGRADE_VERSION_FALLBACK_RESTART
-    help
-       If there is a factory partition, fall back to the factory version instead
-       of rolling back to the previous version
+    config MUPGRADE_VERSION_FALLBACK_FACTORY
+        bool "If there is a factory partition, fall back to the factory version"
+        default y
+        depends on MUPGRADE_VERSION_FALLBACK_RESTART
+        help
+        If there is a factory partition, fall back to the factory version instead
+        of rolling back to the previous version
 
 endmenu

@@ -6,6 +6,7 @@ Mcommmon API
 1. Memory Management: manages memory allocation and release, and can help find a memory leak;
 2. Error Codes: checks the error codes of all the modules, and therefore can help find out what could possibly go wrong;
 3. Event Loop: uses an identical function for all the modules to deal with an event.
+4. Data persistence: provide an API to save any type of data on Flash.
 
 .. ------------------------- Mconfig API Reference ---------------------------
 
@@ -29,3 +30,10 @@ Event Loop
 ------------
 
 .. include:: /_build/inc/mdf_event_loop.inc
+
+.. _api-reference-mdf_info_store:
+
+Info Store
+------------
+
+.. include:: /_build/inc/mdf_info_store.inc

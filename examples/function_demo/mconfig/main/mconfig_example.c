@@ -100,26 +100,42 @@ void app_main()
     esp_log_level_set("mconfig_chain", ESP_LOG_DEBUG);
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
+    /**
+     * @brief   1.Initialize event loop, receive event
+     *          2.Initialize wifi with station mode
+     *          3.Initialize espnow(ESP-NOW is a kind of connectionless WiFi communication protocol)
+     */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
-
+    
+    /**
+     * @brief Network configuration chain slave initialization for obtaining network configuration information from master.
+     */
     MDF_ERROR_ASSERT(mconfig_chain_slave_init());
 
-    /**
-     * @brief Switch to master mode to configure the network for other devices
-     */
     uint8_t sta_mac[6] = {0};
     MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
     sprintf(blufi_config.name, "MESH_%02x%02x", sta_mac[4], sta_mac[5]);
     MDF_LOGI("BLE name: %s", blufi_config.name);
+
+    /**
+     * @brief Initialize Bluetooth network configuration
+     */
     MDF_ERROR_ASSERT(mconfig_blufi_init(&blufi_config));
 
+    /**
+     * @brief Get Network configuration information from blufi or network configuration chain.
+     *      When blufi or network configuration chain complete, will send configuration information to config_queue.
+     */
     MDF_ERROR_ASSERT(mconfig_queue_read(&mconfig_data, portMAX_DELAY));
     MDF_LOGI("mconfig, ssid: %s, password: %s, mesh_id: " MACSTR,
              mconfig_data->config.router_ssid, mconfig_data->config.router_password,
              MAC2STR(mconfig_data->config.mesh_id));
 
+    /**
+     * @brief Deinitialize Bluetooth network configuration and Network configuration chain.
+     */
     MDF_ERROR_ASSERT(mconfig_chain_slave_deinit());
     MDF_ERROR_ASSERT(mconfig_blufi_deinit());
 
@@ -131,14 +147,14 @@ void app_main()
     MDF_ERROR_ASSERT(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
 
     /**
-     * @brief Enable ESP-MESH network
-     */
+     * @brief Initialize and start esp-mesh network according to network configuration information.
+     */    
     MDF_ERROR_ASSERT(mwifi_init(&mconfig_data->init_config));
     MDF_ERROR_ASSERT(mwifi_set_config(&mconfig_data->config));
     MDF_ERROR_ASSERT(mwifi_start());
 
     /**
-     * @brief Switch to master mode to configure the network for other devices
+     * @brief Switch to network configuration chain master mode to configure the network for other devices(slave), according to the white list.
      */
     if (mconfig_data->whitelist_size > 0) {
         for (int i = 0; i < mconfig_data->whitelist_size / sizeof(mconfig_whitelist_t); ++i) {
