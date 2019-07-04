@@ -6,11 +6,11 @@ API Reference
    :maxdepth: 2
 
    Mcommon <mcommon/index>
-   Mwifi <mwifi/index>
-   Mespnow <mespnow/index>
    Mconfig <mconfig/index>
-   Mupgrade <mupgrade/index>
+   Mespnow <mespnow/index>
    Mlink <mlink/index>
+   Mupgrade <mupgrade/index>
+   Mwifi <mwifi/index>
    Third Party <third_party/index>
    Configuration Options <kconfig>
    Error Codes Reference <error-codes>

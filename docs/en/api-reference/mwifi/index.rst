@@ -24,7 +24,9 @@ Writing Applications
 
 Mwifi supports using ESP-MESH under self-organized mode, where only the root node that serves as a gateway of Mesh network can require the LwIP stack to transmit/receive data to/from an external IP network.
 
-If you want to call Wi-Fi API to connect/disconnect/scan, please pause Mwifi first.
+Mwifi also supports the way to fix the root node. In this case, the nodes in the entire ESP-MESH network cannot communicate with the external IP network through wifi. If you need to communicate with the external IP network, you need to use other methods.
+
+If you want to call Wi-Fi API to connect/disconnect/scan, please pause Mwifi first. Self organized networking must be disabled before the application calls any Wi-Fi driver APIs.
 
 
 .. _mesh-initialize-Mwifi:
@@ -57,7 +59,7 @@ The following code snippet demonstrates how to initialize Wi-Fi.
 
 Mwifi Initialization
 """""""""""""""""""""
-In general, you don't need to modify Mwifi and just use its default configuration. But if you want to modify it, you may use ``make menuconfig``. See the detailed configuration below:：
+In general, you don't need to modify Mwifi and just use its default configuration. But if you want to modify it, you may use ``make menuconfig``. See the detailed configuration below:
 
 1. ROOT
 
@@ -66,15 +68,11 @@ In general, you don't need to modify Mwifi and just use its default configuratio
     ======================  ====================
     vote_percentage         Vote percentage threshold above which the node becoms a root
     vote_max_count          Max multiple voting each device can have for the self-healing of a MESH network
-    int8_t backoff_rssi     RSSI threshold below which connections to the root node are not allowed
+    backoff_rssi            RSSI threshold below which connections to the root node are not allowed
     scan_min_count          The minimum number of times a device should scan the beacon frames from other devices before it becomes a root node
-    scan_fail_count         Max fails (60 by default) for a parent node to restore connection to the MESH network before it breaks the connection with its leaf nodes
-    monitor_ie_count        Allowed number of changes a parent node can introduce into its information element (IE), before the leaf nodes must update their own IEs accordingly
-    root_healing_ms         Time lag between the moment a root node is disconnected from the network and the moment the devices start electing another root node
     root_conflicts_enable   Allow more than one root in one network
-    fix_root_enalble        Enable a device to be set as a fixed and irreplaceable root node
+    root_healing_ms         Time lag between the moment a root node is disconnected from the network and the moment the devices start electing another root node
     ======================  ====================
-
 
 2. Capacity
     ======================  ====================
@@ -97,6 +95,10 @@ In general, you don't need to modify Mwifi and just use its default configuratio
     cnx_rssi              RSSI threshold above which the connection with a parent is considered strong
     select_rssi           RSSI threshold for parent selection. Its value should be greater than SWITCH_RSSI
     switch_rssi           RSSI threshold below which a node selects a parent with better RSSI
+    attempt_count         Parent selection fail times, if the scan times reach this value,
+                          device will disconnect with associated children and join self-healing
+    monitor_ie_count      Allowed number of changes a parent node can introduce into its information element (IE),
+                          before the leaf nodes must update their own IEs accordingly
     ====================  ====================
 
 4. Transmission
@@ -125,23 +127,28 @@ The modified Mwifi configuration will only be effective after Mwifi is rebooted.
 
 You may configure Mwifi by using the struct mwifi_config_t. See the configuration parameters below:
 
-    ==================  ====================
-    Parameters          Description
-    ==================  ====================
-    ssid                SSID of the router
-    password            Router password
-    bssid               BSSID is equal to the router's MAC address. This field must be
-                        configured if more than one router shares the same SSID. You
-                        can avoid using BSSIDs by setting up a unique SSID for each
-                        router. This field must also be configured if the router is hidden
+    ======================  ====================
+    Parameters              Description
+    ======================  ====================
+    router_ssid             SSID of the router
+    router_password         Router password
+    router_bssid            BSSID is equal to the router's MAC address. This field must be
+                            configured if more than one router shares the same SSID. You
+                            can avoid using BSSIDs by setting up a unique SSID for each
+                            router. This field must also be configured if the router is hidden
 
-    mesh_id             Mesh network ID. Nodes sharing the same MESH ID
-                        can communicate with one another
-    mesh_password       Password for secure communication between devices in a MESH network
-    mesh_type           Only MESH_IDLE, MESH_ROOT, and MESH_NODE device types are supported.
-                        MESH_ROOT and MESH_NODE are only used for routerless solutions
-    channel             Mesh network and the router will be on the same channel
-    ==================  ====================
+    mesh_id                 Mesh network ID. Nodes sharing the same MESH ID
+                            can communicate with one another
+    mesh_password           Password for secure communication between devices in a MESH network
+    mesh_type               Only MESH_IDLE, MESH_ROOT, and MESH_NODE device types are supported.
+                            MESH_ROOT and MESH_NODE are only used for routerless solutions
+    channel                 Mesh network and the router will be on the same channel
+    channel_switch_disable  If this value is not set, when "attempt" (mwifi_init_config_t) times is reached, 
+                            device will change to a full channel scan for a network that could join.
+    router_switch_disable   If the BSSID is specified and this value is not also set, when the router of this specified BSSID
+                            fails to be found after "attempt" (mwifi_init_config_t) times, the whole network is allowed to switch
+                            to another router with the same SSID.
+    ======================  ====================
 
 
 The following code snippet demonstrates how to configure Mwifi.
@@ -149,12 +156,12 @@ The following code snippet demonstrates how to configure Mwifi.
 .. code-block:: c
 
     mwifi_config_t config = {
-        .ssid          = CONFIG_ROUTER_SSID,
-        .password      = CONFIG_ROUTER_PASSWORD,
-        .channel       = CONFIG_ROUTER_CHANNEL,
-        .mesh_id       = CONFIG_MESH_ID,
-        .mesh_password = CONFIG_MESH_PASSWORD,
-        .mesh_type     = CONFIG_MESH_TYPE,
+        .router_ssid     = CONFIG_ROUTER_SSID,
+        .router_password = CONFIG_ROUTER_PASSWORD,
+        .mesh_id         = CONFIG_MESH_ID,
+        .mesh_password   = CONFIG_MESH_PASSWORD,
+        .mesh_type       = CONFIG_MESH_TYPE,
+        .channel         = CONFIG_ROUTER_CHANNEL,
     };
 
     MDF_ERROR_ASSERT(mwifi_set_config(&config));
@@ -183,10 +190,11 @@ Application Examples
 
 For ESP-MDF examples, please refer to the directory :example:`function_demo/mwifi`, which includes:
 
-   * Connect to the external network: This can be achieved by the root node via MQTT and HTTP.
+   * Connect to the external network: This can be achieved by the root node via TCP.
    * Routerless: It involves a fixed root node which communicates with the external devices via UART.
-   * Channel switching: When the router channel changes, Mesh switches its channel accordingly.
-   * Low power consumption: The leaf nodes stop functioning as softAP and enter into sleep mode.
+   * MQTT example: Implement each node to communicate with the MQTT broker by the root node via MQTT.
+   * Channel switching: When the router channel changes, Mesh switches its channel accordingly.(In development)
+   * Low power consumption: The leaf nodes stop functioning as softAP and enter into sleep mode.(In development)
 
 .. ------------------------- Mwifi API Reference ---------------------------
 
