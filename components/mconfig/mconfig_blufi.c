@@ -624,7 +624,8 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
 
                 switch (blufi_data->type) {
                     case BLUFI_DATA_CUSTUM:
-                        memcpy(&g_recv_config->custom, blufi_data->data, blufi_data->len);
+                        memset(&g_recv_config->custom, 0, sizeof(g_recv_config->custom));
+                        memcpy(&g_recv_config->custom, blufi_data->data, MIN(blufi_data->len, sizeof(g_recv_config->custom)));
                         MDF_LOGD("Data custom: %.*s", blufi_data->len, blufi_data->data);
                         break;
 
@@ -634,7 +635,8 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                         break;
 
                     case BLUFI_DATA_ROUTER_PASSWORD:
-                        memcpy(g_recv_config->config.router_password, blufi_data->data, blufi_data->len);
+                        memcpy(g_recv_config->config.router_password, blufi_data->data,
+                               MIN(blufi_data->len, sizeof(g_recv_config->config.router_password)));
                         MDF_LOGD("Router password: %s", g_recv_config->config.router_password);
                         break;
 
@@ -668,7 +670,8 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                             break;
                         }
 
-                        memcpy(g_recv_config->config.mesh_password, blufi_data->data, blufi_data->len);
+                        memcpy(g_recv_config->config.mesh_password, blufi_data->data,
+                               MIN(blufi_data->len, sizeof(g_recv_config->config.router_password)));
                         MDF_LOGD("Mesh password: %s", g_recv_config->config.mesh_password);
                         break;
 
