@@ -15,7 +15,7 @@
 
 	<div align=center>
 	<img src="ESPMesh_program.png" width="800">
-	<p>Mini program for Network configuration</p>
+	<p>配网小程序</p>
 	</div>
 
 3. 输入配置参数：
