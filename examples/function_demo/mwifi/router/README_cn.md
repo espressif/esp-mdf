@@ -17,16 +17,16 @@
 
 ### 运行 TCP 服务器
 
-1. 将主机（PC 或手机）连接到路由器
-2. 使用 TCP 测试工具（此工具为任意一个第三方的 TCP 测试软件）来创建 TCP 服务器
+1. 将主机（PC 或手机）连接到路由器。
+2. 使用 TCP 测试工具（此工具为任意一个第三方的 TCP 测试软件）来创建 TCP 服务器。
 
-> 注：本示例使用的是 IOS [TCP_UDP](https://itunes.apple.com/cn/app/tcp-udp%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7/id1437239406?mt=8) 测试工具
+> 注：本示例使用的是 iOS [TCP_UDP](https://itunes.apple.com/cn/app/tcp-udp%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7/id1437239406?mt=8) 测试工具
 
 ### 配置设备
 
 输入 `make menuconfig`，在 “Example Configuration” 子菜单下，进行配置：
 
- * 路由器信息：如果您无法获取路由器的信道,请将路由器信道设置为 0，由设备端自动获取
+ * 路由器信息：如果您无法获取路由器的信道，请将路由器信道设置为 0，由设备端自动获取
  * ESP-MESH 网络：密码长度要大于 8 位并小于 64 位，设置为空则不加密
  * TCP 服务器：主机上运行的 TCP 服务器信息, 包含：IP 地址、端口
 
@@ -50,9 +50,9 @@ idf.py erase_flash flash monitor -b 921600 -p /dev/ttyUSB0
 ### 运行
 
 1. ESP-MESH 设备每隔三秒会给 TCP 服务发送当前设备的信息
-2. TCP 服务器可以发送数据到指定地址或者指定组。（数据按照下面 TCP 服务器通信数据格式）
-	1. 当目的地址为 `ff:ff:ff:ff:ff:ff` 时，给所有设备发送。
-	2. 当使用组地址时，将向该组内所有设备发送。
+2. TCP 服务器可以发送数据（数据格式请见下一章节的介绍）到指定地址或者指定组。
+	- 当目的地址为 `ff:ff:ff:ff:ff:ff` 时，给所有设备发送。
+	- 当使用组地址时，将向该组内所有设备发送。
 
 <div align=center>
 <img src="tcp_server.png"  width="500">
