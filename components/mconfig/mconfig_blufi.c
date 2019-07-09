@@ -150,6 +150,8 @@ static esp_timer_handle_t g_connect_timer = NULL;
 static char *g_rsa_privkey                = NULL;
 static char *g_rsa_pubkey                 = NULL;
 
+static mdf_err_t mconfig_ble_connect_timer_create(void);
+
 static void mconfig_blufi_rsa_decrypt_task(void *arg)
 {
     mdf_err_t ret       = MDF_OK;
@@ -339,6 +341,9 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
 
             esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
             g_recv_config->config.channel = event->event_info.connected.channel;
+
+            ret = mconfig_ble_connect_timer_create();
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mconfig_ble_connect_timercb", mdf_err_to_name(ret));
             break;
 
         case SYSTEM_EVENT_STA_DISCONNECTED: {
