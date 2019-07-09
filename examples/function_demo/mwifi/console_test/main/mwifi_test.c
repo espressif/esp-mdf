@@ -826,13 +826,17 @@ void app_main()
         MDF_ERROR_ASSERT(mwifi_start());
     }
     
-    /** Wait until uart tx full empty and the last char send ok. */
-    fflush(stdout);
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    /**
+     * @brief Add debug function, you can use serial command and wireless debugging.
+     *      1. Initialize console module
+     */
     MDF_ERROR_ASSERT(mdebug_console_init());
     MDF_ERROR_ASSERT(mdebug_espnow_init());
     mdebug_cmd_register_common();
 
+    /**
+     * @brief register command.
+     */
     register_mesh_config();
     register_mesh_status();
     register_mesh_scan();

@@ -9,6 +9,12 @@ ESP-NOW debug 接收板需要和 ESP-MDF 设备处于同一个 Wi-Fi 信道上�
 </div>
 
 > ESP-NOW debug 接收板可以不直接与路由器进行连接，只需与 ESP-MESH 网络在同一信道上即可。
+> 若需要与接收其他 ESP-MESH 设备的 log，需要在监听的设备中添加以下代码：
+> ```
+>    MDF_ERROR_ASSERT(mdebug_console_init());
+>    MDF_ERROR_ASSERT(mdebug_espnow_init());
+>    mdebug_cmd_register_common();
+> ```
 
 ESP-NOW debug 接收板提供的主要功能包括：：
 

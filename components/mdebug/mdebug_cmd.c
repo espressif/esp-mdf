@@ -380,7 +380,7 @@ static int coredump_func(int argc, char **argv)
 static void register_coredump()
 {
     coredump_args.length = arg_lit0("l", "length", "Get coredump data length");
-    coredump_args.send_length = arg_str0("ls", "ls", "Send coredump data length", "Configure the address of the coredump data length receiver");
+    coredump_args.send_length = arg_str0(NULL, "sendlength", "Send coredump data length", "Configure the address of the coredump data length receiver");
     coredump_args.output = arg_lit0("o", "output", "Read the coredump data of the device");
     coredump_args.erase  = arg_lit0("e", "erase", "Erase the coredump data of the device");
     coredump_args.seq    = arg_int0("q", "sequence", "<seq>", "Sequence");
