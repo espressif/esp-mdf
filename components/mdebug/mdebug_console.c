@@ -22,6 +22,8 @@
  *
  */
 
+#include "rom/uart.h"
+
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_fat.h"
@@ -167,6 +169,9 @@ static void console_handle_task(void *arg)
 
 mdf_err_t mdebug_console_init()
 {
+    /** Wait until uart tx full empty and the last char send ok. */
+    fflush(stdout);
+    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
 #if CONFIG_MDEBUG_STORE_HISTORY
     initialize_filesystem();
 #endif /**< CONFIG_MDEBUG_STORE_HISTORY */

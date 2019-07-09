@@ -79,7 +79,7 @@ static int command_func(int argc, char **argv)
                     "The format of the address is incorrect. Please enter the format as xx:xx:xx:xx:xx:xx");
 
     ret = mdebug_espnow_write(dest_addr, command_args.command->sval[0],
-                              strlen(command_args.command->sval[0]), 2, portMAX_DELAY);
+                              strlen(command_args.command->sval[0]), MDEBUG_ESPNOW_CONSOLE, portMAX_DELAY);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mespnow_write");
 
     return MDF_OK;
@@ -210,7 +210,7 @@ static int coredump_func(int argc, char **argv)
 
     if (coredump_args.length->count) {
         ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, self_mac));
-        asprintf(&command_str, "coredump -l -s" MACSTR, MAC2STR(self_mac));
+        asprintf(&command_str, "coredump --sendlength " MACSTR, MAC2STR(self_mac));
     }
 
     if (coredump_args.recv->count) {
@@ -228,7 +228,7 @@ static int coredump_func(int argc, char **argv)
         asprintf(&command_str, "coredump -e");
     }
 
-    mdebug_espnow_write(dest_addr, command_str, strlen(command_str), 2, portMAX_DELAY);
+    mdebug_espnow_write(dest_addr, command_str, strlen(command_str), MDEBUG_ESPNOW_CONSOLE, portMAX_DELAY);
     MDF_FREE(command_str);
 
     return MDF_OK;

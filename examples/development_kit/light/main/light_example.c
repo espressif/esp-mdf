@@ -477,10 +477,9 @@ void app_main()
     MDF_ERROR_ASSERT(mespnow_init());
 
     /**
-     * @brief Add debug function, you can use serial command and wireless debugging
+     * @brief Add debug function, you can use serial command and wireless debugging.
+     *      1. Initialize console module
      */
-    /*< Waiting above log print complete, avoid bad data in terminal */
-    vTaskDelay(pdMS_TO_TICKS(50));
     MDF_ERROR_ASSERT(mdebug_console_init());
     MDF_ERROR_ASSERT(mdebug_espnow_init());
     mdebug_cmd_register_common();

@@ -112,11 +112,11 @@ void app_main()
     MDF_ERROR_ASSERT(mespnow_init());
     MDF_ERROR_ASSERT(mwifi_init(&init_config));
 
-    /** Wait until uart tx full empty and the last char send ok. */
-    fflush(stdout);
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
-    /** Initialize console module */
-    mdebug_console_init();
+    /**
+     * @brief Add debug function, you can use serial command and wireless debugging.
+     *      1. Initialize console module
+     */
+    MDF_ERROR_ASSERT(mdebug_console_init());
 
     /** Initializing SD card via SDMMC peripheral */
     sdcard_init();
