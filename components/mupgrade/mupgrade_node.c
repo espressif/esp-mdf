@@ -60,11 +60,10 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     g_upgrade_config->status.written_size = 0;
 
     if (esp_mesh_get_type() == MESH_ROOT) {
-
         /**< Configure OTA data for a new boot partition */
         const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
         ret = esp_ota_set_boot_partition(update_partition);
-        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "esp_ota_set_boot_partition");
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> esp_ota_set_boot_partition", mdf_err_to_name(ret));
         g_upgrade_finished_flag = true;
 
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_STARTED, NULL);
@@ -231,7 +230,7 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
         const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
         g_upgrade_config->status.error_code = esp_ota_set_boot_partition(update_partition);
         MDF_ERROR_CHECK(g_upgrade_config->status.error_code != MDF_OK,
-                        MDF_ERR_MUPGRADE_FIRMWARE_INVALID, "esp_ota_set_boot_partition");
+                        ret, "esp_ota_set_boot_partition");
 
         /**< Send MDF_EVENT_MUPGRADE_FINISH event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_FINISH, NULL);
