@@ -16,7 +16,7 @@ This example shows the following:
 
 This sensor device consumes extremely low power which makes it suitable for setup environments where the usage of cables can be inconvenient and cumbersome, like building corners, industrial fields, etc. In these places, batteries are just what is needed as a long-term power supply.
 
-ESP32-MeshKit-Sense belongs to [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/en/latest/hw-reference/esp32-meshkit.html) - a set of hardware devices specifically designed with the goal to demonstrate the features of the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) network protocol.
+ESP32-MeshKit-Sense belongs to [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/en/latest/hw-reference/esp32-meshkit.html) - a set of hardware devices specifically designed with the goal to demonstrate the features of the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) network protocol.
 
 In a few words, this protocol is an extension of the Wi-Fi protocol which is designed for the ESP32 chip. ESP-MESH takes the best of both Wi-Fi and Bluetooth technologies, combines their advantages, and provides innovative solutions that make you re-think how wireless networks can be built using the same networking equipment.
 
@@ -271,7 +271,7 @@ While in Deep-sleep mode and inactive, the device consumes extremely low power. 
 
 ## 7. Related Resources
 
-* [Deep Sleep Wake Stubs](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/deep-sleep-stub.html)
+* [Deep Sleep Wake Stubs](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/deep-sleep-stub.html)
 * [ESP32-MeshKit-Sense Hardware Design Guidelines](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md)
 * [ESP32-MeshKit-Light User Guide](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf)
 * [Introduction to the ESP-Prog Board](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_en.md)

@@ -4,7 +4,7 @@
 
 ## Introduction
 
-It introduces a quick way to build an ESP-MESH network without a router. For another detailed network configuration method, please refer to [examples/function_demo/mwifi](../function_demo/mwifi/README.md). Before running the example, please read the documents [README](../../README_en.md) and [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html).
+It introduces a quick way to build an ESP-MESH network without a router. For another detailed network configuration method, please refer to [examples/function_demo/mwifi](../function_demo/mwifi/README.md). Before running the example, please read the documents [README](../../README_en.md) and [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html).
 
 ## Configure
 

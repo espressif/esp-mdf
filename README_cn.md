@@ -2,11 +2,11 @@
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
 
-ESP-MDF (Espressif Mesh Development Framework) 是基于 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 芯片的 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 开发框架。ESP-MESH 是一种基于 Wi-Fi 构建的 MESH 网络通信协议。
+ESP-MDF (Espressif Mesh Development Framework) 是基于 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 芯片的 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 开发框架。ESP-MESH 是一种基于 Wi-Fi 构建的 MESH 网络通信协议。
 
 ## 概述
 
-ESP-MDF 在 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 协议栈的基础上增加了配网、升级、调试机制及应用示例。使用 ESP-MDF 您可以快速上手 ESP-MESH 开发。其主要特点如下：
+ESP-MDF 在 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 协议栈的基础上增加了配网、升级、调试机制及应用示例。使用 ESP-MDF 您可以快速上手 ESP-MESH 开发。其主要特点如下：
 
 * **快速配网**：在 app 配网的基础上增加了设备间链式配网，以实现大范围快速配网；
 * **稳定升级**：通过断点续传、数据压缩、版本回退和固件检查等机制达到高效升级；
@@ -73,9 +73,9 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 
 ### 快速开始(Make)
 
-通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
+通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
 
-1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html#get-started-setup-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/macos-setup.html)）进行配置。
+1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html#get-started-setup-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/macos-setup.html)）进行配置。
 
 2. **获取 ESP-MDF**：
     ```shell
@@ -83,7 +83,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     ```
     > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init`
 
-3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/add-idf_path-to-profile.html)。
+3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/add-idf_path-to-profile.html)。
     ```shell
     export MDF_PATH=~/esp/esp-mdf
     ```
@@ -100,7 +100,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     make erase_flash flash
     ```
 
-6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
+6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
     ```shell
     make monitor
     ```
@@ -114,9 +114,9 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 
 ### 快速开始(CMake)
 
-通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南(CMake)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
+通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南(CMake)](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/index.html#)，我们使用 ``~/esp`` 目录来安装编译工具链、ESP-MDF 和示例程序。您也可以使用其它目录，但是需要注意调整相应的指令。
 
-1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#step-1-set-up-the-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started-cmake/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started-cmake/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started-cmake/macos-setup.html)）进行配置。
+1. [**设置工具链**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/index.html#step-1-set-up-the-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started-cmake/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started-cmake/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started-cmake/macos-setup.html)）进行配置。
 
 2. **获取 ESP-MDF**：
     ```shell
@@ -124,7 +124,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     ```
     > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init`
 
-3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH & idf.py 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/add-idf_path-to-profile.html)。
+3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH & idf.py 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/add-idf_path-to-profile.html)。
     ```shell
     export MDF_PATH=~/esp/esp-mdf
     export PATH="$MDF_PATH/esp-idf/tools:$PATH"
@@ -142,7 +142,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     idf.py erase_flash flash
     ```
 
-6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
+6. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
     ```shell
     idf.py monitor
     ```
@@ -178,8 +178,8 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 ## 相关资源
 
 * 查看 ESP-MDF 项目文档请点击 [ESP-MDF 编程指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)。
-* [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html) 是乐鑫物联网开发框架的说明文档。
-* [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
+* [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/index.html) 是乐鑫物联网开发框架的说明文档。
+* [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
 * 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 Issues 中是否已经有您的问题。
 * 如果您想在 ESP-MDF 上贡献代码，请点击[贡献代码指南](docs/zh_CN/contribute/index.rst)。
 * 访问 ESP32 官方论坛请点击 [ESP32 BBS](https://esp32.com/) 。

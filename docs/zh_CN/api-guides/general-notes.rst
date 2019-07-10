@@ -8,11 +8,11 @@ ESP-MESH 基本概念困惑解答
 
 ESP-MESH 是特为 ESP32 芯片研发的自组网技术。ESP32 使用基于双核的修定版本的 FreeRTOS，并使用 ESP-IDF 作为其官方开发框架。
 
-1. 了解 `ESP-MESH 网络协议 <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html>`_
+1. 了解 `ESP-MESH 网络协议 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html>`_
 2. 了解 ESP32 芯片:
     * `ESP32 技术参考手册 <https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_
     * `ESP32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_
-3. 熟悉 `ESP-IDF 开发指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html>`_ 
+3. 熟悉 `ESP-IDF 开发指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/index.html>`_ 
 4. 了解 `FreeRTOS <https://www.freertos.org/>`_
 
 常见问题
@@ -24,14 +24,14 @@ ESP-MESH 根节点相关
 
     根节点是一个 ESP-MESH 网络内唯一与外界（路由器或服务器）连接的节点，其产生方式可以有多种：
 
-    - **通过底层协议自行选举产生**，具体流程请参考 ESP-MESH `组网流程说明 <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-building-a-network>`_。此方式下，需要手机或服务器告诉设备路由器的信息，作为选举的依据；
+    - **通过底层协议自行选举产生**，具体流程请参考 ESP-MESH `组网流程说明 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-building-a-network>`_。此方式下，需要手机或服务器告诉设备路由器的信息，作为选举的依据；
     - **通过应用层设计固定某一个或某一类设备作为根节点**，此时周围的设备可以自动连上该类设备，此种情况即不需要路由或手机参与。但需注意，若多个设备都固定为根节点，则相互之间无法组网
 
 2. 根节点挂了，网络是不是就崩了？
 
     分为两种情况：
 
-    - **若网络为非固定根节点方案**，则网络内设备会在确认根节点无法链接的情况下，重新选出新的根节点，具体流程请参考 `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-managing-a-network>`_。
+    - **若网络为非固定根节点方案**，则网络内设备会在确认根节点无法链接的情况下，重新选出新的根节点，具体流程请参考 `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-managing-a-network>`_。
     - **若网络为固定根节点方案**，在用户重新指派出新的根节点之前，网络无法正常工作。
 
 ESP-MESH 组网相关

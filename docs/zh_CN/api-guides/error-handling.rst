@@ -42,7 +42,7 @@
 
 CPU 异常或其他致命错误发生时，panic 处理程序会输出记录一些 CPU 寄存器和 Backtrace。
 Backtrace 包含 PC:SP 对。其中 PC 是程序计数器，SP 是堆栈指针。如果在中断内发生致命错误，则 Backtrace 可能包括来自被中断的任务和中断的 PC:SP 对。
-有关诊断不可恢复错误的说明，请参阅 `致命错误 <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/fatal-errors.html?highlight=fatal%20error>`_。
+有关诊断不可恢复错误的说明，请参阅 `致命错误 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/fatal-errors.html?highlight=fatal%20error>`_。
 
 使用 IDF Monitor
 ^^^^^^^^^^^^^^^^
@@ -98,7 +98,7 @@ Backtrace 包含 PC:SP 对。其中 PC 是程序计数器，SP 是堆栈指针�
 内存调试
 ^^^^^^^^^
 
-ESP-IDF 集成了用于请求堆信息，检测堆损坏和跟踪内存泄漏的工具，详见：`Heap Memory Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/heap_debug.html?highlight=Heap%20Memory%20Debugging>`_，如果您使用的是 ``mdf_mem.h`` 中相关的 APIs，也能使用。 :cpp:func:`mdf_mem_print_record` 可以打印所有未释放的内存，快速定位内存泄露的问题::
+ESP-IDF 集成了用于请求堆信息，检测堆损坏和跟踪内存泄漏的工具，详见：`Heap Memory Debugging <https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/heap_debug.html?highlight=Heap%20Memory%20Debugging>`_，如果您使用的是 ``mdf_mem.h`` 中相关的 APIs，也能使用。 :cpp:func:`mdf_mem_print_record` 可以打印所有未释放的内存，快速定位内存泄露的问题::
 
     I (1448) [mdf_mem, 95]: Memory record, num: 4
     I (1448) [mdf_mem, 100]: <mwifi : 181> ptr: 0x3ffc5f2c, size: 28

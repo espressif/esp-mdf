@@ -45,7 +45,7 @@ The detailed description of the process given in the figure can be found below.
         - If Device *E* is not whitelisted, its request will be ignored.
     c. As soon as Device *B* obtains the network configuration information, it becomes a master for Devices *C* and *D* and starts the same process.
 
-3. `Building a network <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-guides/mesh.html#building-a-network>`_
+3. `Building a network <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-guides/mesh.html#building-a-network>`_
     a. Root node selection: Devices *A*, *B*, *C* and *D* elect Device *A* as a root node, because of its optimal relay position for passing signal between each node and Router.
     b. Second layer formation: Once the elected root node is connected to Router, the idle node, Device *B*, within the coverage of the root node connects to Device *A*, thereby forming the second layer of the network;
     c. Formation of remaining layers: Devices *C* and *D* connect to Device *B*, forming the third layer, and so on. In this case Device *B* functions as an intermediate parent node for its leaf nodes - Devices *C* and *D*.
@@ -260,7 +260,7 @@ Type   Definition                   Description
 Mconfig-Chain
 --------------
 
-Mconfig-Chain is a network configuration protocol for devices based on `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-reference/wifi/esp_now.html?highlight=espnow>`_, a connectionless Wi-Fi communication protocol defined by Espressif.
+Mconfig-Chain is a network configuration protocol for devices based on `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/wifi/esp_now.html?highlight=espnow>`_, a connectionless Wi-Fi communication protocol defined by Espressif.
 
 Currently, there are three methods to configure a Wi-Fi network: BLE, sniffer, and softAP, all of which are designed for network configuration of a single device. For this reason, these methods are not applicable for an ESP-MESH network, which usually involves network configuration of multiple devices.
 

@@ -9,14 +9,14 @@ Reference links
 ESP-MESH is specifically designed for ESP32 chips. These chips use the modified version of dual-core based FreeRTOS and have an official development framework, which is called ESP-IDF.
 
 1. About the ESP-MESH protocol:
-    * `ESP-MESH <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html>`_
+    * `ESP-MESH <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html>`_
 
 2. About ESP32 Chips:
     * `ESP32 Technical Reference Manual <https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_
     * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_
 
 3. About ESP-IDF:
-    * `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/>`_
+    * `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/stable/>`_
 
 4. About FreeRTOS:
     * `FreeRTOS <https://www.freertos.org/>`_
@@ -32,12 +32,12 @@ Root Node
 
     There are two methods to establish a root node:
 
-    - **Automatic root node election via the physical layer protocol**. This method implies that a mobile phone or a server transmits the router information to devices. They use this information as a reference to elect a root node. For details, please refer to ESP-MESH `General Process of Building a Network <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-building-a-network>`_.
+    - **Automatic root node election via the physical layer protocol**. This method implies that a mobile phone or a server transmits the router information to devices. They use this information as a reference to elect a root node. For details, please refer to ESP-MESH `General Process of Building a Network <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-building-a-network>`_.
     - **Manual root node selection on the application layer**. You may designate a specific device or a certain type of devices as a fixed root node. Other devices nearby will automatically connect to the designated root node and build a network without any assistance from the router or the mobile phone. Please note that if more than one device is designated as a fixed root node, it will lead to creation of multiple networks.
 
 2. Will the root node failure lead to the network crash?
 
-    - **In case of automatic root node election**: When devices in the network detect that a root node is broken, they will elect a new one. For details, please refer to `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#mesh-managing-a-network>`_.
+    - **In case of automatic root node election**: When devices in the network detect that a root node is broken, they will elect a new one. For details, please refer to `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-managing-a-network>`_.
     - **In case of manual root node selection**: Network will be down until a new fixed root node is designated. 
 
 Network Configuration

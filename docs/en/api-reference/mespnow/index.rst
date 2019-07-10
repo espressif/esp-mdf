@@ -1,7 +1,7 @@
 Mespnow API
 ===========
 
-``Mespnow`` (Mesh ESP-NOW) is the encapsulation of `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-reference/wifi/esp_now.html>`_ APIs, and it adds to ESP-NOW the retransmission filter, Cyclic Redundancy Check (CRC), and data fragmentation features.
+``Mespnow`` (Mesh ESP-NOW) is the encapsulation of `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/wifi/esp_now.html>`_ APIs, and it adds to ESP-NOW the retransmission filter, Cyclic Redundancy Check (CRC), and data fragmentation features.
 
 .. ---------------------- Mespnow Features --------------------------
 

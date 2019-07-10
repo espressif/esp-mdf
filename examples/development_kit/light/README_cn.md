@@ -4,7 +4,7 @@
 
 ## 概述
 
-ESP32-MeshKit-Light 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 应⽤的智能电灯（板载 ESP32 芯片），包含配网、升级、本地控制和设备联动等功能，它将帮助您更好地了解 ESP-MESH 的相关特性，并对 ESP32-MeshKit-Light 的程序进⾏⼆次开发。在运行本示例之前，请先详细阅读 [ESP32-MeshKit 指南](../README_cn.md)。
+ESP32-MeshKit-Light 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 应⽤的智能电灯（板载 ESP32 芯片），包含配网、升级、本地控制和设备联动等功能，它将帮助您更好地了解 ESP-MESH 的相关特性，并对 ESP32-MeshKit-Light 的程序进⾏⼆次开发。在运行本示例之前，请先详细阅读 [ESP32-MeshKit 指南](../README_cn.md)。
 
 > 注：本示例不限于 ESP32-MeshKit-Light，您可以直接使用 ESP32 模块外接 LED 灯使用。
 
@@ -65,7 +65,7 @@ ESP-MESH 是一种基于 Wi-Fi 协议构建的网络协议。ESP-MESH 允许在�
 
 Light 工程包含以下功能：
 
- - [构建 ESP-MESH 网络](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#building-a-network)：ESP-MESH 网络构建过程涉及根节点选择，然后逐层形成下游连接，直到所有节点都加入网络。
+ - [构建 ESP-MESH 网络](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#building-a-network)：ESP-MESH 网络构建过程涉及根节点选择，然后逐层形成下游连接，直到所有节点都加入网络。
  - [网络配置](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html#)：目的是将配置信息便捷、高效地传递给 ESP-MESH 设备。
  - [固件升级](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mupgrade.html)：目的是通过断点续传、数据压缩、版本回退和固件检查等机制实现 ESP-MESH 设备高效的升级。
  - [局域网通信](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mlink.html)：通过APP控制 ESP-MESH 网络设备，包括：设备发现，控制，升级等。

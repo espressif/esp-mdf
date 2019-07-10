@@ -10,7 +10,7 @@ The prerequisite for the ESP-Mesh app to communicate with the ESP-MDF devices is
 
  The `ESP-Mesh app <https://www.espressif.com/en/support/download/apps?keys=&field_technology_tid%5B%5D=18>`_ is hereafter referred to as "app" in this document.
 
-The ESP-MDF devices automatically enter the `networking stage <https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html#mesh-networking>`_ once configured. If all the networked devices are shown in the ESP-Mesh app, it means that the networking is successful.
+The ESP-MDF devices automatically enter the `networking stage <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-networking>`_ once configured. If all the networked devices are shown in the ESP-Mesh app, it means that the networking is successful.
 
 .. figure:: ../../_static/Mlink/mlink_discovery_protocol.png
     :align: center

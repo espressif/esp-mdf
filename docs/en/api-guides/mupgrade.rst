@@ -45,7 +45,7 @@ f. HOST sends to the root node a list of the devices to be upgraded.
 
 .. note::
 
-    - The partition tables of all the devices to be upgraded must contain: ota_data, ota_0, ota_1. For more information on these partitions, please refer to `Over The Air Updates (OTA) <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/ota.html>`_.
+    - The partition tables of all the devices to be upgraded must contain: ota_data, ota_0, ota_1. For more information on these partitions, please refer to `Over The Air Updates (OTA) <https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/ota.html>`_.
     - The firmware size must not exceed the size of its destination partition (ota_0 or ota_1).
     - The root node writes the received fragment into flash. At this point, if sending of another packet to the root node as well as all other tasks are not suspended, it may cause data packet loss. So, if UART is used to send the firmware, please enable flow control, or send a firmware fragment and wait for the ACK signal from the root node before sending the next fragment.
 
@@ -70,7 +70,7 @@ d. HOST verifies the versions and completes the upgrade.
 Partition Table
 ---------------
 
-A partition table defines the flash layout. A single ESP32’s flash can contain multiple apps, as well as many different kinds of data. To find more information, please see `Partition Tables <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html>`_.
+A partition table defines the flash layout. A single ESP32’s flash can contain multiple apps, as well as many different kinds of data. To find more information, please see `Partition Tables <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/partition-tables.html>`_.
 
 The default partition table in ESP-IDF provides a partition of only 1 MB for apps, which is quite a limited size for ESP-MESH application development.
 

@@ -4,7 +4,7 @@
 
 ## Introduction
 
-It introduces a quick way to build an ESP-MESH network without a router, and transparently transmitted to the specified node through the serial port. For details on other network configuration methods, please refer to [README](../README.md). Before running this example, please firstly go through [README](../../README.md) and [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html).
+It introduces a quick way to build an ESP-MESH network without a router, and transparently transmitted to the specified node through the serial port. For details on other network configuration methods, please refer to [README](../README.md). Before running this example, please firstly go through [README](../../README.md) and [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html).
 
 ## Configure
 

@@ -3,7 +3,7 @@ ESP-MDF 贡献指南
 
 :link_to_translation:`en:[English]`
 
-本指南简要说明如何在 ESP-MDF 中添加代码，详细说明参见 `贡献指南 <https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html#related-documents>`_。
+本指南简要说明如何在 ESP-MDF 中添加代码，详细说明参见 `贡献指南 <https://docs.espressif.com/projects/esp-idf/en/stable/contribute/index.html#related-documents>`_。
 
 添加代码
 ---------

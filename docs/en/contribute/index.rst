@@ -3,7 +3,7 @@ ESP-MDF Contributions Guide
 
 :link_to_translation:`zh_CN:[中文]`
 
-This guide introduces how to add code to ESP-MDF. For details, please refer to `Contributions Guide <https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html#related-documents>`_.
+This guide introduces how to add code to ESP-MDF. For details, please refer to `Contributions Guide <https://docs.espressif.com/projects/esp-idf/en/stable/contribute/index.html#related-documents>`_.
 
 Add Code
 ---------
