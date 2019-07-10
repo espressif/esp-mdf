@@ -44,7 +44,7 @@ Fatal Errors
 In case of CPU exceptions or other fatal errors, the panic handler may print CPU registers and the backtrace.
 A backtrace line contains PC:SP pairs, where PC stands for the program counter and SP is for the stack pointer. If a fatal error occurs inside an ISR (Interrupt Service Routine), the backtrace can include PC:SP pairs from both the ISR and the task that was interrupted.
 
-For detailed instructions on diagnostics of unrecoverable errors, please refer to `Fatal Errors <https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/fatal-errors.html?highlight=fatal%20error>`_.
+For detailed instructions on diagnostics of unrecoverable errors, please refer to `Fatal Errors <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/fatal-errors.html?highlight=fatal%20error>`_.
 
 Use IDF Monitor
 ^^^^^^^^^^^^^^^^
@@ -100,7 +100,7 @@ The output would look as follows::
 Heap Memory Debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-ESP-IDF integrates tools for requesting heap information, detecting heap corruption, and tracing memory leaks. For details, please refer to `Heap Memory Debugging <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/heap_debug.html?highlight=Heap%20Memory%20Debugging>`_. 
+ESP-IDF integrates tools for requesting heap information, detecting heap corruption, and tracing memory leaks. For details, please refer to `Heap Memory Debugging <https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/heap_debug.html?highlight=Heap%20Memory%20Debugging>`_. 
 
 If you use the APIs from ``mdf_mem.h``, you can also utilize these debugging tools. The function :cpp:func:`mdf_mem_print_record` can print all the unreleased memory and help quickly identify memory leak issues::
 

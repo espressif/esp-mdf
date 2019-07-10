@@ -46,7 +46,7 @@ CRC         循环冗余校验 (Cyclic Redundancy Check, CRC) 是一种根据网
         - 设备（B）在设备列表中，设备（A）通过 Wi-Fi 将配置信息发送给设备（B）
     3. 设备（B）获取配置信息将重复步骤 i, 给设备（C，D）配网。
 
-3. `建立网络 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-guides/mesh.html#building-a-network>`_
+3. `建立网络 <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-guides/mesh.html#building-a-network>`_
     1. 根节点选择：设备（A，B，C，D）根据其与路由器之间的信号强度动态选择，协商生成根节点设备（A）
     2. 第二层形成：一旦根节点连接到路由器，根节点范围内的空闲节点设备（B）将开始与设备 (A) 连接，从而形成网络的第二层
     3. 剩余层的形成：设备（C，D）与中间父节点设备（B）连接，形成网络的叶子节点
@@ -254,7 +254,7 @@ App 将配置信息与设备列表合成一个数据包，并以 BluFi 的自定
 Mconfig-Chain
 --------------
 
-Mconfig-Chain 是基于 `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-reference/wifi/esp_now.html?highlight=espnow>`_ （一种由 Espressif 定义的无连接 Wi-Fi 通信协议）的设备间配网协议。
+Mconfig-Chain 是基于 `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/wifi/esp_now.html?highlight=espnow>`_ （一种由 Espressif 定义的无连接 Wi-Fi 通信协议）的设备间配网协议。
 
 当前 Wi-Fi 网络配置主要有三种方式：BLE 配网、智能配网（sniffer）和 softAP 配网，均是为单个设备配网设计的，其并不适合 ESP-MESH 网络这种多设备同时配网的场景。Mconfig-Chain 是专为设计 ESP-MESH 网络的配网方式，其配网过程是链式的、可传递的，所有已配网的设备均可以为其他设备配网，实现大范围高效配网。
 

@@ -2,10 +2,10 @@
 
 [![Documentation Status](https://readthedocs.com/projects/espressif-esp-mdf/badge/?version=latest)](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest)
 
-ESP-MDF, or Espressif Mesh Development Framework, is a development framework for [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html), a networking protocol built on top of the Wi-Fi protocol. ESP-MDF is based on the [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview) chip.
+ESP-MDF, or Espressif Mesh Development Framework, is a development framework for [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html), a networking protocol built on top of the Wi-Fi protocol. ESP-MDF is based on the [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview) chip.
 
 ## Overview
-ESP-MDF is based on the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) protocol stack to facilitate your development of ESP-MESH. ESP-MDF provides the following features:
+ESP-MDF is based on the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) protocol stack to facilitate your development of ESP-MESH. ESP-MDF provides the following features:
 
 * **Fast network configuration**: In addition to manual configuration with the network configuration apps, such as ESP-MESH App or similar third-party apps, ESP-MDF offers a chained way of network configuration, during which devices autonomously and quickly establish a network, and form a greater coverage area.
 
@@ -77,11 +77,11 @@ ESP32-Buddy is a development board specifically designed to test the development
 
 ### Quick Start(Make)
 
-This section provides the steps for quick start with your development of ESP-MDF applications. For more details, please refer to [ESP-IDF Get Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html).
+This section provides the steps for quick start with your development of ESP-MDF applications. For more details, please refer to [ESP-IDF Get Started](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html).
 
 The directory ``~/esp`` will be used further to install the compiling toolchain, ESP-MDF and demo programs. You can use another directory, but make sure to modify the commands accordingly.
 
-1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-setup-toolchain): please set up according to your PC's operating system ([Windows](http://esp-idf.readthedocs.io/en/latest/get-started/windows-setup.html), [Linux](http://esp-idf.readthedocs.io/en/latest/get-started/linux-setup.html) or [Mac OS](http://esp-idf.readthedocs.io/en/latest/get-started/macos-setup.html)).
+1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html#get-started-setup-toolchain): please set up according to your PC's operating system ([Windows](http://docs.espressif.com/projects/esp-idf/en/stable/get-started/windows-setup.html), [Linux](http://docs.espressif.com/projects/esp-idf/en/stable/get-started/linux-setup.html) or [Mac OS](http://docs.espressif.com/projects/esp-idf/en/stable/get-started/macos-setup.html)).
 
 2. **Get ESP-MDF**:
     ```shell
@@ -89,7 +89,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     ```
     If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init`
 
-3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH to User Profile`](https://esp-idf.readthedocs.io/en/latest/get-started/add-idf_path-to-profile.html).
+3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH to User Profile`](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/add-idf_path-to-profile.html).
     ```shell
     export MDF_PATH=~/esp/esp-mdf
     ```
@@ -106,7 +106,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     make erase_flash flash
     ```
 
-6. [**Monitor/Debugging**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html): If you want to exit the monitor, please use the shortcut key ``Ctrl+]``.
+6. [**Monitor/Debugging**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/idf-monitor.html): If you want to exit the monitor, please use the shortcut key ``Ctrl+]``.
     ```shell
     make monitor
     ```
@@ -120,11 +120,11 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 
 ### Quick Start(CMake)
 
-This section provides the steps for quick start with your development of ESP-MDF applications. For more details, please refer to [ESP-IDF Get Started (CMake)](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#).
+This section provides the steps for quick start with your development of ESP-MDF applications. For more details, please refer to [ESP-IDF Get Started (CMake)](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/index.html#).
 
 The directory ``~/esp`` will be used further to install the compiling toolchain, ESP-MDF and demo programs. You can use another directory, but make sure to modify the commands accordingly.
 
-1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/index.html#step-1-set-up-the-toolchain): please set up according to your PC's operating system ([Windows](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/windows-setup.html), [Linux](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/linux-setup.html) or [Mac OS](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/macos-setup.html)).
+1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/index.html#step-1-set-up-the-toolchain): please set up according to your PC's operating system ([Windows](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/windows-setup.html), [Linux](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/linux-setup.html) or [Mac OS](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/macos-setup.html)).
 
 2. **Get ESP-MDF**:
     ```shell
@@ -132,7 +132,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     ```
     If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init`
 
-3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH & idf.py PATH to User Profile (CMake)`](https://docs.espressif.com/projects/esp-idf/en/latest/get-started-cmake/add-idf_path-to-profile.html).
+3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH & idf.py PATH to User Profile (CMake)`](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/add-idf_path-to-profile.html).
     ```shell
     export MDF_PATH=~/esp/esp-mdf
     export PATH="$MDF_PATH/esp-idf/tools:$PATH"
@@ -150,7 +150,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     idf.py erase_flash flash
     ```
 
-6. [**Monitor/Debugging**](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html): If you want to exit the monitor, please use the shortcut key ``Ctrl+]``.
+6. [**Monitor/Debugging**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/idf-monitor.html): If you want to exit the monitor, please use the shortcut key ``Ctrl+]``.
     ```shell
     idf.py monitor
     ```
@@ -190,8 +190,8 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 ## Related Documentation
 
 * For ESP-MDF related documents, please go to [ESP-MDF Programming Guide](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest).
-* [ESP-IDF Programming Guide](https://esp-idf.readthedocs.io/en/latest/) describes Espressif's IoT development framework.
 * [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
+* [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/) describes Espressif's IoT development framework.
 * To report a bug or request a function, please go to [Issues](https://github.com/espressif/esp-mdf/issues) on GitHub to submit them. Before submitting an issue, please check if it has already been covered.
 * If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](docs/en/contribute/index.rst).
 * To visit ESP32 official forum, please go to [ESP32 BBS](https://esp32.com/).

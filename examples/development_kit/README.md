@@ -6,7 +6,7 @@
 
 ## Overview
 
-ESP32-MeshKit is a network configuration solution for smart homes based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html).
+ESP32-MeshKit is a network configuration solution for smart homes based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html).
 
 ESP32-MeshKit currently allows you to integrate the following hardware components:
 
@@ -16,7 +16,7 @@ ESP32-MeshKit currently allows you to integrate the following hardware component
    * Monitoring the power consumption of MeshKit peripherals
    * Controlling MeshKit peripherals based on the data from multiple onboard sensors. 
   
-* [ESP32-MeshKit-Button](button/README.md): Smart button solution, tailored for ESP-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_now.html).
+* [ESP32-MeshKit-Button](button/README.md): Smart button solution, tailored for ESP-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_now.html).
 
 To configure and network these hardware components you need:
 
@@ -88,7 +88,7 @@ The shared ESP-Mesh App's source code will be helpful in development of your own
    
     * **Password**: Input the password of the current Wi-Fi network.
    
-    * **More**: Tap to modify the default configuration parameters of the ESP-MESH network. For more information on the parameters, please check the [ESP-MESH Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_mesh.html).
+    * **More**: Tap to modify the default configuration parameters of the ESP-MESH network. For more information on the parameters, please check the [ESP-MESH Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_mesh.html).
 * After you fill out the required fields, tap `Next`
 
     <table>

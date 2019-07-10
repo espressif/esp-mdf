@@ -1,7 +1,7 @@
 Mwifi API
 ==========
 
-``Mwifi`` (Wi-Fi Mesh) is the encapsulation of `ESP-MESH APIs <https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/mesh/index.html>`_, and it adds to ESP-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features.
+``Mwifi`` (Wi-Fi Mesh) is the encapsulation of `ESP-MESH APIs <https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/mesh/index.html>`_, and it adds to ESP-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features.
 
 .. ---------------------- Mwifi Features --------------------------
 

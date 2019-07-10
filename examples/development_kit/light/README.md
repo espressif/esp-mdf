@@ -4,7 +4,7 @@
 
 ## Overview
 
-[ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf) is a smart lighting solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, local control, device association, etc.
+[ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf) is a smart lighting solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, local control, device association, etc.
 
 ESP32-MeshKit-Light consists of light bulbs with integrated ESP32 chips. The kit will help you better understand ESP-MESH features and how to further develop ESP-Meshkit-Light. Before reading this document, please refer to [ESP32-MeshKit Guide](../README.md).
 
@@ -69,7 +69,7 @@ ESP-MESH is a networking protocol built atop the Wi-Fi protocol. ESP-MESH allows
 
 Light project realizes the following features:
 
- - [Building an ESP-MESH Network](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html#building-a-network): involves selecting a root node, then forming downstream connections layer by layer until all nodes have joined the network. 
+ - [Building an ESP-MESH Network](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#building-a-network): involves selecting a root node, then forming downstream connections layer by layer until all nodes have joined the network. 
  - [Mesh Network Configuration](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html): sends network configuration information to ESP-MESH devices in a convenient and efficient manner.
  - [Mesh Upgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html): implements efficient upgrading of ESP-MESH devices via automatic retransmission of failed fragments, data compression, reverting to an earlier version and firmware check.
  - [Communicating via LAN](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mlink.html): controls ESP-MESH network devices through App, including: device discovery, control, upgrade, etc. Prerequisite: the mobile phone and mesh network are on the same LAN.

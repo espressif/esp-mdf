@@ -12,7 +12,7 @@
 
 * 关于 ESP32 的书籍列表，请查看 `乐鑫 <https://www.espressif.com/zh-hans/support/iot-college/books-new>`_ 网站。
 
-* 如果您有兴趣参与到 ESP-IDF 的开发, 请查阅 `Contributions Guide <http://esp-idf.readthedocs.io/en/latest/contribute/index.html>`_。
+* 如果您有兴趣参与到 ESP-IDF 的开发, 请查阅 `Contributions Guide <http://docs.espressif.com/projects/esp-idf/en/stable/contribute/index.html>`_。
 
 * 关于 ESP32 的其它信息，请查看官网 `文档 <https://espressif.com/zh-hans/support/download/documents>`_ 版块。
 

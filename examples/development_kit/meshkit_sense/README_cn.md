@@ -17,7 +17,7 @@
 
 作为传感器设备，ESP32-MeshKit-Sense 功耗极低，特别适合建筑物角落、工业现场等安装环境受限的情况。此类环境难以采用线缆供电，所以多采用电池进行长时间供电。
 
-ESP32-MeshKit-Sense 与其它硬件设备共同组成了基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-guides/mesh.html) 网络协议的 [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/hw-reference/esp32-meshkit.html) 智能家居组网方案。
+ESP32-MeshKit-Sense 与其它硬件设备共同组成了基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-guides/mesh.html) 网络协议的 [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/hw-reference/esp32-meshkit.html) 智能家居组网方案。
 
 简言之，ESP-MESH 是一种基于 Wi-Fi 协议构建的网络协议，专为 ESP32 芯片研发而成，集 Wi-Fi 和蓝牙两大技术优势，提供了如何运用同一组网设备建立无线网络的创新解决方案。
 
@@ -268,7 +268,7 @@ ESP32 在 Deep-sleep 模式下能够使用 ULP (Ultra Low Power) 协处理器读
 
 ## 7. 相关资源
 
-* [Deep Sleep Wake Stubs 介绍](https://esp-idf.readthedocs.io/zh_CN/latest/api-guides/deep-sleep-stub.html)
+* [Deep Sleep Wake Stubs 介绍](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-guides/deep-sleep-stub.html)
 * [ESP32-MeshKit-Sense 硬件设计指南](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md)
 * [ESP32-MeshKit-Light 用户指南](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)
 * [ESP-Prog 下载与调试板介绍](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_cn.md)

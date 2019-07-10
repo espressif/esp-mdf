@@ -3,7 +3,7 @@
 ***********
 :link_to_translation:`en:[English]`
 
-本文档旨在指导用户创建 ESP-MDF 的软件环境。ESP-MDF 是基于 ESP-IDF 封装的 ESP-MESH 开发构架，因此 ESP-MDF 的软件环境搭建与 ESP-IDF 基本相同，本文将主要阐述 ESP-MDF 与 ESP-IDF 环境区别和注意事项。在您使用 ESP-MDF 开发前，请先详细阅读 ESP-IDF `快速入指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/get-started/index.html>`_。
+本文档旨在指导用户创建 ESP-MDF 的软件环境。ESP-MDF 是基于 ESP-IDF 封装的 ESP-MESH 开发构架，因此 ESP-MDF 的软件环境搭建与 ESP-IDF 基本相同，本文将主要阐述 ESP-MDF 与 ESP-IDF 环境区别和注意事项。在您使用 ESP-MDF 开发前，请先详细阅读 ESP-IDF `快速入指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html>`_。
 
 
 准备工作

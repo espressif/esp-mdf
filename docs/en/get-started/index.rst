@@ -3,7 +3,7 @@ Introduction
 *************
 :link_to_translation:`zh_CN:[中文]`
 
-It is intended to guide users to build a software environment for ESP-MDF. ESP-MDF is a development framework based on ESP-MESH which is encapsulated by ESP-IDF. Therefore, the building of the software environment for ESP-MDF is similar to the building for ESP-IDF. This document focuses on the software environment difference between ESP-MDF and ESP-IDF, as well as provides some related notes. Before developing with ESP-MDF, please read ESP-IDF `Get Started <https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html>`_.
+It is intended to guide users to build a software environment for ESP-MDF. ESP-MDF is a development framework based on ESP-MESH which is encapsulated by ESP-IDF. Therefore, the building of the software environment for ESP-MDF is similar to the building for ESP-IDF. This document focuses on the software environment difference between ESP-MDF and ESP-IDF, as well as provides some related notes. Before developing with ESP-MDF, please read ESP-IDF `Get Started <https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html>`_.
 
 
 What you need

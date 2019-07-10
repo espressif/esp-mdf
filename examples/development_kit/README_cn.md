@@ -5,7 +5,7 @@
 ---
 
 ## 概述
-ESP32-MeshKit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/mesh.html) 的智能家居组网方案，包含以下硬件：
+ESP32-MeshKit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案，包含以下硬件：
 
 * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：板载 ESP32 芯片的智能灯，用于 ESP-MESH 作为主干网络进行长供电的场景。
 
@@ -14,7 +14,7 @@ ESP32-MeshKit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/e
 	* 监测 MeshKit 外设功耗 
 	* 根据传感器数据控制 MeshKit 外设
 
-* [ESP32-MeshKit-Button](button/README_cn.md)：ESP-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-reference/network/esp_now.html) 给 ESP-MESH 设备发包。
+* [ESP32-MeshKit-Button](button/README_cn.md)：ESP-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_now.html) 给 ESP-MESH 设备发包。
 
 对以上硬件进行配置和组网，您需要：
 
@@ -77,7 +77,7 @@ ESP-Mesh App 可帮助您调研和了解 ESP-MESH，并进行二次开发。上�
 
     * **Mesh ID**：ESP-MESH 网络唯一标识符，默认为路由器的 Mac 地址，相同的 `Mesh ID` 将组成一个网络；
     * **密码**：Wi-Fi 密码；
-    * **More**：点此即可查看和修改有关 ESP-MESH 网络内部的默认配置。更多配置详情，请参照 [ESP-MESH 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-reference/network/esp_mesh.html)。
+    * **More**：点此即可查看和修改有关 ESP-MESH 网络内部的默认配置。更多配置详情，请参照 [ESP-MESH 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_mesh.html)。
  
 * 信息输入完成后，点击`下一步`；
 
