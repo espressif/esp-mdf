@@ -2,7 +2,7 @@
 
 # ESP-NOW debug 接收板示例
 
-ESP-NOW debug 接收板需要和 ESP-MDF 设备处于同一个 Wi-Fi 信道上才可以接收 ESP-MDF 设备发送的调试数据。同时，如果 ESP-NOW debug 接收板和 ESP-MDF 设备处于同一个局域网（连接同一个路由器）下，接收板还可以通过 mDNS 设备发现服务获取 Mesh 网络的基本信息，包括：Mesh-ID、根节点 IP、根节点 MAC 地址等。
+ESP-NOW debug 接收板需要和 ESP-MESH 设备处于同一个 Wi-Fi 信道上才可以接收 ESP-MESH 设备发送的调试数据。同时，如果 ESP-NOW debug 接收板和 ESP-MESH 设备处于同一个局域网下（连接同一个路由器），接收板还可以通过 mDNS 设备发现服务获取 Mesh 网络的基本信息，包括：Mesh-ID、根节点 IP、根节点 MAC 地址等。
 
 <div align=center>
 <img src="espnow_debug.png" width="800">
@@ -16,16 +16,16 @@ ESP-NOW debug 接收板需要和 ESP-MDF 设备处于同一个 Wi-Fi 信道上�
 >    mdebug_cmd_register_common();
 > ```
 
-ESP-NOW debug 接收板提供的主要功能包括：：
+ESP-NOW debug 接收板提供的主要功能包括：
 
- - [sdcard 文件管理](#sd-卡文件操作命令): 例出当前 SD 卡当中所有的文件，删除指定文件，可选择以某种格式打印文件内容(hex, string, base64)
- - [sniffer 监听环境中的 IEEE 802.11 包](#sniffer-操作命令): 抓取数据包并以 pcap 格式保存在 SD 卡中，可指定文件名称，设置数据包过滤条件，并且可指定在某个信道上监听
- - [Wi-Fi 配置](#wi-fi-配置命令): 设置工作在 STA 模式下的 Wi-Fi 信息（路由器 SSID 、密码和 BSSID，工作信道），保存/擦除配置信息
- - [Wi-Fi 扫描](#扫描命令): 工作在 STA 模式下，扫描环境中的 AP 或 ESP-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
- - [log 设置](#日志命令): 监听其他设备的 log 日志,统计各类日志（I、W、E）的数量以及重启次数和  Coredump 次数并显示在屏幕上，添加/移除监听设备，设置 log 传输级别
- - [coredump 信息管理](#coredump-命令): 向指定设备查询是否有 coredump 信息，接收/擦除 coredump 信息，请求接收指定序号的 coredump 信息
- - [command](#command-命令): 在指定设备上运行命令
- - [一般命令](#其他命令): help（打印当前支持的所有命令）
+ - [sdcard 文件管理](#sd-卡文件操作命令)：列出当前 SD 卡当中所有的文件，删除指定文件，可选择以某种格式打印文件内容 (hex, string, base64)
+ - [sniffer 监听环境中的 IEEE 802.11 包](#sniffer-操作命令)：抓取数据包并以 pcap 格式保存在 SD 卡中，可指定文件名称，设置数据包过滤条件，并且可指定在某个信道上监听
+ - [Wi-Fi 配置](#wi-fi-配置命令)：设置工作在 STA 模式下的 Wi-Fi 信息（路由器 SSID 、密码和 BSSID，工作信道），保存/擦除配置信息
+ - [Wi-Fi 扫描](#扫描命令)：工作在 STA 模式下，扫描环境中的 AP 或 ESP-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
+ - [log 设置](#日志命令)：监听其他设备的 log 日志，统计各类日志 (I、W、E) 的数量以及重启次数和 coredump 次数并显示在屏幕上，添加/移除监听设备，设置 log 传输级别
+ - [coredump 信息管理](#coredump-命令)：向指定设备查询是否有 coredump 信息，接收/擦除 coredump 信息，请求接收指定序号的 coredump 信息
+ - [command](#command-命令)：在指定设备上运行命令
+ - [一般命令](#其他命令)：help（打印当前支持的所有命令）
 
 ## ESP-NOW 介绍
 
@@ -39,7 +39,7 @@ ESP-NOW debug 接收板通过 [ESP-NOW](https://docs.espressif.com/projects/esp-
 2. 接收端在非加密通信的情况下可以不添加发送端的 MAC 地址（加密通信时需要添加），但是发送端必须要添加接收端的 MAC 地址
 3. ESP-NOW 最多可添加 20 个配对设备，同时支持其中最多 6 个设备进行通信加密
 4. 通过注册回调函数的方式接收数据包，以及检查发送情况（成功或失败）
-5. 利用 CTR 和 CBC-MAC 协议（CCMP）保护数据的安全
+5. 利用 CTR 和 CBC-MAC 协议 (CCMP) 保护数据的安全
 
 > 更多关于 ESP-NOW 的原理介绍，请参考 Espressif 官方手册 [ESP-NOW 使用说明](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/wifi/esp_now.html) 和 ESP-IDF 示例 [espnow](https://github.com/espressif/esp-idf/tree/master/examples/wifi/espnow)。
 
@@ -59,7 +59,7 @@ ESP-NOW debug 接收板通过 [ESP-NOW](https://docs.espressif.com/projects/esp-
 </div>
 
 > 注: 
-> 1. 如果使用非 ESP-WROVER-KIT 也能运行, 只是部分关于存储的功能无法使用，例如：保存抓包数据
+> 1. 如果使用非 ESP-WROVER-KIT 也能运行， 只是部分关于存储的功能无法使用，例如：保存抓包数据
 > 2. 如是使用 ESP-WROVER-KIT V4.1， 并同时使用 SD-Card 和 LCD，请将电阻 R167、R168 取掉，避免屏幕无法正常使用
 
 ### 项目文件组织结构
@@ -110,20 +110,20 @@ wireless_debug/
 
 ### 串口命令格式说明
 
-* ESP-NOW debug 接收板支持的串口指令包括: help,sdcard,wifi_sniffer,wifi_config,wifi_scan,log,coredump,command。
+* ESP-NOW debug 接收板支持的串口指令包括：help、sdcard、wifi_sniffer、wifi_config、wifi_scan、log、coredump 和 command。
 
 * 串口命令的交互遵循以下规则：
     1. 控制命令通过串口，从 PC 端发送给 ESP-NOW debug 接收板，串口通信波特率为 115200
-    2. 控制命令定义中，字符均为小写字母(部分选项为大写字母), 字符串不需要带引号
-    3. 命令描述中括号 {} 包含的元素整体, 表示一个参数, 需要根据实际情况进行替换
-    4. 命令描述中方括号 [] 包含的部分，表示为缺省值, 可以填写或者可能显示
+    2. 控制命令定义中，字符均为小写字母（部分选项为大写字母），字符串不需要带引号
+    3. 命令描述中括号 {} 包含的元素整体，表示一个参数，需要根据实际情况进行替换
+    4. 命令描述中方括号 [] 包含的部分，表示为缺省值，可以填写或者可能显示
     5. 串口命令的模式如下所示，每个元素之间，以空格符分隔
 
         ```
         命令＋选项＋参数，例如： log -a aa:bb:cc:dd:ee:ff
         ```
 
-    6. 换行符支持 '\n' 或者 '\r\n'。
+    6. 换行符支持 '\n' 或者 '\r\n'
     7. 串口以 115200 波特率返回执行结果
 
 ### SD 卡文件操作命令
@@ -231,9 +231,9 @@ wireless_debug/
     |||||
     |-|-|-|-|
     |命令定义|wifi_scan [-m] [-r <rssi (-120 ~ 0)>] [-s <ssid>] [-b <bssid (xx:xx:xx:xx:xx:xx)>] [-p <time (ms)>] [-i <mesh_id (xx:xx:xx:xx:xx:xx)>] [-P <mesh_password>]||
-    |参数|rssi|通过 RSSI 过滤 设备|
-    ||ssid|通过 RSSI 过滤 设备|
-    ||bssid|通过 bssid 过滤 设备|
+    |参数|rssi|通过 RSSI 过滤设备|
+    ||ssid|通过 SSID 过滤设备|
+    ||bssid|通过 BSSID 过滤设备|
     ||passive|每个信道被动扫描时间|
     ||mesh|扫描 mesh 设备|
     ||mesh_id|mesh_id|
@@ -294,14 +294,14 @@ wireless_debug/
 
 #### 其他命令
 
-* `help`: 打印当前支持的所有命令
+* `help`：打印当前支持的所有命令
 
 ## 性能影响说明
 
-由于 ESP-NOW 和 ESP-MESH 一样，都是通过 Wi-Fi 接口进行数据包收发，因此，当 ESP-MDF 设备数据传输量较大时，会对其控制命令接收或数据传输产生一些延时。
+由于 ESP-NOW 和 ESP-MESH 一样，都是通过 Wi-Fi 接口进行数据包收发，因此，当 ESP-MESH 设备数据传输量较大时，会对其控制命令接收或数据传输产生一些延时。
 
-经实际测试，在网络环境良好的情况下，以下配置参数导致的 ESP-MDF 设备延时是可以忽略的阈值：
+经实际测试，在网络环境良好的情况下，以下配置参数导致的 ESP-MESH 设备延时是可以忽略的阈值：
 
-* 50 个 ESP-MDF 设备（设备数量越多，网络环境越差）
-* ESP-NOW 接收端添加 `10` 个 ESP-MDF 设备（接收端添加数量越多，网络环境越差）
+* 50 个 ESP-MESH 设备（设备数量越多，网络环境越差）
+* ESP-NOW 接收端添加 `10` 个 ESP-MESH 设备（接收端添加数量越多，网络环境越差）
 * 传输日志级别为 `info` （日志级别越低，网络环境越差）
