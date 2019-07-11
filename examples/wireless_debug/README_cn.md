@@ -238,10 +238,10 @@ wireless_debug/
     ||mesh|扫描 mesh 设备|
     ||mesh_id|mesh_id|
     ||mesh_password|mesh_password|
-    |示例|wifi_scan -m|扫描 mesh 设备|
-    ||wifi_scan -m -r -60|扫描 RSSI 信号值在 -60 以内的 mesh 设备|
-    ||wifi_scan -m -s espressif|扫描 SSID 为 espressif 下的 mesh 设备|
-    ||wifi_scan -p 300|设置每个信道被动扫描时间为 300 ms|
+    |示例|wifi_scan| 扫描所有的设备|
+    ||wifi_scan -r -60|扫描 RSSI 信号值在 -60 以内的设备|
+    ||wifi_scan -s espressif|扫描 SSID 为 espressif 的设备|
+    ||wifi_scan -m -p 600 -i 30:ae:a4:80:16:3c |扫描 mesh_id 为 30:ae:a4:80:16:3c 的 mesh 设备|
 
 ### 日志命令
 

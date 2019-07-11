@@ -239,10 +239,9 @@ wireless_debug/
     ||mesh|Scan mesh devices|
     ||mesh_id|mesh_id|
     ||mesh_password|mesh_password|
-    |Example|wifi_scan -m|Scan mesh devices|
-    ||wifi_scan -m -r -60|Scan mesh devices with RSSI signal value within -60|
-    ||wifi_scan -m -s espressif|Scan mesh devices with SSID under espressif|
-    ||wifi_scan -p 300|Set the passive scan time of each channel to 300 ms|
+    |Example|wifi_scan|Scan all APs|
+    ||wifi_scan -r -60|Scan devices with RSSI signal value within -60|
+    ||wifi_scan -m -p 600 -i 30:ae:a4:80:16:3c |Scan mesh devices with mesh_id 30:ae:a4:80:16:3c|
 
 ### Log Command
 
