@@ -91,6 +91,10 @@ esp_err_t __mlink_json_parse(const char *json_str, const char *key,
                     break;
 
                 case cJSON_Number:
+                    if (!pSub->valueint) {
+                        goto ERR_EXIT;
+                    }
+
                     *((char *)value) = pSub->valueint;
                     break;
 

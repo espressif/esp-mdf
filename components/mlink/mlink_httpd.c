@@ -184,7 +184,7 @@ static void mlink_connection_timeout_cb(void *timer)
 
     mlink_conn->flag = MLINK_HTTPD_CHUNKS_DATA;
 
-   if(mlink_socket_iswritable(mlink_conn->sockfd)){
+    if (mlink_socket_iswritable(mlink_conn->sockfd)) {
         if (httpd_default_send(mlink_conn->handle, mlink_conn->sockfd, chunk_footer, strlen(chunk_footer), 0) <= 0) {
             MDF_LOGW("<%s> httpd_default_send, sockfd: %d", strerror(errno), mlink_conn->sockfd);
         }
@@ -804,7 +804,7 @@ mdf_err_t mlink_httpd_write(const mlink_httpd_t *response, TickType_t wait_ticks
      */
     mlink_httpd_resp_set_status(&resp_data, response->type.resp == true ? HTTPD_200 : HTTPD_400);
     mlink_httpd_resp_set_hdr(&resp_data, "Content-Type",
-                             response->type.format == MESH_PROTO_JSON ? HTTPD_TYPE_JSON : HTTPD_TYPE_TEXT);
+                             response->type.format == MESH_PROTO_JSON ? HTTPD_TYPE_JSON : "application/bin");
     mlink_httpd_resp_set_hdr(&resp_data, "Mesh-Node-Mac", mlink_mac_hex2str(response->addrs_list, mac_str));
     resp_size = mlink_httpd_resp_set_data(&resp_data, response->data, response->size);
 

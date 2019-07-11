@@ -5,7 +5,9 @@ set(COMPONENT_SRCS "mlink_espnow.c"
                     "mlink_json.c"
                     "mlink_notice.c"
                     "mlink_trigger.c"
-                    "mlink_utils.c")
+                    "mlink_utils.c"
+                    "mlink_ble.c"
+                    "mlink_sniffer.c")
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 

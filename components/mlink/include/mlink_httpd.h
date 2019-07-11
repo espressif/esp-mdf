@@ -75,14 +75,18 @@ typedef struct {
 /**
  * @brief  Start http server
  *
- * @return  [description]
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 mdf_err_t mlink_httpd_start(void);
 
 /**
  * @brief  Stop http server
  *
- * @return  [description]
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 mdf_err_t mlink_httpd_stop(void);
 
@@ -92,7 +96,9 @@ mdf_err_t mlink_httpd_stop(void);
  * @param  request    Request data
  * @param  wait_ticks Waiting timeout
  *
- * @return            [description]
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 mdf_err_t mlink_httpd_read(mlink_httpd_t **request, TickType_t wait_ticks);
 
@@ -102,7 +108,9 @@ mdf_err_t mlink_httpd_read(mlink_httpd_t **request, TickType_t wait_ticks);
  * @param  response   Response data
  * @param  wait_ticks Waiting timeout
  *
- * @return            [description]
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
  */
 mdf_err_t mlink_httpd_write(const mlink_httpd_t *response, TickType_t wait_ticks);
 

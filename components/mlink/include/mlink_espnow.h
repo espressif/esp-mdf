@@ -93,7 +93,7 @@ mdf_err_t __mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, cons
  *    - MDF_ERR_INVALID_ARG
  */
 mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t **data,
-                            size_t *size, uint32_t *type, TickType_t wait_ticks);
+                              size_t *size, uint32_t *type, TickType_t wait_ticks);
 #define mlink_espnow_read_6(addrs_list,addrs_num,data,size,type,wait_ticks) __mlink_espnow_read(addrs_list,addrs_num,data,size,type,wait_ticks)
 #define mlink_espnow_read_5(addrs_list,addrs_num,data,size,wait_ticks) mlink_espnow_read_6(addrs_list,addrs_num,data,size,NULL,wait_ticks)
 #define mlink_espnow_read(...)\

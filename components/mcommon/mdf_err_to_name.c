@@ -123,6 +123,9 @@ static const mdf_err_msg_t mdf_err_msg_table[] = {
 #   ifdef      MDF_ERR_MWIFI_NO_FOUND
     ERR_TBL_IT(MDF_ERR_MWIFI_NO_FOUND),               /**< 2097161 0x200009 Routes or devices not found */
 #   endif
+#   ifdef      MDF_ERR_MWIFI_NO_ROOT
+    ERR_TBL_IT(MDF_ERR_MWIFI_NO_ROOT),                /**< 2097162 0x20000a Routes or devices not found */
+#   endif
     // components/mcommon/include/mdf_err.h
 #   ifdef      MDF_ERR_MESPNOW_BASE
     ERR_TBL_IT(MDF_ERR_MESPNOW_BASE),                 /**< 3145728 0x300000 Starting number of MESPNOW error codes */
@@ -161,6 +164,9 @@ static const mdf_err_msg_t mdf_err_msg_table[] = {
 #   endif
 #   ifdef      MDF_ERR_MUPGRADE_NOT_INIT
     ERR_TBL_IT(MDF_ERR_MUPGRADE_NOT_INIT),            /**< 5242889 0x500009 Upgrade configuration is not initialized */
+#   endif
+#   ifdef      MDF_ERR_MUPGRADE_STOP
+    ERR_TBL_IT(MDF_ERR_MUPGRADE_STOP),                /**< 5242890 0x50000a Upgrade configuration is not initialized */
 #   endif
     // components/mcommon/include/mdf_err.h
 #   ifdef      MDF_ERR_MDEBUG_BASE

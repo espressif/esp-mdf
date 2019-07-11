@@ -168,7 +168,7 @@ static mlink_trigger_t *mlink_trigger_parse(const char *raw_data)
         goto EXIT;
     }
 
-    if(mlink_json_parse(raw_data, "communicate_type", communicate_str)== MDF_OK){
+    if (mlink_json_parse(raw_data, "communicate_type", communicate_str) == MDF_OK) {
         if (!strcasecmp(communicate_str, "group")) {
             trigger_item->communicate_type = MLINK_ESPNOW_COMMUNICATE_GROUP;
         }
@@ -385,7 +385,7 @@ mdf_err_t mlink_trigger_handle(mlink_communicate_t communicate)
         if (communicate == MLINK_COMMUNICATE_MESH) {
             mwifi_data_type_t data_type  = {
                 .protocol = MLINK_PROTO_HTTPD,
-                .group    = (trigger_idex->communicate_type == MLINK_ESPNOW_COMMUNICATE_GROUP)? true : false,
+                .group    = (trigger_idex->communicate_type == MLINK_ESPNOW_COMMUNICATE_GROUP) ? true : false,
             };
             mlink_httpd_type_t httpd_type = {
                 .format = MLINK_HTTPD_FORMAT_JSON,
