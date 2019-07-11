@@ -6,13 +6,13 @@
 
 本示例将介绍如何使用 `Mdebug` 模块，在 mesh 产品中进行 ESP-MESH 基本调试。有以下功能：
 
- - [ESP-MESH 吞吐量测试](#esp-mesh-吞吐量测试介绍): 设置工作的模式（Client/Server），ping 功能
- - [ESP-MESH 网络配置](#mesh-config-命令): 配置 ESP-MESH 信息（路由器 SSID 、密码和 BSSID，工作信道，MESH ID 和密码，设备类型，最大连接数量，最大层数），打印/保存 ESP-MESH 配置信息，
- - [ESP-MESH 状态查询](#mesh_status-命令): 开始/停止 ESP-MESH，打印 ESP-MESH 设备状态
- - [Wi-Fi 扫描](#mesh_scan-命令): 扫描环境中的 AP 或 ESP-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
- - [coredump 信息管理](#coredump-命令): 打印/擦除 coredump 信息，获取 coredump 数据长度，将 coredump 数据发送到指定设备，重传指定序号的 coredump 数据
- - [log 设置](#日志命令): 添加/移除监听设备，设置 log 传输级别，将 log 发送到指定设备
- - [一般命令](#一般命令): help（打印当前支持的所有命令）、version（获取 SDK 的版本）、heap（获取当前设备剩余内存）、restart（重启设备）、reset（重置设备并重启）
+ - [ESP-MESH 吞吐量测试](#esp-mesh-吞吐量测试介绍)：设置工作的模式 (Client/Server)，ping 功能
+ - [ESP-MESH 网络配置](#mesh-config-命令)：配置 ESP-MESH 信息（路由器 SSID 、密码和 BSSID，工作信道，MESH ID 和密码，设备类型，最大连接数量，最大层数），打印/保存 ESP-MESH 配置信息
+ - [ESP-MESH 状态查询](#mesh_status-命令)：开始/停止 ESP-MESH，打印 ESP-MESH 设备状态
+ - [Wi-Fi 扫描](#mesh_scan-命令)：扫描环境中的 AP 或 ESP-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
+ - [coredump 信息管理](#coredump-命令)：打印/擦除 coredump 信息，获取 coredump 数据长度，将 coredump 数据发送到指定设备，重传指定序号的 coredump 数据
+ - [log 设置](#日志命令)：添加/移除监听设备，设置 log 传输级别，将 log 发送到指定设备
+ - [一般命令](#一般命令)：help（打印当前支持的所有命令）、version（获取 SDK 的版本）、heap（获取当前设备剩余内存）、restart（重启设备）、reset（重置设备并重启）
 
 ## 硬件准备
 
@@ -37,13 +37,13 @@
 
 ### 串口命令格式说明
 
-* ESP-NOW debug 接收板支持的串口指令包括: help,sdcard,wifi_sniffer,wifi_config,wifi_scan,log,coredump,command。
+* ESP-NOW debug 接收板支持的串口指令包括：help、sdcard、wifi_sniffer、wifi_config、wifi_scan、log、coredump 和 command。
 
 * 串口命令的交互遵循以下规则：
     1. 控制命令通过串口，从 PC 端发送给 ESP-NOW debug 接收板，串口通信波特率为 115200
-    2. 控制命令定义中，字符均为小写字母(部分选项为大写字母), 字符串不需要带引号
-    3. 命令描述中括号 {} 包含的元素整体, 表示一个参数, 需要根据实际情况进行替换
-    4. 命令描述中方括号 [] 包含的部分，表示为缺省值, 可以填写或者可能显示
+    2. 控制命令定义中，字符均为小写字母（部分选项为大写字母），字符串不需要带引号
+    3. 命令描述中括号 {} 包含的元素整体，表示一个参数，需要根据实际情况进行替换
+    4. 命令描述中方括号 [] 包含的部分，表示为缺省值，可以填写或者可能显示
     5. 串口命令的模式如下所示，每个元素之间，以空格符分隔
 
         ```
@@ -128,7 +128,7 @@
     ||mesh_config -o|打印 ESP-MESH 配置信息|
     ||mesh_config -S|保存 ESP-MESH 配置信息|
     |示例|mesh_config -c 11|配置 ESP-MESH 工作信道为 11 信道|
-    ||mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif|配置 ESP-MESH ID 为 14:12:12:12:12:12，连接路由器信息： SSID 为 espressif， 密码为 espressif|
+    ||mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif|配置 ESP-MESH ID 为 14:12:12:12:12:12，连接路由器信息：SSID 为 espressif， 密码为 espressif|
     ||mesh_config -o|打印 ESP-MESH 配置信息|
     ||mesh_config -S|保存 ESP-MESH 配置信息|
 
