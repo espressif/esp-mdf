@@ -90,7 +90,9 @@ Please proceed to the document [Getting Started with ESP-MDF](https://docs.espre
 
 #### Step 2. ULP Assembly Environment Setup
 
-Please refer to [ULP introduction on Espressif Github](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_ulp_co-processor_and_assembly_environment_setup_en.md) for the detailed introduction to ULP co-processor and assembly environment setup.
+The ULP coprocessor currently only supports assembly language and needs to configure the ULP coprocessor compilation environment. Please refer to [Introduction to the ESP32 ULP Co-processor and Assembly Environment Setup](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_ulp_co-processor_and_assembly_environment_setup_en.md).
+
+> Note: Multi-threaded compilation is not supported. It is forbidden to use `make -j`
 
 #### Step 3. Example Configuration
 
