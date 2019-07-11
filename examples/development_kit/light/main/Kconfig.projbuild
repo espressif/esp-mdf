@@ -66,7 +66,7 @@ endmenu
 
 config LIGHT_VERSION
     string "Light version"
-    default "1.1.1"
+    default "1.2.0"
     help
         Version of the five-color light
 
@@ -75,5 +75,12 @@ config LIGHT_MEMORY_DEBUG
     default n
     help
         Enable memory debugging.
+
+config LIGHT_BLE_GATEWAY
+    bool "Enable the BLE gateway on the non-root node"
+    default n
+    help
+        Enabling the BLE gateway on a non-root node,
+        enabling the BLE gateway will consume a lot of memory.
 
 endmenu

@@ -28,7 +28,7 @@
 #include "light_driver.h"
 #include "light_handle.h"
 
-static const char *TAG          = "light_handle";
+static const char *TAG = "light_handle";
 
 mdf_err_t light_show_layer(mlink_handle_data_t *handle_data)
 {

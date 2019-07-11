@@ -66,7 +66,7 @@ typedef struct {
     mlink_httpd_format_t req_fromat; /**< The format of the received request data */
     char *resp_data;           /**< Response data to be sent */
     ssize_t resp_size;         /**< The length of response data to be sent */
-    mlink_httpd_format_t resp_fromat;/**< The format of response data to be sent */
+    mlink_httpd_format_t resp_fromat; /**< The format of response data to be sent */
 } mlink_handle_data_t;
 
 /**
@@ -163,7 +163,8 @@ mdf_err_t mlink_add_characteristic(uint16_t cid, const char *name, characteristi
  *     - ESP_OK
  *     - ESP_FAIL
  */
-mdf_err_t mlink_add_characteristic_handle(mlink_characteristic_func_t get_value_func, mlink_characteristic_func_t set_value_func);
+mdf_err_t mlink_add_characteristic_handle(mlink_characteristic_func_t get_value_func,
+        mlink_characteristic_func_t set_value_func);
 
 /**
  * @brief Handling requests from the APP
@@ -173,12 +174,14 @@ mdf_err_t mlink_add_characteristic_handle(mlink_characteristic_func_t get_value_
  * @param  data     Requested message
  * @param  size     The length of the requested data
  *
+ * @note This function is deprecated. Use 'mlink_handle_request' function
+ *
  * @return
  *     - ESP_OK
  *     - ESP_FAIL
  */
 mdf_err_t mlink_handle(const uint8_t *src_addr, const mlink_httpd_type_t *type,
-                       const void *data, size_t size);
+                       const void *data, size_t size) __attribute__((deprecated));
 
 /**
  * @brief Add or modify a request handler
@@ -191,6 +194,19 @@ mdf_err_t mlink_handle(const uint8_t *src_addr, const mlink_httpd_type_t *type,
  *     - ESP_FAIL
  */
 mdf_err_t mlink_set_handle(const char *name, const mlink_handle_func_t func);
+
+
+/**
+ * @brief Call the handler in the request list
+ *
+ * @param handle_data The data type of the parameter of the handler
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ *     - MDF_ERR_NOT_SUPPORTED
+ */
+mdf_err_t mlink_handle_request(mlink_handle_data_t *handle_data);
 
 #ifdef __cplusplus
 }

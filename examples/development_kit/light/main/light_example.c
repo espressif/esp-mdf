@@ -43,7 +43,7 @@
 #define LIGHT_RESTART_COUNT_FALLBACK  (10)
 #define LIGHT_RESTART_COUNT_RESET     (3)
 
-static const char *TAG                       = "light";
+static const char *TAG                       = "light_example";
 static TaskHandle_t g_root_write_task_handle = NULL;
 static TaskHandle_t g_root_read_task_handle  = NULL;
 
@@ -56,15 +56,15 @@ static void root_write_task(void *arg)
     char *data    = NULL;
     size_t size   = 0;
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
-    mwifi_data_type_t data_type      = {0};
+    mwifi_data_type_t mwifi_type      = {0};
 
     MDF_LOGI("root_write_task is running");
 
     while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
-        ret = mwifi_root_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
+        ret = mwifi_root_read(src_addr, &mwifi_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
-        if (data_type.upgrade) {
+        if (mwifi_type.upgrade) {
             ret = mupgrade_root_handle(src_addr, data, size);
             MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_handle", mdf_err_to_name(ret));
             goto FREE_MEM;
@@ -73,7 +73,7 @@ static void root_write_task(void *arg)
         MDF_LOGD("Root receive, addr: " MACSTR ", size: %d, data: %.*s",
                  MAC2STR(src_addr), size, size, data);
 
-        switch (data_type.protocol) {
+        switch (mwifi_type.protocol) {
             case MLINK_PROTO_HTTPD: { // use http protocol
                 mlink_httpd_t httpd_data  = {
                     .size       = size,
@@ -81,7 +81,7 @@ static void root_write_task(void *arg)
                     .addrs_num  = 1,
                     .addrs_list = src_addr,
                 };
-                memcpy(&httpd_data.type, &data_type.custom, sizeof(httpd_data.type));
+                memcpy(&httpd_data.type, &mwifi_type.custom, sizeof(httpd_data.type));
 
                 ret = mlink_httpd_write(&httpd_data, portMAX_DELAY);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_write", mdf_err_to_name(ret));
@@ -96,7 +96,7 @@ static void root_write_task(void *arg)
             }
 
             default:
-                MDF_LOGW("Does not support the protocol: %d", data_type.protocol);
+                MDF_LOGW("Does not support the protocol: %d", mwifi_type.protocol);
                 break;
         }
 
@@ -118,7 +118,7 @@ static void root_read_task(void *arg)
 {
     mdf_err_t ret               = MDF_OK;
     mlink_httpd_t *httpd_data   = NULL;
-    mwifi_data_type_t data_type = {
+    mwifi_data_type_t mwifi_type = {
         .compression = true,
         .communicate = MWIFI_COMMUNICATE_MULTICAST,
     };
@@ -128,14 +128,15 @@ static void root_read_task(void *arg)
     while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
         ret = mlink_httpd_read(&httpd_data, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK || !httpd_data, FREE_MEM, "<%s> mwifi_root_read", mdf_err_to_name(ret));
-        MDF_LOGD("Root receive, addrs_num: %d, addrs_list: " MACSTR ", size: %d, data: %.*s",
+        MDF_LOGD("Root send, addrs_num: %d, addrs_list: " MACSTR ", size: %d, data: %.*s",
                  httpd_data->addrs_num, MAC2STR(httpd_data->addrs_list),
                  httpd_data->size, httpd_data->size, httpd_data->data);
 
-        data_type.group = httpd_data->group;
-        memcpy(&data_type.custom, &httpd_data->type, sizeof(mlink_httpd_type_t));
+        mwifi_type.group = httpd_data->group;
+        memcpy(&mwifi_type.custom, &httpd_data->type, sizeof(mlink_httpd_type_t));
+
         ret = mwifi_root_write(httpd_data->addrs_list, httpd_data->addrs_num,
-                               &data_type, httpd_data->data, httpd_data->size, true);
+                               &mwifi_type, httpd_data->data, httpd_data->size, true);
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_write", mdf_err_to_name(ret));
 
 FREE_MEM:
@@ -167,8 +168,9 @@ void node_handle_task(void *arg)
     mdf_err_t ret = MDF_OK;
     uint8_t *data = NULL;
     size_t size   = MWIFI_PAYLOAD_LEN;
-    mwifi_data_type_t data_type      = {0x0};
+    mwifi_data_type_t mwifi_type     = {0x0};
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
+    mlink_httpd_type_t *header_info  = NULL;
 
     while (true) {
         if (!mwifi_is_connected()) {
@@ -176,11 +178,11 @@ void node_handle_task(void *arg)
             continue;
         }
 
-        ret = mwifi_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
+        ret = mwifi_read(src_addr, &mwifi_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> Receive a packet targeted to self over the mesh network",
                        mdf_err_to_name(ret));
 
-        if (data_type.upgrade) { // This mesh package contains upgrade data.
+        if (mwifi_type.upgrade) { // This mesh package contains upgrade data.
             ret = mupgrade_handle(src_addr, data, size);
             MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_handle", mdf_err_to_name(ret));
             goto FREE_MEM;
@@ -188,20 +190,68 @@ void node_handle_task(void *arg)
 
         MDF_LOGI("Node receive, addr: " MACSTR ", size: %d, data: %.*s", MAC2STR(src_addr), size, size, data);
 
-        mlink_httpd_type_t *httpd_type = (mlink_httpd_type_t *)&data_type.custom;
+        /*< Header information for http data */
+        header_info = (mlink_httpd_type_t *)&mwifi_type.custom;
+        MDF_ERROR_GOTO(header_info->format != MLINK_HTTPD_FORMAT_JSON, FREE_MEM,
+                       "The current version only supports the json protocol");
 
-        ret = mlink_handle(src_addr, httpd_type, data, size);
+        /**
+         * @brief Processing request commands, generating response data
+         *
+         * @note  Handling only the body part of http, the header
+         *        of http is handled by mlink_httpd
+         */
+        mlink_handle_data_t handle_data = {
+            .req_data    = (char *)data,
+            .req_size    = size,
+            .req_fromat  = MLINK_HTTPD_FORMAT_JSON,
+            .resp_data   = NULL,
+            .resp_size   = 0,
+            .resp_fromat = MLINK_HTTPD_FORMAT_JSON,
+        };
+        ret = mlink_handle_request(&handle_data);
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mlink_handle", mdf_err_to_name(ret));
+
+        if (handle_data.resp_fromat == MLINK_HTTPD_FORMAT_JSON) {
+            mlink_json_pack(&handle_data.resp_data, "status_msg", mdf_err_to_name(ret));
+            handle_data.resp_size = mlink_json_pack(&handle_data.resp_data, "status_code", -ret);
+        }
 
         /**
          * @brief If this packet comes from a device on the mesh network,
          *  it will notify the App that the device's status has changed.
          */
-        if (httpd_type->from == MLINK_HTTPD_FROM_DEVICE) {
-            data_type.protocol = MLINK_PROTO_NOTICE;
-            ret = mwifi_write(NULL, &data_type, "status", strlen("status"), true);
+        if (header_info->from == MLINK_HTTPD_FROM_DEVICE) {
+            mwifi_type.protocol = MLINK_PROTO_NOTICE;
+            ret = mwifi_write(NULL, &mwifi_type, "status", strlen("status"), true);
             MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mlink_handle", mdf_err_to_name(ret));
         }
+
+        /**
+         * @brief Send the response data to the source device
+         */
+        if (header_info->resp) {
+            uint8_t *dest_addr = (header_info->from == MLINK_HTTPD_FROM_SERVER) ? NULL : src_addr;
+            /*< Populate the header information of http */
+            header_info->format = handle_data.resp_fromat;
+            header_info->from   = MLINK_HTTPD_FROM_DEVICE;
+
+            mwifi_type.protocol = MLINK_PROTO_HTTPD;
+            mwifi_type.compression = true;
+            ret = mwifi_write(dest_addr, &mwifi_type, handle_data.resp_data, handle_data.resp_size, true);
+
+            if (handle_data.resp_fromat == MLINK_HTTPD_FORMAT_HEX) {
+                MDF_LOGI("Node send, size: %d, data: ", handle_data.resp_size);
+                ESP_LOG_BUFFER_HEX(TAG, handle_data.resp_data, handle_data.resp_size);
+            } else {
+                MDF_LOGI("Node send, size: %d, data: %.*s", handle_data.resp_size,
+                         handle_data.resp_size, handle_data.resp_data);
+            }
+        }
+
+        MDF_FREE(handle_data.resp_data);
+        MDF_ERROR_GOTO(ret != ESP_OK, FREE_MEM, "<%s> mdf_write", mdf_err_to_name(ret));
+
 
 FREE_MEM:
         MDF_FREE(data);
@@ -223,17 +273,17 @@ static void espnow_to_mwifi_task(void *arg)
     size_t size         = 0;
     uint32_t type       = 0;
 
-    mwifi_data_type_t data_type = {
+    mwifi_data_type_t mwifi_type = {
         .protocol = MLINK_PROTO_HTTPD,
     };
 
-    mlink_httpd_type_t httpd_type = {
+    mlink_httpd_type_t header_info = {
         .format = MLINK_HTTPD_FORMAT_JSON,
         .from   = MLINK_HTTPD_FROM_DEVICE,
         .resp   = false,
     };
 
-    memcpy(&data_type.custom, &httpd_type, sizeof(mlink_httpd_type_t));
+    memcpy(&mwifi_type.custom, &header_info, sizeof(mlink_httpd_type_t));
 
     while (mlink_espnow_read(&addrs_list, &addrs_num, &data, &size, &type, portMAX_DELAY) == MDF_OK) {
         /*< Send to yourself if the destination address is empty */
@@ -241,11 +291,11 @@ static void espnow_to_mwifi_task(void *arg)
             esp_wifi_get_mac(ESP_IF_WIFI_STA, addrs_list);
         }
 
-        data_type.group = (type == MLINK_ESPNOW_COMMUNICATE_GROUP) ? true : false;
+        mwifi_type.group = (type == MLINK_ESPNOW_COMMUNICATE_GROUP) ? true : false;
         MDF_LOGI("Mlink espnow read data: %.*s", size, data);
 
         for (int i = 0; i < addrs_num; ++i) {
-            ret = mwifi_write(addrs_list  + 6 * i, &data_type, data, size, true);
+            ret = mwifi_write(addrs_list  + 6 * i, &mwifi_type, data, size, true);
             MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
         }
 
@@ -256,6 +306,65 @@ static void espnow_to_mwifi_task(void *arg)
     MDF_LOGW("espnow_to_mwifi_task is exit");
     vTaskDelete(NULL);
 }
+
+#ifdef CONFIG_LIGHT_BLE_GATEWAY
+mdf_err_t mlink_ble_write(void *data, size_t size)
+{
+    mdf_err_t ret         = MDF_OK;
+    char *header          = NULL;
+    char *body            = NULL;
+    char **addr_list_json = NULL;
+    size_t addr_list_num  = 0;
+    mwifi_data_type_t mwifi_type = {
+        .protocol = MLINK_PROTO_HTTPD,
+    };
+    mlink_httpd_type_t header_info = {
+        .format = MLINK_HTTPD_FORMAT_JSON,
+        .from   = MLINK_HTTPD_FROM_DEVICE,
+        .resp   = false,
+    };
+
+    memcpy(&mwifi_type.custom, &header_info, sizeof(mlink_httpd_type_t));
+
+    ret = mlink_json_parse(data, "header", &header);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: header");
+    ret = mlink_json_parse(data, "body", &body);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: header");
+
+    if (mlink_json_parse(header, "group", &addr_list_num) == MDF_OK && addr_list_num > 0) {
+        mwifi_type.group = true;
+        addr_list_json = MDF_CALLOC(addr_list_num, sizeof(char *));
+        ret = mlink_json_parse(header, "group", addr_list_json);
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
+    } else if (mlink_json_parse(header, "addr", &addr_list_num) == MDF_OK && addr_list_num > 0) {
+        addr_list_json = MDF_CALLOC(addr_list_num, sizeof(char *));
+        ret = mlink_json_parse(header, "addr", addr_list_json);
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: addr");
+    } else {
+        MDF_LOGW("Data format error");
+        ret = MDF_ERR_NOT_SUPPORTED;
+        goto EXIT;
+    }
+
+    MDF_LOGI("addr_num: %d, headr: %s, body: %s", addr_list_num, header, body);
+
+    for (int i = 0; i < addr_list_num; ++i) {
+        uint8_t addr[6] = {0x0};
+        mlink_mac_str2hex(addr_list_json[i], addr);
+        MDF_FREE(addr_list_json[i]);
+
+        ret = mwifi_write(addr, &mwifi_type, body, strlen(body), true);
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> mwifi_write", esp_err_to_name(ret));
+    }
+
+EXIT:
+
+    MDF_FREE(header);
+    MDF_FREE(body);
+    MDF_FREE(addr_list_json);
+    return MDF_OK;
+}
+#endif /**< CONFIG_LIGHT_BLE_GATEWAY */
 
 /**
  * @brief All module events will be sent to this task in esp-mdf
@@ -278,6 +387,34 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected on station interface");
             light_driver_breath_stop();
+
+#ifdef CONFIG_LIGHT_BLE_GATEWAY
+
+            if (!esp_mesh_is_root()) {
+                mlink_ble_config_t config = {
+                    .company_id = MCOMMON_ESPRESSIF_ID,
+                    /**
+                     * @brief  This custom_data is for iBeacon definitions. https://developer.apple.com/ibeacon/
+                     *         Espressif WeChat official account can be found using WeChat "Yao Yi Yao Zhou Bian"
+                     */
+                    .custom_data = {
+                        0x02, 0x01, 0x06, 0x1A, 0xFF, 0x4C, 0x00, 0x02,
+                        0x15, 0xFD, 0xA5, 0x06, 0x93, 0xA4, 0xE2, 0x4F,
+                        0xB1, 0xAF, 0xCF, 0xC6, 0xEB, 0x07, 0x64, 0x78,
+                        0x25, 0x27, 0xB7, 0xF2, 0x06, 0xC5
+                    },
+                    .custom_size = 30,
+                };
+
+                memcpy(config.name, mlink_device_get_name(), sizeof(config.name) - 1);
+                MDF_ERROR_ASSERT(mlink_ble_init(&config));
+                mlink_ble_set_cb(NULL, mlink_ble_write);
+            } else {
+                MDF_ERROR_ASSERT(mlink_ble_deinit());
+            }
+
+#endif /**< CONFIG_LIGHT_BLE_GATEWAY */
+
             break;
 
         case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
@@ -380,10 +517,10 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MUPGRADE_STATUS: {
             MDF_LOGI("The upgrade progress is: %d%%", (int)ctx);
-            mwifi_data_type_t data_type = {
+            mwifi_data_type_t mwifi_type = {
                 .protocol = MLINK_PROTO_NOTICE,
             };
-            ret = mwifi_write(NULL, &data_type, "ota_status", strlen("ota_status"), true);
+            ret = mwifi_write(NULL, &mwifi_type, "ota_status", strlen("ota_status"), true);
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
             break;
         }
@@ -421,6 +558,20 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             break;
 
+        case MDF_EVENT_MLINK_BUFFER_FULL: {
+            MDF_LOGI("Receive data from sniffer");
+
+            /**
+             * @brief Notify the APP to actively request the sniffer data received by the device
+             */
+            mwifi_data_type_t mwifi_type = {
+                .protocol = MLINK_PROTO_NOTICE,
+            };
+            ret = mwifi_write(NULL, &mwifi_type, "sniffer", strlen("sniffer"), true);
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
+            break;
+        }
+
         default:
             break;
     }
@@ -433,7 +584,7 @@ void app_main()
     char name[32]                   = {0};
     uint8_t sta_mac[6]              = {0};
     mwifi_config_t ap_config        = {0x0};
-    mwifi_init_config_t init_config = {0x0};
+    mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
 
     /**
      * NOTE:
@@ -468,6 +619,23 @@ void app_main()
     }
 
     /**
+     * @brief Light driver initialization
+     */
+    MDF_ERROR_ASSERT(light_driver_init(&driver_config));
+    light_driver_set_switch(true);
+
+    if (mdf_info_load("init_config", &init_config, sizeof(mwifi_init_config_t)) == MDF_OK
+            && mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t)) == MDF_OK) {
+        if (restart_is_exception()) {
+            light_driver_set_rgb(255, 0, 0); /**< red */
+        } else {
+            light_driver_set_switch(true);   /**< turn on */
+        }
+    } else {
+        light_driver_breath_start(255, 255, 0); /**< yellow blink */
+    }
+
+    /**
      * @brief   1.Initialize event loop, receive event
      *          2.Initialize wifi with station mode
      *          3.Initialize espnow(ESP-NOW is a kind of connectionless WiFi communication protocol)
@@ -485,25 +653,13 @@ void app_main()
     mdebug_cmd_register_common();
 
     /**
-     * @brief Light driver initialization
-     */
-    MDF_ERROR_ASSERT(light_driver_init(&driver_config));
-
-    /**
      * @brief   1.Get Mwifi initialization configuration information and Mwifi AP configuration information from nvs flash.
      *          2.If there is no network configuration information in the nvs flash,
      *              obtain the network configuration information through the blufi or mconfig chain.
      *          3.Indicate the status of the device by means of a light
      */
-    if (mdf_info_load("init_config", &init_config, sizeof(mwifi_init_config_t)) == MDF_OK
-            && mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t)) == MDF_OK) {
-        if (restart_is_exception()) {
-            light_driver_set_rgb(255, 0, 0); /**< red */
-        } else {
-            light_driver_set_switch(true);
-        }
-    } else {
-        light_driver_breath_start(255, 255, 0); /**< yellow blink */
+    if (mdf_info_load("init_config", &init_config, sizeof(mwifi_init_config_t)) != MDF_OK
+            || mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t)) != MDF_OK) {
         MDF_ERROR_ASSERT(get_network_config(&init_config, &ap_config, LIGHT_TID, LIGHT_NAME));
         MDF_LOGI("mconfig, ssid: %s, password: %s, mesh_id: " MACSTR,
                  ap_config.router_ssid, ap_config.router_password,
@@ -511,6 +667,8 @@ void app_main()
 
         /**
          * @brief Save configuration information to nvs flash.
+         *
+         * @note `init_config` uses MWIFI_INIT_CONFIG_DEFAULT(), no need to use APP configuration under normal circumstances
          */
         mdf_info_save("init_config", &init_config, sizeof(mwifi_init_config_t));
         mdf_info_save("ap_config", &ap_config, sizeof(mwifi_config_t));
@@ -521,8 +679,11 @@ void app_main()
      *        It means you can not use the bluetooth mode which you have released by this function.
      *        it can release the .bss, .data and other section to heap
      */
-    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
-    esp_bt_controller_mem_release(ESP_BT_MODE_BLE);
+    esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    /**< When using a BLE gateway, you must ensure that the BLE host stack is not released */
+#ifndef CONFIG_LIGHT_BLE_GATEWAY
+    esp_bt_mem_release(ESP_BT_MODE_BLE);
+#endif /**< CONFIG_LIGHT_BLE_GATEWAY */
 
     /**
      * @brief Configure MLink (LAN communication module)

@@ -289,10 +289,13 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
     mlink_json_pack(&handle_data->resp_data, "version", g_device_info->version);
     mlink_json_pack(&handle_data->resp_data, "idf_version", esp_get_idf_version());
     mlink_json_pack(&handle_data->resp_data, "mdf_version", mdf_get_version());
-    mlink_json_pack(&handle_data->resp_data, "mlink_trigger", mlink_trigger_is_exist());
     mlink_json_pack(&handle_data->resp_data, "mlink_version", 2);
+    mlink_json_pack(&handle_data->resp_data, "mlink_trigger", mlink_trigger_is_exist());
     mlink_json_pack(&handle_data->resp_data, "rssi", mwifi_get_parent_rssi());
     mlink_json_pack(&handle_data->resp_data, "layer", esp_mesh_get_layer());
+
+    sprintf(tmp_str, "%lld", esp_mesh_get_tsf_time());
+    mlink_json_pack(&handle_data->resp_data, "tsf_time", tmp_str);
 
     uint16_t group_num = esp_mesh_get_group_num();
 
@@ -437,8 +440,23 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
     int cid         = 0;
     mdf_err_t ret   = MDF_OK;
     size_t cids_num = 0;
+    char tsf_time_str[16] = {0x0};
     characteristic_value_t value = {0};
     char *characteristics_list[CHARACTERISTICS_MAX_NUM] = {NULL};
+
+    /**
+     * @brief If `tsf_time_us` is included, the device will delay running set commands
+     */
+    if (mlink_json_parse(handle_data->req_data, "tsf_time_us", tsf_time_str) == MDF_OK) {
+        uint64_t tsf_time_us = 0;
+        scanf(tsf_time_str, "%llu", &tsf_time_us);
+
+        int64_t delay_running = (tsf_time_us - esp_mesh_get_tsf_time()) / 1000;
+
+        if (delay_running > 0 && delay_running < 3 * 1000) {
+            vTaskDelay(pdMS_TO_TICKS(delay_running));
+        }
+    }
 
     ret = mlink_json_parse(handle_data->req_data, "characteristics", &cids_num);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "Parse the json formatted string");
@@ -766,6 +784,157 @@ EXIT:
     return ret;
 }
 
+/**
+ * @brief iBeacon's data format
+ */
+typedef struct {
+    uint8_t flags[3];
+    uint8_t length;
+    uint8_t type;
+    uint16_t company_id;
+    uint16_t beacon_type;
+    uint8_t proximity_uuid[16];
+    uint16_t major;
+    uint16_t minor;
+    int8_t measured_power;
+} __attribute__((packed)) mlink_ble_ibeacon_t;
+
+mdf_err_t mlink_ble_ibeacon_set_config(mlink_handle_data_t *handle_data)
+{
+    /* Major and Minor part are stored in big endian mode in iBeacon packet,
+     * need to use this macro to transfer while creating or processing
+     * iBeacon data */
+#define ENDIAN_CHANGE_U16(x) ((((x)&0xFF00)>>8)|(((x)&0xFF)<<8))
+
+    mdf_err_t ret        = ESP_OK;
+    char device_name[32] = {0};
+    char uuid_str[33]    = {0};
+    mlink_ble_config_t config = {0x0};
+
+    /**
+     * @brief for iBeacon packet format, please refer to Apple "Proximity Beacon Specification" doc,
+     *  https://developer.apple.com/ibeacon/Getting-Started-with-iBeacon.pdf*/
+    /* constant part of iBeacon data */
+    mlink_ble_ibeacon_t *ibeacon_adv_data = (mlink_ble_ibeacon_t *)config.custom_data;
+
+    ret = mlink_ble_get_config(&config);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "mlink_ble_get_config");
+
+    mlink_json_parse(handle_data->req_data, "name", device_name);
+    mlink_json_parse(handle_data->req_data, "major", &ibeacon_adv_data->major);
+    mlink_json_parse(handle_data->req_data, "minor", &ibeacon_adv_data->minor);
+    mlink_json_parse(handle_data->req_data, "power", &ibeacon_adv_data->measured_power);
+
+    if (mlink_json_parse(handle_data->req_data, "uuid", uuid_str) == MDF_OK) {
+        uint8_t uuid[20] = {0x0};
+
+        for (int i = 0; i < strlen(uuid_str) && i < 16; ++i) {
+            sscanf(uuid_str + i * 2, "%02x", (int *)(uuid + i));
+        }
+
+        memcpy(ibeacon_adv_data->proximity_uuid, uuid, sizeof(ibeacon_adv_data->proximity_uuid));
+    }
+
+    strncpy(config.name, device_name, sizeof(config.name) - 1);
+    config.custom_size = sizeof(mlink_ble_ibeacon_t);
+
+    ret = mlink_ble_set_config(&config);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mlink_ble_set_config, ret: %d", ret);
+
+    return ESP_OK;
+}
+
+mdf_err_t mlink_ble_ibeacon_get_config(mlink_handle_data_t *handle_data)
+{
+    mdf_err_t ret             = ESP_OK;
+    char uuid_str[33]         = {0};
+    mlink_ble_config_t config = {0x0};
+
+    ret = mlink_ble_get_config(&config);
+    MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "mlink_ble_set_config, ret: %d", ret);
+
+    mlink_ble_ibeacon_t *ibeacon_adv_data = (mlink_ble_ibeacon_t *)config.custom_data;
+
+    for (int i = 0; i < 16; ++i) {
+        sprintf(uuid_str + i * 2, "%02x", ibeacon_adv_data->proximity_uuid[i]);
+    }
+
+    mlink_json_pack(&handle_data->resp_data, "name", config.name);
+    mlink_json_pack(&handle_data->resp_data, "uuid", uuid_str);
+    mlink_json_pack(&handle_data->resp_data, "major", ibeacon_adv_data->major);
+    mlink_json_pack(&handle_data->resp_data, "minor", ibeacon_adv_data->minor);
+    mlink_json_pack(&handle_data->resp_data, "power", ibeacon_adv_data->measured_power);
+
+    handle_data->resp_size = strlen(handle_data->resp_data);
+
+    return ESP_OK;
+}
+
+static mdf_err_t mlink_sniffer_get_data(mlink_handle_data_t *handle_data)
+{
+    mdf_err_t ret = MDF_OK;
+
+    handle_data->resp_fromat = MLINK_HTTPD_FORMAT_HEX;
+    ret = mlink_sniffer_data((uint8_t **)&handle_data->resp_data, (size_t *)&handle_data->resp_size);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "get_sniffer_list, size: %d", handle_data->resp_size);
+
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, handle_data->resp_data, handle_data->resp_size, ESP_LOG_DEBUG);
+
+    return ESP_OK;
+}
+
+static mdf_err_t mlink_sniffer_set_cfg(mlink_handle_data_t *handle_data)
+{
+    mdf_err_t ret = MDF_OK;
+    mlink_sniffer_config_t config = {0x0};
+
+    mlink_sniffer_get_config(&config);
+
+    mlink_json_parse(handle_data->req_data, "type", &config.enable_type);
+    mlink_json_parse(handle_data->req_data, "notice_threshold", &config.notice_percentage);
+    mlink_json_parse(handle_data->req_data, "esp_module_filter", &config.esp_filter);
+    mlink_json_parse(handle_data->req_data, "ble_scan_interval", &config.ble_scan_interval);
+    mlink_json_parse(handle_data->req_data, "ble_scan_window", &config.ble_scan_window);
+
+    mlink_sniffer_set_config(&config);
+
+    if (config.enable_type == MLINK_SNIFFER_NONE) {
+        mlink_sniffer_deinit();
+    } else {
+        mlink_sniffer_init();
+    }
+
+    if (config.enable_type & MLINK_SNIFFER_WIFI) {
+        ret = mlink_sniffer_wifi_start();
+    } else {
+        ret = mlink_sniffer_wifi_stop();
+    }
+
+    if (config.enable_type & MLINK_SNIFFER_BLE) {
+        ret = mlink_sniffer_ble_start();
+    } else {
+        ret = mlink_sniffer_ble_stop();
+    }
+
+    return ret;
+}
+
+static mdf_err_t mlink_sniffer_get_cfg(mlink_handle_data_t *handle_data)
+{
+    mlink_sniffer_config_t config = {0x0};
+    mlink_sniffer_get_config(&config);
+
+    mlink_json_pack(&handle_data->resp_data, "type", (uint8_t)config.enable_type);
+    mlink_json_pack(&handle_data->resp_data, "notice_threshold", config.notice_percentage);
+    mlink_json_pack(&handle_data->resp_data, "esp_module_filter", config.esp_filter);
+    mlink_json_pack(&handle_data->resp_data, "ble_scan_interval", config.ble_scan_interval);
+    mlink_json_pack(&handle_data->resp_data, "ble_scan_window", config.ble_scan_window);
+
+    handle_data->resp_size = strlen(handle_data->resp_data);
+
+    return ESP_OK;
+}
+
 static mlink_handle_t g_handles_list[MLINK_HANDLES_MAX_SIZE] = {
     {"reset",            mlink_handle_system_reset},
     {"reboot",           mlink_handle_system_reboot},
@@ -782,7 +951,12 @@ static mlink_handle_t g_handles_list[MLINK_HANDLES_MAX_SIZE] = {
     {"set_group",        mlink_handle_set_group},
     {"get_group",        mlink_handle_get_group},
     {"remove_group",     mlink_handle_remove_group},
-    {NULL,              NULL},
+    {"get_sniffer_info", mlink_sniffer_get_data},
+    {"get_sniffer_config", mlink_sniffer_get_cfg},
+    {"set_sniffer_config", mlink_sniffer_set_cfg},
+    {"get_ibeacon_config", mlink_ble_ibeacon_get_config},
+    {"set_ibeacon_config", mlink_ble_ibeacon_set_config},
+    {NULL,                 NULL},
 };
 
 mdf_err_t mlink_set_handle(const char *name, const mlink_handle_func_t func)
@@ -878,4 +1052,28 @@ EXIT:
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "mdf_write");
 
     return MDF_OK;
+}
+
+mdf_err_t mlink_handle_request(mlink_handle_data_t *handle_data)
+{
+    MDF_PARAM_CHECK(handle_data);
+
+    mdf_err_t ret           = MDF_FAIL;
+    char      func_name[32] = {0x0};
+
+    ret = mlink_json_parse(handle_data->req_data, "request", func_name);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "mlink_json_parse, ret: %d, key: %s, value: %.*s",
+                    ret, func_name, handle_data->req_size, handle_data->req_data);
+
+    ret = MDF_ERR_NOT_SUPPORTED;
+
+    /**< If we can find this request from our list, we will handle this request */
+    for (int i = 0; g_handles_list[i].func; i++) {
+        if (!strcasecmp(func_name, g_handles_list[i].name)) {
+            MDF_LOGD("Function: %s", func_name);
+            ret = g_handles_list[i].func(handle_data);
+        }
+    }
+
+    return ret;
 }

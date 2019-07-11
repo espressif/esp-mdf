@@ -33,6 +33,8 @@
 #include "mlink_handle.h"
 #include "mlink_trigger.h"
 #include "mlink_espnow.h"
+#include "mlink_ble.h"
+#include "mlink_sniffer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +45,7 @@ extern "C" {
 #define MDF_EVENT_MLINK_SET_STATUS     (MDF_EVENT_MLINK_BASE + 0x02)
 #define MDF_EVENT_MLINK_GET_STATUS     (MDF_EVENT_MLINK_BASE + 0x03)
 #define MDF_EVENT_MLINK_SET_TRIGGER    (MDF_EVENT_MLINK_BASE + 0x04)
+#define MDF_EVENT_MLINK_BUFFER_FULL    (MDF_EVENT_MLINK_BASE + 0x05)
 
 /**
  * @brief Type of protocol
