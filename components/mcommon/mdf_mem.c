@@ -107,13 +107,13 @@ void mdf_mem_print_record(void)
 
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].ptr || g_mem_info[i].size != 0) {
-            MDF_LOGW("(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
+            MDF_LOGI("(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
                      g_mem_info[i].ptr, g_mem_info[i].size);
             total_size += g_mem_info[i].size;
         }
     }
 
-    MDF_LOGW("Memory record, num: %d, size: %d", g_mem_count, total_size);
+    MDF_LOGI("Memory record, num: %d, size: %d", g_mem_count, total_size);
 }
 
 void mdf_mem_print_heap(void)
@@ -122,7 +122,7 @@ void mdf_mem_print_heap(void)
     char *task_list_buffer = MDF_MALLOC(uxTaskGetNumberOfTasks() * 64);
     vTaskList(task_list_buffer);
 
-    MDF_LOGW("Task Lists:\nTask Name\tStatus\tPrio\tHWM\tTask\n%s\nCurrent task, Name: %s, HWM: %d\n",
+    MDF_LOGI("Task Lists:\nTask Name\tStatus\tPrio\tHWM\tTask\n%s\nCurrent task, Name: %s, HWM: %d\n",
              task_list_buffer, pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
 
     MDF_FREE(task_list_buffer);
@@ -130,10 +130,10 @@ void mdf_mem_print_heap(void)
 
 
 #ifndef CONFIG_SPIRAM_SUPPORT
-    MDF_LOGW("Free heap, current: %d, minimum: %d",
+    MDF_LOGI("Free heap, current: %d, minimum: %d",
              esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
 #else
-    MDF_LOGW("Free heap, internal current: %d, minimum: %d, total current: %d, minimum: %d",
+    MDF_LOGI("Free heap, internal current: %d, minimum: %d, total current: %d, minimum: %d",
              heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL),
              heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL),
              esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
