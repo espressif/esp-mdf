@@ -120,7 +120,7 @@ static void ota_task()
     uint8_t dest_addr[][MWIFI_ADDR_LEN] = {MWIFI_ADDR_ANY};
 
     /**
-     * @brief In order to allow more nodes to join the mesh network for firmware upgrade, 
+     * @brief In order to allow more nodes to join the mesh network for firmware upgrade,
      *      in the example we will start the firmware upgrade after 30 seconds.
      */
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
@@ -147,6 +147,10 @@ static void ota_task()
         ret = esp_http_client_open(client, 0);
 
         if (ret != MDF_OK) {
+            if (!esp_mesh_is_root()) {
+                goto EXIT;
+            }
+
             vTaskDelay(pdMS_TO_TICKS(1000));
             MDF_LOGW("<%s> Connection service failed", mdf_err_to_name(ret));
         }
