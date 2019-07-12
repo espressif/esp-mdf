@@ -88,8 +88,8 @@ mdf_err_t mupgrade_firmware_download(const void *data, size_t size)
                     g_upgrade_config->status.error_code, "mupgrade_firmware_init");
 
     if (g_upgrade_config->status.written_size == 0) {
-        /**< Send MDF_EVENT_MUPGRADE_STARTED event to the event handler */
-        mdf_event_loop_send(MDF_EVENT_MUPGRADE_STARTED, NULL);
+        /**< Send MDF_EVENT_MUPGRADE_FIRMWARE_DOWNLOAD event to the event handler */
+        mdf_event_loop_send(MDF_EVENT_MUPGRADE_FIRMWARE_DOWNLOAD, NULL);
     }
 
     /**< Write OTA update data to partition */

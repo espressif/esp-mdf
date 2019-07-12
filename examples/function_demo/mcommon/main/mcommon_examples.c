@@ -29,27 +29,61 @@ static const char *TAG = "mcommom_examples";
 /**
  * @brief Store data in flash
  */
+static void log_test()
+{
+    /**
+     * @brief Set log level for given tag
+     *        You can set the log level for different files for debugging.
+     */
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+
+    /**
+     * @brief 1. The difference between MDF_LOGX and ESP_LOGX:
+     *           - Added line number
+     *           - Add TAG parameters by default
+     *           - Separate log enabled macro
+     *        2. Support log input and redirection, can receive wirelessly via `wireless_debug`
+     */
+    MDF_LOGV("Bigger chunks of debugging information, or frequent messages which can potentially flood the output");
+    MDF_LOGD("Extra information which is not necessary for normal use (values, pointers, sizes, etc)");
+    MDF_LOGI("Information messages which describe normal flow of events");
+    MDF_LOGW("Error conditions from which recovery measures have been taken");
+    MDF_LOGE("Critical errors, software module can not recover on its own");
+}
+
+/**
+ * @brief Store data in flash
+ */
 static void info_store_test()
 {
-    mdf_err_t ret = MDF_OK;
     const char *key = "test"; /**< least 15 characters */
-    size_t length   = 0;      /**< Maximum length is 1984 bytes */
     uint32_t value  = 0;
 
+    /**
+     * @brief Initialize the default NVS partition
+     */
     MDF_ERROR_ASSERT(mdf_info_init());
 
+    /**
+     * @brief Save the information with given key
+     *
+     * @note Ensure that key is less than 15 characters.
+     */
     value = 10;
     MDF_ERROR_ASSERT(mdf_info_save(key, &value, sizeof(uint32_t)));
+
+    /**
+     * @brief Load the information
+     */
     value = 0;
-    length = sizeof(uint32_t);
-    MDF_ERROR_ASSERT(mdf_info_load(key, &value, &length));
+    MDF_ERROR_ASSERT(mdf_info_load(key, &value, sizeof(uint32_t)));
     MDF_LOGI("value: %d", value);
 
+    /**
+     * @brief  Erase the information with given key
+     */
     MDF_ERROR_ASSERT(mdf_info_erase(key));
-    value  = 0;
-    length = sizeof(uint32_t);
-    ret = mdf_info_load(key, &value, &length);
-    MDF_LOGW("<%s> mdf_info_load, value: %d", mdf_err_to_name(ret), value);
 }
 
 /**
@@ -57,17 +91,23 @@ static void info_store_test()
  */
 static void memory_test()
 {
-    uint8_t *data  = NULL;
-
-    mdf_mem_print_heap();
+    uint8_t *data = NULL;
 
     /**
      * @brief Leak checking: find memory which is allocated and never freed
      */
     for (int i = 0; i < 10; ++i) {
-        data = MDF_MALLOC(10);
+        data = (uint8_t *)MDF_MALLOC(10);
     }
 
+    /**
+     * @brief Print memory and free space on the stack
+     */
+    mdf_mem_print_heap();
+
+    /**
+    * @brief Print all MDF_XALLOC assignments but not free memory
+    */
     mdf_mem_print_record();
 
     /**
@@ -86,6 +126,7 @@ static void memory_test()
      */
 
 #ifndef CONFIG_SPIRAM_SUPPORT
+
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
     }
@@ -95,6 +136,7 @@ static void memory_test()
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
     }
+
 #endif
 
     // MDF_FREE(data);
@@ -128,6 +170,10 @@ static void event_loop_test()
 {
     int value = 1;
 
+    /**
+     * @brief Esp-mdf All events are maintained by a unified event_loop_task,
+     *        you can send custom events as follows
+     */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_test_cb));
     MDF_ERROR_ASSERT(mdf_event_loop_send(EVENT_TEST, (void *)value));
     MDF_ERROR_ASSERT(mdf_event_loop_delay_send(EVENT_DELAY_TEST, (void *)value, 1000 / portTICK_RATE_MS));
@@ -138,6 +184,11 @@ static void event_loop_test()
  */
 void app_main()
 {
+    MDF_LOGI("***************************************************");
+    MDF_LOGI("                   Log output                      ");
+    MDF_LOGI("***************************************************");
+    log_test();
+
     MDF_LOGI("***************************************************");
     MDF_LOGI("                   info store                      ");
     MDF_LOGI("***************************************************");
