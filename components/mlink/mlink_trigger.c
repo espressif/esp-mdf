@@ -350,6 +350,8 @@ mdf_err_t mlink_trigger_handle(mlink_communicate_t communicate)
     mdf_err_t ret = ESP_OK;
     int value     = -1;
 
+    MDF_ERROR_CHECK(!g_trigger_list, MDF_ERR_NOT_INIT, "mlink_trigger is not initialized");
+
     for (mlink_trigger_t *trigger_idex = g_trigger_list->next; trigger_idex; trigger_idex = trigger_idex->next) {
         trigger_compare_t *cmp = &trigger_idex->trigger_compare;
         ret = mlink_device_get_value(trigger_idex->trigger_cid, &value);

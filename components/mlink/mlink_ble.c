@@ -313,7 +313,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             MDF_LOGI("ESP_GATTS_EXEC_WRITE_EVT");
 
             if (p_data->exec_write.exec_write_flag) {
-                MDF_LOGW("print_write_buffer: %s", s_write_prep_ringbuffer);
+                MDF_LOGD("print_write_buffer: %s", s_write_prep_ringbuffer);
                 g_gatts_event_write_cb(s_write_prep_ringbuffer, s_write_prep_size);
             }
 
@@ -369,7 +369,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 static void gatts_event_handler(esp_gatts_cb_event_t event,
                                 esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
-    MDF_LOGI("gatts_event_handler, event: %d, gatts_if: %d", event, gatts_if);
+    MDF_LOGD("gatts_event_handler, event: %d, gatts_if: %d", event, gatts_if);
 
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
