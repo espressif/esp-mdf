@@ -250,7 +250,7 @@ static int mesh_status_func(int argc, char **argv)
     }
 
     if (mesh_status_args.stop->count) {
-        MDF_LOGW("task, name: %s, HWM: %d", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+        MDF_LOGD("task, name: %s, HWM: %d", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         ret = mwifi_stop();
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "Stop ESP-MESH");
     }
@@ -534,7 +534,7 @@ static void mesh_iperf_server_task(void *arg)
                      lost_count, total_count, lost_count * 100 / total_count);
 
             data_type.custom = recv_count;
-            MDF_LOGW("data_type.custom: %d",  data_type.custom);
+            MDF_LOGD("data_type.custom: %d",  data_type.custom);
             ret = mwifi_write(g_mesh_iperf_cfg.addr, &data_type, &ret, 1, true);
             MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", mdf_err_to_name(ret));
         }
@@ -809,7 +809,7 @@ void app_main()
     * @brief Set the log level for serial port printing.
     */
     esp_log_level_set("*", ESP_LOG_INFO);
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    // esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
     /**
      * @brief Initialize wifi mesh.
