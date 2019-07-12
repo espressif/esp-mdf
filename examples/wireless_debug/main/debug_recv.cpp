@@ -58,11 +58,11 @@ typedef struct log_record_ {
 static const char *TAG = "debug_recv";
 
 static SLIST_HEAD(log_record_list_, log_record_) s_log_record_list;
-static CEspLcd* lcd_obj = NULL;
+static CEspLcd *lcd_obj = NULL;
 
 extern "C" {
-    unsigned char * base64_encode(const unsigned char *src, size_t len,
-                                  size_t *out_len);
+    unsigned char *base64_encode(const unsigned char *src, size_t len,
+                                 size_t *out_len);
 }
 
 static esp_err_t log_analysis(const uint8_t *mac, const uint8_t *data)
@@ -214,6 +214,7 @@ static void espnow_recv_task(void *arg)
                                                                        ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
                                 esp_partition_erase_range(coredump_part, 0, coredump_part->size);
                             }
+
                             break;
                         }
 
@@ -246,6 +247,7 @@ static void espnow_recv_task(void *arg)
                             }
 
                             char file_name[32] = {0x0};
+
                             if (sdcard_is_mount()) {
                                 sprintf(file_name, "%02x-%02x-%02x-%02x-%02x-%02x_%d.dmp", MAC2STR(expect_addr), packet->size);
                                 sdcard_rename_file("tmp.dmp", file_name);
@@ -255,11 +257,11 @@ static void espnow_recv_task(void *arg)
                             MDF_LOGI("================= CORE DUMP START =================");
 
                             for (int offset = 0; offset < written_size; offset += recv_size) {
-                                recv_size = MDEBUG_LOG_MAX_SIZE;
-
                                 if (sdcard_is_mount()) {
+                                    recv_size = MDEBUG_LOG_MAX_SIZE;
                                     sdcard_read_file(file_name, offset, recv_data, &recv_size);
                                 } else {
+                                    recv_size = MIN(MDEBUG_LOG_MAX_SIZE, written_size - offset);
                                     const esp_partition_t *coredump_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
                                                                            ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
                                     esp_partition_read(coredump_part, offset, recv_data, recv_size);
@@ -284,7 +286,7 @@ static void espnow_recv_task(void *arg)
 
                             break;
                         }
-                        
+
                         default:
                             break;
                     }

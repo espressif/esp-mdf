@@ -57,6 +57,7 @@ mdf_err_t mdebug_log_get_config(mdebug_log_config_t *config)
 mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
 {
     mdf_err_t ret = MDF_OK;
+
     if (config) {
         ret = mdf_info_save(MDEBUG_ESPNOW_STORE_KEY, config, sizeof(mdebug_log_config_t));
         memcpy(g_log_config, config, sizeof(mdebug_log_config_t));
@@ -70,16 +71,31 @@ mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
 mdf_err_t mdebug_espnow_write(const uint8_t *dest_addr, const void *data, size_t size,
                               mdebug_espnow_t type, TickType_t wait_ticks)
 {
+    static SemaphoreHandle_t s_espnow_write_lock = NULL;
+
+    if (!s_espnow_write_lock) {
+        s_espnow_write_lock = xSemaphoreCreateMutex();
+    }
+
     mdf_err_t ret = MDF_OK;
     mdebug_espnow_data_t *espnow_data = MDF_MALLOC(sizeof(mdebug_espnow_data_t) + size);
 
     espnow_data->type = type;
     memcpy(espnow_data->data, data, size);
 
-    ESP_ERROR_CHECK(mespnow_add_peer(ESP_IF_WIFI_STA, dest_addr, NULL));
+    /**< Wait for other tasks to be sent before send ESP-MESH data */
+    if (!xSemaphoreTake(s_espnow_write_lock, wait_ticks)) {
+        MDF_FREE(espnow_data);
+        return MDF_ERR_TIMEOUT;
+    }
+
+    mespnow_add_peer(ESP_IF_WIFI_STA, dest_addr, NULL);
     ret = mespnow_write(MESPNOW_TRANS_PIPE_DEBUG, dest_addr, espnow_data,
                         size + sizeof(mdebug_espnow_data_t), wait_ticks);
-    ESP_ERROR_CHECK(mespnow_del_peer(dest_addr));
+    mespnow_del_peer(dest_addr);
+
+    /**< ESP-MESH send completed, release send lock */
+    xSemaphoreGive(s_espnow_write_lock);
 
     MDF_FREE(espnow_data);
 
@@ -172,11 +188,13 @@ static void mdebug_espnow_send_task(void *arg)
     size_t recv_size             = 0;
     uint8_t *recv_data           = MDF_MALLOC(MESPNOW_PAYLOAD_LEN);
     mdebug_espnow_t recv_type    = 0;
+
     for (;;) {
-        recv_size = MESPNOW_PAYLOAD_LEN -1;
+        recv_size = MESPNOW_PAYLOAD_LEN - 1;
 
         if (mdebug_espnow_read(src_addr, recv_data, &recv_size, &recv_type, portMAX_DELAY) == MDF_OK) {
             MDF_LOGV("recv_size: %d, recv_data: %s", recv_size, recv_data);
+
             switch (recv_type) {
                 case MDEBUG_ESPNOW_CONSOLE: {
                     recv_data[recv_size] = '\0';
