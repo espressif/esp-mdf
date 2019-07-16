@@ -74,7 +74,6 @@ ESP-Mesh App 可帮助您调研和了解 ESP-MESH，并进行二次开发。上�
 
 * 输入配置信息：
     * **Wi-Fi 名称**：手机所连 Wi-Fi 名称。注意仅支持 2.4 G；
-
     * **Mesh ID**：ESP-MESH 网络唯一标识符，默认为路由器的 Mac 地址，相同的 `Mesh ID` 将组成一个网络；
     * **密码**：Wi-Fi 密码；
     * **More**：点此即可查看和修改有关 ESP-MESH 网络内部的默认配置。更多配置详情，请参照 [ESP-MESH 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_mesh.html)。
@@ -106,6 +105,7 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
     </table>
 
 ### 2. 添加设备
+
 如果 App 发现处于配网模式的 ESP-MESH 设备，会自动弹出设备添加框，点击`加入网络`即完成配网。
 
 <table>
@@ -144,6 +144,7 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
    </table>
 
 ### 4. “群组”界面
+
 * **默认群组**：App 默认按照设备类型对设备进行分组，默认群组禁止解散
 * **添加群组**：您可以添加自定群组，对设备进行分组控制
 
@@ -155,6 +156,7 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
    </table>
 
 ### 5. “我的”界面
+
 * **设置**：App 的版本信息，App 升级及常见问题解答；
 
 * **拓扑结构**：ESP-MESH 网络结构及组网信息。您可以通过长按节点，获取设备的组网信息。
@@ -172,7 +174,6 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
 长按已添加设备列表中的 ESP-MESH 设备，在弹出的对话框中选择`固件升级`，选择以下任一方式升级固件：
 
 * 固件拷贝升级：您可以将固件直接拷贝到手机的 `文件管理/手机存储/Espressif/Esp32/upgrade` 文件夹中。
- 
 * 远程链接升级：您可以将固件存放在云端（如 GitHub 上）或局域网内创建的 HTTP 服务器，在 App 端输入固件链接地址。
 
 <table>
@@ -184,4 +185,5 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
 </table>
 
 ## 驱动说明
+
 ESP32-MeshKit 的硬件驱动全部使用了 [esp-iot-solution](https://github.com/espressif/esp-iot-solution) 中的相关驱动代码，可通过仓库链接进行代码更新。

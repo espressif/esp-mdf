@@ -206,4 +206,5 @@ Long press on a certain ESP-MESH device on the list of added devices and in the 
 </table>
 
 ## Drivers
+
 All the hardware drivers for ESP32-MeshKit use the corresponding driver code in [esp-iot-solution](https://github.com/espressif/esp-iot-solution). You can visit this repository for any code update.

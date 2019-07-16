@@ -15,9 +15,10 @@ ESP-MDF is based on the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/e
 
 * **LAN control**: Network can be controlled by an app, sensor, etc.
 
-* **Various application demos**: It offers comprehensive solutions based on ESP-MESH in the areas of lighting, indoor positioning, etc.
+* **Various application demos**: It offers comprehensive solutions based on ESP-MESH in the areas of lighting, etc.
 
 ## Framework
+
 ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils is the encapsulation and third-party library of ESP-IDF APIs. Components are the ESP-MDF functional modules that use Utils APIs. Examples are the ESP-MESH solutions based on the Components.
 
 <img src="docs/_static/mdf_framework.jpg">
@@ -39,35 +40,40 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
 - **Components**:
     - [Mconfig](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html): network configuration module
     - [Mupgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html): upgrade module
-    - Mdebug: debugging module
+    - [Mdebug](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html): debugging module
     - [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html): LAN control module
 
 - **Examples**:
-    - Function demo: demonstrates how functions can be used
-    - Development Kit: provides ESP32-MeshKit and ESP32-Buddy application demos
+    - [Function demo](examples/function_demo/): demonstrates how functions can be used
+    - [Development Kit](examples/development_kit/): provides ESP32-MeshKit and ESP32-Buddy application demos
+    - [Aliyun link Kit](examples/maliyun_linkkit/)：ESP32-Mesh access to Alibaba Cloud platform example
     - Solution: offers a routerless solution, as well as the solutions for indoor positioning, street light control, etc.
 
 ## Develop with ESP-MDF
+
 ### Development Boards
-#### ESP32-MeshKit
+
+#### ESP32-MeshKit Development board
+
 ESP32-MeshKit offers a complete [ESP-MESH Lighting Solution](https://www.espressif.com/en/products/software/esp-mesh/overview) (see the below figure), complemented by ESP-Mesh App ([iOS version](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8) and [Android](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)) for research, development and better understanding of ESP-MESH.
 
 <table>
-        <tr>
-            <td ><img src="docs/_static/ESP32-MeshKit_Light.jpg" width="550"><p align=center>ESP32-MeshKit Light</p></td>
-            <td ><img src="docs/_static/ESP32-MeshKit_Sense.jpg" width="600"><p align=center>ESP32-MeshKit Sense</p></td>
-        </tr>
-    </table>
+    <tr>
+        <td ><img src="docs/_static/ESP32-MeshKit_Light.jpg" width="550"><p align=center>ESP32-MeshKit Light</p></td>
+        <td ><img src="docs/_static/ESP32-MeshKit_Sense.jpg" width="600"><p align=center>ESP32-MeshKit Sense</p></td>
+    </tr>
+</table>
 
 * Products:
     * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): The RGBCW smart lights that show control results visually. They can be used to test network configuration time, response speed, stability performance, and measure distance, etc.
 
     * [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md): This kit is equipped with a light sensor as well as a temperature & humidity sensor. It can measure power consumption and develop low power applications. The kit may also be used with ESP-Prog for firmware downloading and debugging.
 
-    * ESP32-MeshKit-Button: Serves as an on/off controller, ready for the development of low power applications. It can be used with ESP-Prog for firmware downloading and debugging (Coming soon).
+    * [ESP32-MeshKit-Button](examples/development_kit/button/docs/ESP32-MeshKit-Button_Schematic.pdf): Serves as an on/off controller, ready for the development of low power applications. It can be used with ESP-Prog for firmware downloading and debugging.
 
-#### ESP32-Buddy
-ESP32-Buddy is a development board specifically designed to test the development of ESP-MESH. With its small size and USB power input, the board can be conveniently used for testing a large number of devices and measure distances between them (Coming soon).
+#### ESP32-Buddy Development board
+
+ESP32-Buddy is a development board specifically designed to test the development of ESP-MESH. With its small size and USB power input, the board can be conveniently used for testing a large number of devices and measure distances between them.
 
 * Functions:
     * 16 MB flash: stores logs
@@ -177,9 +183,11 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 * **Wider transmission coverage**: The transmission distance between two devices is 30 m through walls, and 200 m without any obstacles in between (relevant to ESP32-DevKitC).
     * **Smart Home**: Even if there are only three to five devices in your home, they can form a network and communicate with one another through walls.
     * **Street light**: If ESP-MESH is used for the street lighting scenario, two long-distance devices can communicate with each other.
+
 * **High transmission speed**: For Wi-Fi transmission, the speed can reach up to 10 Mbps.
     * **Environment Control System**: Directly transfers the raw data collected by sensors and analyzes mass data for calibration of algorithms, thereby improving sensors' accuracy.
     * **Background Music System**: Both audio and video transmissions are supported.
+    
 * **Simultaneously run Wi-Fi and BLE protocol stacks**: ESP32 chips can run both Wi-Fi and BLE protocol stacks side by side and use ESP-MESH as the main network to transmit data, receive BLE probe beacon, send BLE broadcasts and connect BLE devices.
     * **Items tracing**: Monitors the BLE or Wi-Fi data packets from a device at multiple selected spots.
     * **Pedestrian counting**: Through monitoring Wi-Fi probe request frames.
@@ -198,4 +206,3 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 * For the hardware documents related to ESP32-MeshKit, please visit [Espressif Website](https://www.espressif.com/en/support/download/documents).
 * ESP32-MeshKit-Light purchase link: [Taobao](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail).
 * ESP32-Buddy purchase link: Coming soon.
-

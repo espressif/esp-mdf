@@ -12,13 +12,13 @@ ESP-MDF 在 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api
 * **稳定升级**：通过断点续传、数据压缩、版本回退和固件检查等机制达到高效升级；
 * **高效调试**：支持指令终端、通过无线进行日志传输和调试等多种调试方式；
 * **局域网控制**：支持 app 控制、传感器控制等；
-* **丰富的示例**：提供了基于 ESP-MESH 的照明、室内定位等综合解决方案。
+* **丰富的示例**：提供了基于 ESP-MESH 的照明等综合解决方案。
 
 ## 框架
 
 ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示），他们之间的关系：Utils 是 ESP-IDF APIs 的抽象封装以及第三方库，Components 是基于 Utils APIs 组成的 ESP-MDF 功能模块，Examples 是基于 Components 完成的 ESP-MESH 解决方案。
 
-<img src="docs/_static/mdf_framework.jpg">
+<img src="docs/_static/mdf_framework.jpg" author="Author by Natasha">
 
 - **Utils**：
     - Third Party：第三方的组件
@@ -38,32 +38,44 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
     - [Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html)：配网模块
     - [Mupgrade](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mupgrade.html)：升级模块
     - Mdebug：调试模块
-    - [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html)：局域网控制模块
+    - [Mlink](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mlink.html)：局域网控制模块
 
 - **Examples**：
-    - Function demo：各个功能块的使用示例
-    - Development Kit：ESP32-MeshKit 和 ESP32-Buddy 使用示例
+    - [Function demo](examples/function_demo/)：各个功能模块的使用示例
+    - [Development Kit](examples/development_kit/)：ESP32-MeshKit 和 ESP32-Buddy 使用示例
+    - [Aliyun link Kit](examples/maliyun_linkkit/)：ESP32-Mesh 接入阿里云平台示例
     - Solution：室内定位、无路由、路灯等解决方案
 
 ## 使用 ESP-MDF 进行开发
+
+### 开发流程
+
+1. 您首先需要了解 ESP-MESH 概念，可参考链接：[ESP-MESH](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-guides/mesh.html);
+2. 之后，您需要了解[ ESP-MDF 开发框架](https://docs.espressif.com/projects/esp-mdf/en/latest/index.html#)并通过 ESP-MDF 中的[示例](examples)学习使用 ESP-MDF 进行开发,例如：运行 Function demo 目录下的示例学习 ESP-MDF 各个模块;
+3. 您可以在 ESP-MDF 的 examples 目录下找到一系列示例工程，并基于这些示例工程进行您的项目开发;
+4. 当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
+
 ### 开发板指南
-#### ESP32-MeshKit
+
+#### ESP32-MeshKit 开发套件
+
 ESP32-MeshKit 包含一整套完整的 [ESP-MESH 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)（如下图所示），可配套 ESP-Mesh App（[iOS 版](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8)和[安卓版](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)）使用，用于调研和了解 ESP-MESH，也可以进行二次开发。
 
 <table>
-        <tr>
-            <td ><img src="docs/_static/ESP32-MeshKit_Light.jpg" width="550"><p align=center>ESP32-MeshKit Light</p></td>
-            <td ><img src="docs/_static/ESP32-MeshKit_Sense.jpg" width="600"><p align=center>ESP32-MeshKit Sense</p></td>
-        </tr>
-    </table>
+    <tr>
+        <td ><img src="docs/_static/ESP32-MeshKit_Light.jpg" width="550"><p align=center>ESP32-MeshKit Light</p></td>
+        <td ><img src="docs/_static/ESP32-MeshKit_Sense.jpg" width="600"><p align=center>ESP32-MeshKit Sense</p></td>
+    </tr>
+</table>
 
 * 产品：
     * [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：RGBCW 智能灯，直观反应控制结果，可用于测试组网时间、响应速度、距离测试、稳定性测试等。
     * [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md)：带有光强传感器和温湿度传感器，可用于功耗测量和低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和 Debug。
-    * ESP32-MeshKit-Button：作为开关控制，用于低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和 Debug（即将上线，敬请期待）。
+    * [ESP32-MeshKit-Button](docs/ESP32-MeshKit-Button_Schematic.pdf)：作为开关控制，用于低功耗应用的开发，可配套使用 ESP-Prog 进行固件烧录和调试。
 
-#### ESP32-Buddy
-ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，采用 USB 供电，方便做大数量设备的测试及距离测试（即将上线，敬请期待）。
+#### ESP32-Buddy 开发板
+
+ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，采用 USB 供电，方便做大数量设备的测试及距离测试。
 
 * 功能：
     * 16 MB 的 flash：存储运行日志
@@ -186,6 +198,3 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 * 关于 ESP32-MeshKit 硬件文档，请至[乐鑫官网](https://www.espressif.com/zh-hans/support/download/documents?keys=&field_technology_tid%5B%5D=18)查看。
 * ESP32-MeshKit-Light 购买链接：[淘宝](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail)。
 * ESP32-Buddy 购买链接：即将上架。
-
-
-
