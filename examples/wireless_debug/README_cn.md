@@ -223,6 +223,7 @@ wireless_debug/
     |-|-|-|-|
     |命令定义|wifi_config -SE|保存/擦除 Wi-Fi 配置信息|
     |示例|wifi_config -S|保存 Wi-Fi 配置信息|
+    |示例|wifi_config -E|擦除 Wi-Fi 配置信息|
 
 ### 扫描命令
 
