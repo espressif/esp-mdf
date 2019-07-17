@@ -44,12 +44,18 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
     - [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html): LAN control module
 
 - **Examples**:
-    - [Function demo](examples/function_demo/): demonstrates how functions can be used
-    - [Development Kit](examples/development_kit/): provides ESP32-MeshKit and ESP32-Buddy application demos
-    - [Aliyun link Kit](examples/maliyun_linkkit/)：ESP32-Mesh access to Alibaba Cloud platform example
-    - Solution: offers a routerless solution, as well as the solutions for indoor positioning, street light control, etc.
-
+- [Function demo](examples/function_demo/): Example of use of each function module
+         - Mwifi: An example of common networking methods: no router, no router. First develop based on this example, then add distribution, upgrade, wireless test and other functions based on it.
+         - Mupgrade: Upgrade example of the device
+         - Mconfig: Example of network configuration of the device
+         - Mcommon: Common Module Example, Event Processing Memory Management Example of Using Information Store
+     - [Console Test] (examples/function_demo/mwifi/console_test): Test the ESP-MESH throughput, network configuration, and packet delay by entering commands through the serial port.
+     - [Wireless Debug](examples/wireless_debug/): ESP-MDF debugging via wireless
+     - [Development Kit](examples/development_kit/): ESP32-MeshKit usage example for research and understanding of ESP-MESH
+     - [Aliyun link Kit](examples/maliyun_linkkit/): Example of ESP-MESH access to Alibaba Cloud platform
 ## Develop with ESP-MDF
+
+You first need to read [ESP-MESH Communication Protocol] (https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) and [ESP-MDF Compilation Guide] ( Https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest) and research and learn about ESP-MESH through the ESP32-MeshKit development kit. Secondly, based on [Function demo] (examples/function_demo/) for your project development, when you can encounter problems in development, you can first go to [Official Forum] (https://esp32.com/viewforum.php?f= 21&sid=27bd50a0e45d47b228726ee55437f57e) and [Official GitHub] (https://github.com/espressif/esp-mdf/issues) to find out if a similar problem already exists. If there is no similar problem, you can also ask directly on the website.
 
 ### Development Boards
 
@@ -93,7 +99,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     ```shell
     git clone --recursive https://github.com/espressif/esp-mdf.git
     ```
-    If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init`
+    If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init --recursive`
 
 3. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH to User Profile`](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/add-idf_path-to-profile.html).
     ```shell
@@ -198,7 +204,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 ## Related Documentation
 
 * For ESP-MDF related documents, please go to [ESP-MDF Programming Guide](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest).
-* [ESP-MESH](https://esp-idf.readthedocs.io/en/latest/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
+* [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
 * [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/) describes Espressif's IoT development framework.
 * To report a bug or request a function, please go to [Issues](https://github.com/espressif/esp-mdf/issues) on GitHub to submit them. Before submitting an issue, please check if it has already been covered.
 * If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](docs/en/contribute/index.rst).

@@ -33,6 +33,8 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
     - Mcommon：ESP-MDF 各组件之间的共用模块
         - Event loop：ESP-MDF 的事件处理
         - Error Check：ESP-MDF 的错误码管理
+        - Memory Management：ESP-MDF 的内存管理
+        - Information Storage：将配置信息存储到 flash 中
 
 - **Components**：
     - [Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html)：配网模块
@@ -42,18 +44,18 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
 
 - **Examples**：
     - [Function demo](examples/function_demo/)：各个功能模块的使用示例
-    - [Development Kit](examples/development_kit/)：ESP32-MeshKit 和 ESP32-Buddy 使用示例
-    - [Aliyun link Kit](examples/maliyun_linkkit/)：ESP32-Mesh 接入阿里云平台示例
-    - Solution：室内定位、无路由、路灯等解决方案
+        - Mwifi：常见组网方式的示例：无路由器、有路由器。先基于此示例进行开发,而后在其基础上添加配网、升级、无线测试等功能
+        - Mupgrade：设备的升级示例
+        - Mconfig：设备的配网示例
+        - Mcommon：通用模块示例,事件处理 内存管理 信息存储的使用示例
+    - [Console Test](examples/function_demo/mwifi/console_test)：通过串口输入命令的方式，测试 ESP-MESH 吞吐量、网络配置、发包时延。
+    - [Wireless Debug](examples/wireless_debug/)：通过无线的方式进行 ESP-MDF 调试
+    - [Development Kit](examples/development_kit/)：ESP32-MeshKit 使用示例, 用于调研和了解 ESP-MESH
+    - [Aliyun link Kit](examples/maliyun_linkkit/)：ESP-MESH 接入阿里云平台示例
 
 ## 使用 ESP-MDF 进行开发
 
-### 开发流程
-
-1. 您首先需要了解 ESP-MESH 概念，可参考链接：[ESP-MESH](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/api-guides/mesh.html);
-2. 之后，您需要了解[ ESP-MDF 开发框架](https://docs.espressif.com/projects/esp-mdf/en/latest/index.html#)并通过 ESP-MDF 中的[示例](examples)学习使用 ESP-MDF 进行开发,例如：运行 Function demo 目录下的示例学习 ESP-MDF 各个模块;
-3. 您可以在 ESP-MDF 的 examples 目录下找到一系列示例工程，并基于这些示例工程进行您的项目开发;
-4. 当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
+您首先需要详细阅读 [ESP-MESH 通信协议](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html)和[ESP-MDF 编译指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)，并通过 ESP32-MeshKit 开发套件调研和了解 ESP-MESH。其次基于 [Function demo](examples/function_demo/)进行您的项目开发，当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
 
 ### 开发板指南
 
@@ -93,7 +95,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     ```shell
     git clone --recursive https://github.com/espressif/esp-mdf.git
     ```
-    > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init`
+    > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init --recursive`
 
 3. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/add-idf_path-to-profile.html)。
     ```shell
@@ -173,7 +175,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 * **无需网关**：ESP-MESH 采用去中心化的结构，其无需网关避免了单点故障造成整个网络瘫痪，仅一个 ESP-MESH 设备也能正常工作；
 * **传输更安全**：数据链路层和应用层均可实施加密；
 * **传输更可靠**：两个设备之间的是可靠传输和流控，支持单播、组播和广播；
-* **网络容量大**：ESP-MESH 采用树状结构，单个设备最多直接连接 10 个设备，单个网络可容纳 1000 个节点以上；
+* **网络容量大**：ESP-MESH 采用树状结构，单个设备最多直接连接 10 个设备，单个网络可容纳 1000 个节点；
 * **传输范围广**：两个设备之间的传输距离隔墙 30 m，空旷环境 200 m（测试基于 ESP32-DevKitC）；
     * **智能家居**：即使仅有三五个设备且隔墙也能够组成网络，可以满足家庭环境中，设备数量少无法相互通信的问题；
     * **路灯方案**：可能满足路灯场景中两个相距较远的设备之间的通信。
@@ -189,7 +191,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
 
 ## 相关资源
 
-* 查看 ESP-MDF 项目文档请点击 [ESP-MDF 编程指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)。
+* [ESP-MDF 编程指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html) 是 ESP-MDF 开发框架的说明文档。
 * [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/index.html) 是乐鑫物联网开发框架的说明文档。
 * [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
 * 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 Issues 中是否已经有您的问题。
