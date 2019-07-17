@@ -2,7 +2,7 @@
 
 # ESP-NOW debug 接收板示例
 
-ESP-NOW debug 接收板需要和 ESP-MESH 设备处于同一个 Wi-Fi 信道上才可以接收 ESP-MESH 设备发送的调试数据。同时，如果 ESP-NOW debug 接收板和 ESP-MESH 设备处于同一个局域网下（连接同一个路由器），接收板还可以通过 mDNS 设备发现服务获取 Mesh 网络的基本信息，包括：Mesh-ID、根节点 IP、根节点 MAC 地址等。
+ESP-NOW debug 接收板需要和 ESP-MESH 设备处于同一个 Wi-Fi 信道上才可以接收 ESP-MESH 设备发送的调试数据。
 
 <div align=center>
 <img src="espnow_debug.png" width="800">
@@ -171,7 +171,6 @@ wireless_debug/
     |命令定义|wifi_sniffer -c <channel (1 ~ 13)>||
     |指令|wifi_sniffer -c|设置 sniffer 监听信道|
     |参数|channel|信道号|
-    ||| 11 // 监听 11 信道 |
     |示例|wifi_sniffer -c 11|sniffer 监听 11 信道|
 
 2. 设置监听数据包存储文件名
@@ -211,11 +210,11 @@ wireless_debug/
     |命令定义|wifi_config -c <channel (1 ~ 13)> -s <ssid> -b <bssid (xx:xx:xx:xx:xx:xx)> -p <password>||
     |指令|wifi_config -c -s -b -p|Wi-Fi 配置|
     |参数|channel|Wi-Fi 工作信道|
-    ||| 11 // 监听 11 信道 |
     ||ssid|AP 的 SSID|
     ||bssid|AP 的 BSSID|
     ||password|AP 的 密码|
     |示例|wifi_config -s "esp-liyin" -p "password"|Wi-Fi 配置，连接 SSID 为 esp-liyin 密码为 password 的 AP|
+    |示例|wifi_config -c 11|配置 ESP-MESH 设备工作信道为 11|
 
 2. 保存/擦除 Wi-Fi 配置信息
 

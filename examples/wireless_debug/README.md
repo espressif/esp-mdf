@@ -2,7 +2,7 @@
 
 # ESP-NOW Debug Receiver Board Demo
 
-ESP-NOW debug receiver board can receive debugging data from ESP-MESH devices only when the board is on the same Wi-Fi channel with the devices. Meanwhile, if the board is on the same local area network (connected to the same router) with the devices, the board can discover services via mDNS and get basic information of Mesh network, including Mesh ID, root node IP, root node MAC address and etc.  
+ESP-NOW debug receiver board can receive debugging data from ESP-MESH devices only when the board is on the same Wi-Fi channel with the devices.
 
 <div align=center>
 <img src="espnow_debug.png" width="800">
@@ -172,7 +172,6 @@ wireless_debug/
     |Command definition|wifi_sniffer -c <channel (1 ~ 13)>||
     |Command|wifi_sniffer -c|Configure sniffer monitoring channel|
     |Parameter|channel|Channel number|
-    ||| 11 // means to monitor channel 11 |
     |Example|wifi_sniffer -c 11|Sniffer monitors channel 11|
 
 2. Configure the name of the file used to save monitored data packages
@@ -212,11 +211,11 @@ wireless_debug/
     |Command definition|wifi_config -c <channel (1 ~ 13)> -s <ssid> -b <bssid (xx:xx:xx:xx:xx:xx)> -p <password>||
     |Command|wifi_config -c -s -b -p|Wi-Fi configuration|
     |Parameter|channel|Wi-Fi work channel|
-    ||| 11 // means to monitor channel 11 |
     ||ssid|AP SSID|
     ||bssid|AP BSSID|
     ||password|AP password|
     |Example|wifi_config -s "esp-liyin" -p "password"|Wi-Fi sets and connects to the AP with SSID as esp-liyin and password as "password".|
+    |Example|wifi_config -c 11|Configure the working channel of the ESP-MESH device to be 11|
 
 2. Save/erase Wi-Fi configuration information
 
