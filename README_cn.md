@@ -44,14 +44,23 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
 
 - **Examples**：
     - [Function demo](examples/function_demo/)：各个功能模块的使用示例
-        - Mwifi：常见组网方式的示例：无路由器、有路由器。先基于此示例进行开发,而后在其基础上添加配网、升级、无线测试等功能
-        - Mupgrade：设备的升级示例
-        - Mconfig：设备的配网示例
-        - Mcommon：通用模块示例,事件处理 内存管理 信息存储的使用示例
-    - [Console Test](examples/function_demo/mwifi/console_test)：通过串口输入命令的方式，测试 ESP-MESH 吞吐量、网络配置、发包时延。
-    - [Wireless Debug](examples/wireless_debug/)：通过无线的方式进行 ESP-MDF 调试
+        - [Mwifi](examples/function_demo/mwifi)：常见组网方式的示例：无路由器、有路由器。先基于此示例进行开发,而后在其基础上添加配网、升级、无线测试等功能
+        - [Mupgrade](examples/function_demo/mupgrade)：设备的升级示例
+        - [Mconfig](examples/function_demo/mconfig)：设备的配网示例
+        - [Mcommon](examples/function_demo/mcommon)：通用模块示例,事件处理 内存管理 信息存储的使用示例
+
+    - Debug：性能测试和调试工具
+        - [Console Test](examples/function_demo/mwifi/console_test)：通过串口输入命令的方式，测试 ESP-MESH 吞吐量、网络配置、发包时延。
+        - [Wireless Debug](examples/wireless_debug/)：通过无线的方式进行 ESP-MDF 调试
+
     - [Development Kit](examples/development_kit/)：ESP32-MeshKit 使用示例, 用于调研和了解 ESP-MESH
-    - [Aliyun link Kit](examples/maliyun_linkkit/)：ESP-MESH 接入阿里云平台示例
+        - [ESP32-MeshKit-Light](examples/development_kit/light/)：板载 ESP32 芯片的智能灯，用于 ESP-MESH 作为主干网络进行长供电的场景。支持 BLE + ESP-MESH, 可实现BLE网关, iBeacon 和 BLE 扫描
+        - [ESP32-MeshKit-Sense](examples/development_kit/sense/)：ESP-MESH 在 Deep-sleep + Light-sleep 模式下的低功耗方案，可用于：监测 MeshKit 外设功耗和根据传感器数据控制 MeshKit 外设
+        - [ESP32-MeshKit-Button](examples/development_kit/button/)：ESP-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_now.html) 给 ESP-MESH 设备发包。
+
+    - 云平台: ESP-MDF 对接云平台
+        - [Aliyun Linkkit](examples/maliyun_linkkit/)：ESP-MDF 接入阿里飞燕平台示例
+        - AWS：ESP-MDF 接入 AWS 平台示例
 
 ## 使用 ESP-MDF 进行开发
 

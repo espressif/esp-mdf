@@ -36,6 +36,8 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
     - Mcommon: modules shared by all ESP-MDF components
         - Event loop: deals with ESP-MDF events
         - Error Check: manages ESP-MDF's code errors
+        - Memory Management: Memory Management for ESP-MDF
+        - Information Storage: Store configuration information in flash
 
 - **Components**:
     - [Mconfig](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html): network configuration module
@@ -44,18 +46,29 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
     - [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html): LAN control module
 
 - **Examples**:
-- [Function demo](examples/function_demo/): Example of use of each function module
-         - Mwifi: An example of common networking methods: no router, no router. First develop based on this example, then add distribution, upgrade, wireless test and other functions based on it.
-         - Mupgrade: Upgrade example of the device
-         - Mconfig: Example of network configuration of the device
-         - Mcommon: Common Module Example, Event Processing Memory Management Example of Using Information Store
-     - [Console Test] (examples/function_demo/mwifi/console_test): Test the ESP-MESH throughput, network configuration, and packet delay by entering commands through the serial port.
-     - [Wireless Debug](examples/wireless_debug/): ESP-MDF debugging via wireless
-     - [Development Kit](examples/development_kit/): ESP32-MeshKit usage example for research and understanding of ESP-MESH
-     - [Aliyun link Kit](examples/maliyun_linkkit/): Example of ESP-MESH access to Alibaba Cloud platform
+    - [Function demo](examples/function_demo/): Example of use of each function module
+        - [Mwifi Example](examples/function_demo/mwifi): An example of common networking methods: no router, no router. First develop based on this example, then add distribution, upgrade, wireless test and other functions based on it.
+        - [Mupgrade Example](examples/function_demo/mupgrade): Upgrade example of the device
+        - [Mconfig Example](examples/function_demo/mconfig): Example of network configuration of the device
+        - [Mcommon Examples](examples/function_demo/mcommon): Common Module Example, Event Processing Memory Management Example of Using Information Store
+
+    - Debug: Performance Testing and Debugging Tools
+        - [Console Test](examples/function_demo/mwifi/console_test): Test the ESP-MESH throughput, network configuration, and packet delay by entering commands through the serial port.
+        - [Wireless Debug](examples/wireless_debug/): ESP-MDF debugging via wireless
+     - [Development Kit](examples/development_kit/): ESP32-MeshKit usage example for research and understanding of ESP-MESH
+        - [ESP32-MeshKit-Light](examples/development_kit/light/): Smart lighting solution with ESP-MESH functioning as the master network. The kit consists of light bulbs with integrated ESP32 chips. Support BLE + ESP-MDF for BLE gateway, ibeacon and BLE scanning
+        - [ESP32-MeshKit-Sense](examples/development_kit/sense/): Development board, specifically designed for applications where ESP-MESH is in Light-sleep or Deep-sleep mode. The board provides solutions for:
+           - Monitoring the power consumption of MeshKit peripherals
+           - Controlling MeshKit peripherals based on the data from multiple onboard sensors. 
+        - [ESP32-MeshKit-Button](examples/development_kit/button/): Smart button solution, tailored for ESP-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_now.html).
+
+
+     - Cloud Platform: ESP-MDF docking cloud platform
+        - [Aliyun Linkkit](examples/maliyun_linkkit/): Example of ESP-MDF access to Alibaba Cloud platform
+        - AWS: ESP-MDF Access AWS Platform Example
 ## Develop with ESP-MDF
 
-You first need to read [ESP-MESH Communication Protocol] (https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) and [ESP-MDF Compilation Guide] ( Https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest) and research and learn about ESP-MESH through the ESP32-MeshKit development kit. Secondly, based on [Function demo] (examples/function_demo/) for your project development, when you can encounter problems in development, you can first go to [Official Forum] (https://esp32.com/viewforum.php?f= 21&sid=27bd50a0e45d47b228726ee55437f57e) and [Official GitHub] (https://github.com/espressif/esp-mdf/issues) to find out if a similar problem already exists. If there is no similar problem, you can also ask directly on the website.
+You first need to read [ESP-MESH Communication Protocol](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) and [ESP-MDF Programming Guide](Https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest) and research and learn about ESP-MESH through the ESP32-MeshKit development kit. Secondly, based on [Function demo](examples/function_demo/) for your project development, when you can encounter problems in development, you can first go to [BBS](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e) and [Issues](https://github.com/espressif/esp-mdf/issues) to find out if a similar problem already exists. If there is no similar problem, you can also ask directly on the website.
 
 ### Development Boards
 
