@@ -152,12 +152,15 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
         case MESH_EVENT_NETWORK_STATE:
             g_rootless_flag = event.info.network_state.is_rootless;
-            g_toDs_status_flag = s_evet_info.toDS_state = MESH_TODS_UNREACHABLE;
 
             MDF_LOGI("Network state: %s", g_rootless_flag ? "root_less" : "root_connect");
 
+            if (g_rootless_flag) {
+                g_toDs_status_flag = s_evet_info.toDS_state = MESH_TODS_UNREACHABLE;
+                mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info);
+            }
+
             memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
-            mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info);
             break;
 
         default:
@@ -459,6 +462,7 @@ mdf_err_t mwifi_get_init_config(mwifi_init_config_t *init_config)
 
 mdf_err_t mwifi_set_config(mwifi_config_t *config)
 {
+    MDF_ERROR_CHECK(!g_mwifi_inited_flag, MDF_ERR_MWIFI_NOT_INIT, "Mwifi isn't initialized");
     MDF_PARAM_CHECK(config);
     MDF_PARAM_CHECK(!MWIFI_ADDR_IS_EMPTY(config->mesh_id));
     MDF_PARAM_CHECK(config->channel <= 14);
@@ -544,7 +548,6 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
             }
         } while (ret == ESP_ERR_MESH_NO_MEMORY && --retry_count);
 
-        
         /**< ESP-MESH send completed, release send lock */
         xSemaphoreGive(s_mwifi_send_lock);
         MDF_ERROR_CHECK(ret != ESP_OK, ret, "Node failed to send packets, dest_addr: " MACSTR
@@ -681,7 +684,7 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
                            mdf_err_to_name(ret), MAC2STR((addrs_list + i)->addr));
     }
 
-    return MDF_OK;
+    return ret;
 }
 
 mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_type,
