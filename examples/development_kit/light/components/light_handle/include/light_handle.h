@@ -73,6 +73,18 @@ enum light_status {
 mdf_err_t light_show_layer(mlink_handle_data_t *handle_data);
 
 /**
+ * @brief Get the TSF time.
+ *
+ * @param handle_data pointer of mlink_handle_data_t
+ *
+ * @return
+ *     - MDF_OK
+ *     - MDF_ERR_INVALID_ARG
+ *     - MDF_FAIL
+ */
+mdf_err_t light_get_tsf_time(mlink_handle_data_t *handle_data);
+
+/**
  * @brief Set light characteristic
  *
  * @param cid characteristic id
