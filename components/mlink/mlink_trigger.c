@@ -156,7 +156,7 @@ static mlink_trigger_t *mlink_trigger_parse(const char *raw_data)
 
     if (!strcasecmp(request_str, "sync")) {
         trigger_item->trigger_type = TRIGGER_SYNC;
-        ret = mlink_json_parse(trigger_content_str, "execute_cid", trigger_item->trigger_params);
+        ret = mlink_json_parse(trigger_content_str, "execute_cid", (int *)trigger_item->trigger_params);
         MDF_ERROR_GOTO(ret < 0, EXIT, "Parse the json formatted string");
     } else if (!strcasecmp(request_str, "linkage")) {
         trigger_item->trigger_type = TRIGGER_LINKAGE;

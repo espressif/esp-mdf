@@ -160,6 +160,40 @@ FREE_MEM:
     vTaskDelete(NULL);
 }
 
+static void delay_func_timer_cb(void *timer)
+{
+    char *data = (char *)pvTimerGetTimerID(timer);
+
+    mlink_handle_data_t handle_data = {
+        .req_data    = data,
+        .req_size    = strlen(data),
+        .req_fromat  = MLINK_HTTPD_FORMAT_JSON,
+        .resp_data   = NULL,
+        .resp_size   = 0,
+        .resp_fromat = MLINK_HTTPD_FORMAT_JSON,
+    };
+
+    if (mlink_handle_request(&handle_data) != MDF_OK) {
+        MDF_LOGW("Call the handler in the request list");
+    }
+
+    MDF_FREE(handle_data.resp_data);
+    MDF_FREE(data);
+    xTimerStop(timer, 0);
+    xTimerDelete(timer, 0);
+}
+
+static mdf_err_t delay_func_call(char *data, TickType_t wait_ticks)
+{
+    MDF_PARAM_CHECK(data);
+
+    MDF_LOGD("tsf_time: %lld, wait_ticks: %d, delay_data: %s", esp_mesh_get_tsf_time(), wait_ticks, data);
+    TimerHandle_t timer = xTimerCreate("delay_func", wait_ticks, false, data, delay_func_timer_cb);
+    xTimerStart(timer, 0);
+
+    return MDF_OK;
+}
+
 /**
  * @brief Handling data between wifi mesh devices.
  */
@@ -173,11 +207,6 @@ void node_handle_task(void *arg)
     mlink_httpd_type_t *header_info  = NULL;
 
     while (true) {
-        if (!mwifi_is_connected()) {
-            vTaskDelay(pdMS_TO_TICKS(100));
-            continue;
-        }
-
         ret = mwifi_read(src_addr, &mwifi_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> Receive a packet targeted to self over the mesh network",
                        mdf_err_to_name(ret));
@@ -194,6 +223,26 @@ void node_handle_task(void *arg)
         header_info = (mlink_httpd_type_t *)&mwifi_type.custom;
         MDF_ERROR_GOTO(header_info->format != MLINK_HTTPD_FORMAT_JSON, FREE_MEM,
                        "The current version only supports the json protocol");
+
+        /**
+         * @brief Delayed call to achieve synchronous execution
+         */
+        char tsf_time_str[16] = {0x0};
+        int64_t delay_ticks   = 0;
+
+        if (mlink_json_parse((char *)data, "tsf_time", tsf_time_str) == MDF_OK) {
+            int64_t tsf_time_us = 0;
+            sscanf(tsf_time_str, "%llu", &tsf_time_us);
+            delay_ticks = pdMS_TO_TICKS((tsf_time_us - esp_mesh_get_tsf_time()) / 1000);
+            MDF_LOGD("delay_ticks: %lld ms", delay_ticks);
+        }
+
+        if (delay_ticks > 0 && delay_ticks < 60 * 1000) {
+            char *delay_data = MDF_CALLOC(1, size + 1);
+            memcpy(delay_data, data, size);
+            delay_func_call(delay_data, delay_ticks);
+            goto FREE_MEM;
+        }
 
         /**
          * @brief Processing request commands, generating response data
@@ -221,7 +270,7 @@ void node_handle_task(void *arg)
          * @brief If this packet comes from a device on the mesh network,
          *  it will notify the App that the device's status has changed.
          */
-        if (header_info->from == MLINK_HTTPD_FROM_DEVICE) {
+        if (header_info->from == MLINK_HTTPD_FROM_DEVICE && mwifi_get_root_status()) {
             mwifi_type.protocol = MLINK_PROTO_NOTICE;
             ret = mwifi_write(NULL, &mwifi_type, "status", strlen("status"), true);
             MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mlink_handle", mdf_err_to_name(ret));
@@ -251,7 +300,6 @@ void node_handle_task(void *arg)
 
         MDF_FREE(handle_data.resp_data);
         MDF_ERROR_GOTO(ret != ESP_OK, FREE_MEM, "<%s> mdf_write", mdf_err_to_name(ret));
-
 
 FREE_MEM:
         MDF_FREE(data);
@@ -429,6 +477,10 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             ret = mlink_httpd_stop();
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_stop", mdf_err_to_name(ret));
+
+            ret = mwifi_post_root_status(false);
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_post_root_status", mdf_err_to_name(ret));
+
             break;
 
         case MDF_EVENT_MWIFI_FIND_NETWORK: {
@@ -491,6 +543,9 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
                 xTaskCreate(root_read_task, "root_read", 8 * 1024,
                             NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_read_task_handle);
             }
+
+            ret = mwifi_post_root_status(true);
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_post_root_status", mdf_err_to_name(ret));
 
             break;
         }
@@ -719,6 +774,7 @@ void app_main()
      * @brief Add a request handler, handling request for devices on the LAN.
      */
     MDF_ERROR_ASSERT(mlink_set_handle("show_layer", light_show_layer));
+    MDF_ERROR_ASSERT(mlink_set_handle("get_tsf_time", light_get_tsf_time));
 
     /**
      * @brief Initialize and start esp-mesh network according to network configuration information.

@@ -69,6 +69,18 @@ mdf_err_t light_show_layer(mlink_handle_data_t *handle_data)
     return MDF_OK;
 }
 
+mdf_err_t light_get_tsf_time(mlink_handle_data_t *handle_data)
+{
+    char tsf_time_str[16] = {0x0};
+
+    sprintf(tsf_time_str, "%lld", esp_mesh_get_tsf_time());
+    mlink_json_pack(&handle_data->resp_data, "tsf_time", tsf_time_str);
+
+    handle_data->resp_size = strlen(handle_data->resp_data);
+
+    return MDF_OK;
+}
+
 mdf_err_t mlink_set_value(uint16_t cid, void *arg)
 {
     int value = *((int *)arg);

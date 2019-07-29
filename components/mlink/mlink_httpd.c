@@ -160,8 +160,8 @@ static int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, si
 static void mlink_connection_remove(mlink_connection_t *mlink_conn)
 {
     if (mlink_conn && mlink_conn->timer) {
-        xTimerStop(mlink_conn->timer, portMAX_DELAY);
-        xTimerDelete(mlink_conn->timer, portMAX_DELAY);
+        xTimerStop(mlink_conn->timer, 0);
+        xTimerDelete(mlink_conn->timer, 0);
         memset(mlink_conn, 0, sizeof(mlink_connection_t));
     }
 }
