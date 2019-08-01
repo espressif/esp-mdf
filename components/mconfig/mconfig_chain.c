@@ -36,6 +36,7 @@
 #define VENDOR_OUI_TYPE_CONFIG       (0x0F)
 #define MCONFIG_CHAIN_EXIT_DELAY     (100)
 #define MCONFIG_CHAIN_SEND_RETRY_NUM (3)
+#define ESPNOW_BUFFER_LEN            (MESPNOW_PAYLOAD_LEN + CONFIG_MCONFIG_CUSTOM_EXTERN_LEN)
 
 /**
  * @brief Used to save wifi scanned information
@@ -134,7 +135,7 @@ static void mconfig_chain_master_task(void *arg)
 {
     mdf_err_t ret                  = 0;
     size_t espnow_size             = 0;
-    uint8_t *espnow_data           = MDF_MALLOC(MESPNOW_PAYLOAD_LEN);
+    uint8_t *espnow_data           = MDF_MALLOC(ESPNOW_BUFFER_LEN);
     char *pubkey_pem               = MDF_MALLOC(MCONFIG_RSA_PUBKEY_PEM_SIZE + 1);
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0};
     uint32_t start_ticks           = xTaskGetTickCount();
@@ -174,7 +175,7 @@ static void mconfig_chain_master_task(void *arg)
         /**
          * @brief 2. Receive device request for network information
          */
-        espnow_size = MESPNOW_PAYLOAD_LEN;
+        espnow_size = ESPNOW_BUFFER_LEN;
         ret = mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, espnow_data,
                            &espnow_size, MCONFIG_CHAIN_EXIT_DELAY / portTICK_RATE_MS);
 
@@ -237,6 +238,8 @@ static void mconfig_chain_master_task(void *arg)
             MDF_LOGD("<%s> mespnow_write AES key & config", mdf_err_to_name(ret));
             continue;
         }
+
+
 
         /**
          * @brief 5. Send device whitelist information
@@ -340,7 +343,7 @@ static void mconfig_chain_slave_task(void *arg)
 {
     mdf_err_t ret                   = MDF_OK;
     size_t espnow_size              = 0;
-    uint8_t *espnow_data            = MDF_MALLOC(MESPNOW_PAYLOAD_LEN);
+    uint8_t *espnow_data            = MDF_MALLOC(ESPNOW_BUFFER_LEN);
     char *privkey_pem               = MDF_CALLOC(1, MCONFIG_RSA_PRIVKEY_PEM_SIZE);
     char *pubkey_pem                = MDF_CALLOC(1, MCONFIG_RSA_PUBKEY_PEM_SIZE);
     g_mconfig_scan_queue            = xQueueCreate(10, sizeof(mconfig_scan_info_t));
@@ -381,13 +384,13 @@ static void mconfig_chain_slave_task(void *arg)
          * @brief Clean up the receive buffer of ESP-NOW
          */
         do {
-            espnow_size = MESPNOW_PAYLOAD_LEN;
+            espnow_size = ESPNOW_BUFFER_LEN;
             ret = mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, dest_addr,
                                espnow_data, &espnow_size, 0);
         } while (ret == MDF_OK);
 
         /**< Remove headers and footers to reduce data length */
-        memset(espnow_data, 0, MESPNOW_PAYLOAD_LEN);
+        memset(espnow_data, 0, ESPNOW_BUFFER_LEN);
         memcpy(espnow_data, pubkey_pem + strlen(PEM_BEGIN_PUBLIC_KEY),
                MCONFIG_RSA_PUBKEY_PEM_DATA_SIZE);
         espnow_data[MCONFIG_RSA_PUBKEY_PEM_DATA_SIZE] = rssi;
@@ -408,7 +411,7 @@ static void mconfig_chain_slave_task(void *arg)
          * @brief 3. Receive network configuration information
          */
         ESP_ERROR_CHECK(mespnow_add_peer(ESP_IF_WIFI_STA, dest_addr, (uint8_t *)CONFIG_MCONFIG_CHAIN_LMK));
-        espnow_size = MESPNOW_PAYLOAD_LEN;
+        espnow_size = ESPNOW_BUFFER_LEN;
         ret = mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, dest_addr,
                            espnow_data, &espnow_size, 1000 / portTICK_RATE_MS);
 

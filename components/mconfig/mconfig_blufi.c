@@ -631,7 +631,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                     case BLUFI_DATA_CUSTUM:
                         memset(&g_recv_config->custom, 0, sizeof(g_recv_config->custom));
                         memcpy(&g_recv_config->custom, blufi_data->data, MIN(blufi_data->len, sizeof(g_recv_config->custom)));
-                        MDF_LOGD("Data custom: %.*s", blufi_data->len, blufi_data->data);
+                        MDF_LOGD("Data custom: custom: %d, %.*s", sizeof(g_recv_config->custom), blufi_data->len, blufi_data->data);
                         break;
 
                     case BLUFI_DATA_ROUTER_SSID:
