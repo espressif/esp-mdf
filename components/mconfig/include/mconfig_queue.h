@@ -51,8 +51,8 @@ typedef struct {
 typedef struct {
     mwifi_config_t config;                 /**< Mwifi AP configuration */
     union {
-        mwifi_init_config_t init_config;   /**< Mwifi initialization configuration*/
-        uint8_t custom[32];                /**< Custom data for specific applications, such as: uuid, token, username, etc */
+        mwifi_init_config_t init_config;   /**< Mwifi initialization configuration, Used only during debugging */
+        uint8_t custom[32 + CONFIG_MCONFIG_CUSTOM_EXTERN_LEN]; /**< Custom data for specific applications, such as: uuid, token, username, etc */
     };
     uint16_t whitelist_size;               /**< The size of the device's whitelist */
     mconfig_whitelist_t whitelist_data[0]; /**< Whitelist of devices */

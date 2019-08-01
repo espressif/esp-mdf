@@ -40,4 +40,12 @@ menu "MDF Mconfig"
         help
             Espnow communication encrypted key in mconfig distribution network.
 
+    config MCONFIG_CUSTOM_EXTERN_LEN
+        int "Extend the length of custom data"
+        range 0 223
+        default 0
+        help
+            Different length versions are incompatible. Increasing the length
+            will affect the network configuration time.
+
 endmenu
