@@ -270,8 +270,8 @@ static void maliyun_linkkit_gateway_publish_task(void *arg)
 
         if (data_type.upgrade) {
             ret = mupgrade_root_handle(src_addr, data, size);
-            MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_handle", mdf_err_to_name(ret));
-            continue;
+            MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_root_handle", mdf_err_to_name(ret));
+            goto FREE_MEM;
         }
 
         MDF_LOGD("Root receive, addr: " MACSTR ", size: %d",
