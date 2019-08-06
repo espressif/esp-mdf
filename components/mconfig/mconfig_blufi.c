@@ -54,6 +54,8 @@
 #define BLUFI_STA_TOOMANY_ERR     (0x12)
 #define BLUFI_STA_CONFIG_ERR      (0x13)
 
+#define ESP_BLUFI_EVENT_RECV_MDF_CUSTOM ESP_BLUFI_EVENT_RECV_CA_CERT
+
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
    If user use other negotiation procedure to exchange(or generate) key, should redefine the type by yourself.
@@ -601,7 +603,15 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             esp_blufi_close(s_server_if, s_conn_id);
             break;
 
-        case ESP_BLUFI_EVENT_RECV_USERNAME:
+        case ESP_BLUFI_EVENT_RECV_MDF_CUSTOM: {
+            MDF_LOGD("data_len: %d, custom_data: %.*s",
+                     param->custom_data.data_len, param->custom_data.data_len, param->custom_data.data);
+
+            ret = mdf_event_loop(MDF_EVENT_MCONFIG_BLUFI_RECV, &param->custom_data);
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mdf_event_loop", mdf_err_to_name(ret));
+            break;
+        }
+
         case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA: {
             bool config_flag = true;
 
@@ -967,6 +977,19 @@ mdf_err_t mconfig_blufi_deinit()
 
     /**< Send MDF_EVENT_MCONFIG_BLUFI_STOPED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STOPED, NULL);
+
+    return MDF_OK;
+}
+
+mdf_err_t mconfig_blufi_send(uint8_t *data, size_t size)
+{
+    MDF_PARAM_CHECK(data);
+    MDF_PARAM_CHECK(size > 0);
+
+    mdf_err_t ret = MDF_OK;
+
+    ret = esp_blufi_send_custom_data(data, size);
+    MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_bt_controller_disable");
 
     return MDF_OK;
 }
