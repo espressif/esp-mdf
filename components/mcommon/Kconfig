@@ -27,11 +27,23 @@ menu "MDF Mcommon"
         default 1 if MDF_PINNED_TO_CORE_1
         default 0
 
+    config MDF_EVENT_TASK_STACK_SIZE
+        int "MDF Event loop task stack size"
+        default 4096
+        help
+            Config MDF event task stack size.
+
     config MDF_MEM_DEBUG
         bool "Memory debug"
         default y
         help
             Memory debug.
+
+    config MDF_MEM_DBG_INFO_MAX
+        int "MDF Memory debug record max."
+        default 128
+        help
+            Config MDF Memory debug record max.
 
     config MDF_ERR_TO_NAME_LOOKUP
         bool "Enable lookup of error code strings"
