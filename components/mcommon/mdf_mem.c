@@ -15,8 +15,6 @@
 #include "mdf_common.h"
 #include "mdf_mem.h"
 
-#define MDF_MEM_DBG_INFO_MAX     128
-
 typedef struct {
     void *ptr;
     int size;

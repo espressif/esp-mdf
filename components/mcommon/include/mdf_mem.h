@@ -27,6 +27,11 @@ extern "C" {
 #define MDF_MEM_DEBUG false
 #endif /**< CONFIG_MDF_MEM_DEBUG */
 
+#ifndef CONFIG_MDF_MEM_DBG_INFO_MAX
+#define CONFIG_MDF_MEM_DBG_INFO_MAX     (128)
+#endif  /**< CONFIG_MDF_MEM_DBG_INFO_MAX */
+#define MDF_MEM_DBG_INFO_MAX CONFIG_MDF_MEM_DBG_INFO_MAX
+
 /**
  * @brief Add to memory record
  *
