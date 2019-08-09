@@ -473,7 +473,6 @@ static void maliyun_linkkit_subscribe_task(void *arg)
             continue;
         }
 
-        MDF_FREE(data);
         size = MALIYUN_PAYLOAD_LEN;
         ret = mwifi_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> Receive a packet targeted to self over the mesh network",
@@ -481,8 +480,8 @@ static void maliyun_linkkit_subscribe_task(void *arg)
 
         if (data_type.upgrade) {
             ret = mupgrade_handle(src_addr, data, size);
-            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mupgrade_handle", mdf_err_to_name(ret));
-            continue;
+            MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mupgrade_handle", mdf_err_to_name(ret));
+            goto FREE_MEM;
         }
 
         MDF_LOGD("Node receive, addr: " MACSTR ", size: %d", MAC2STR(src_addr), size);
@@ -516,6 +515,9 @@ JSON_EXIT:
                 break;
             }
         }
+
+FREE_MEM:
+        MDF_FREE(data);
     }
 
     MDF_FREE(data);
