@@ -1,0 +1,25 @@
+menu "MINIZ"
+
+    config MINIZ_SPLIT_TINFL_DECOMPRESSOR_TAG
+        bool "Allocate memory multiple times in decompress"
+        default y
+        help
+           Make a static array in the struct tinfl_decompressor_tag a pointer and allocate 
+           memory for it when it is used 
+        
+    config MINIZ_SPLIT_TDEFL_COMPRESSOR
+        bool "Allocate memory multiple times in compress"
+        default y
+        help
+            Make a static array in the tdefl_compressor a pointer and allocate memory 
+            for it when it is used
+        
+    config MINIZ_MINIMIZE_STACK_CONSUME
+        bool "Low stack usage"
+        default y
+        help
+            Change the large array in the stack to a pointer and allocate memory for it to reduce stack consumption, 
+            The affected functions are tdefl_radix_sort_syms(), tdefl_optimize_huffman_table(),
+            tdefl_start_dynamic_block().
+        
+endmenu
