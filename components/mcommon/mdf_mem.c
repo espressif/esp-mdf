@@ -47,12 +47,12 @@ void mdf_mem_add_record(void *ptr, int size, const char *tag, int line)
     }
 
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
-        if (!g_mem_info[i].ptr) {
+        if (!g_mem_info[i].size) {
             g_mem_info[i].ptr  = ptr;
-            g_mem_info[i].size = size;
             g_mem_info[i].tag  = tag;
             g_mem_info[i].line = line;
             g_mem_info[i].timestamp = esp_log_timestamp();
+            g_mem_info[i].size = size;
             g_mem_count++;
             break;
         }
@@ -72,8 +72,8 @@ void mdf_mem_remove_record(void *ptr, const char *tag, int line)
     }
 
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
-        if (g_mem_info[i].ptr == ptr) {
-            memset(g_mem_info + i, 0, sizeof(mdf_mem_info_t));
+        if (g_mem_info[i].size && g_mem_info[i].ptr == ptr) {
+            g_mem_info[i].size = 0;
             g_mem_count--;
             break;
         }
@@ -94,7 +94,7 @@ void mdf_mem_print_record(void)
     }
 
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
-        if (g_mem_info[i].ptr || g_mem_info[i].size != 0) {
+        if (g_mem_info[i].size) {
             MDF_LOGI("(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
                      g_mem_info[i].ptr, g_mem_info[i].size);
             total_size += g_mem_info[i].size;
