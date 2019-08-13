@@ -530,7 +530,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             }
 
             if (!g_root_read_task_handle) {
-                xTaskCreate(root_read_task, "root_read", 8 * 1024,
+                xTaskCreate(root_read_task, "root_read", 4 * 1024,
                             NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_read_task_handle);
             }
 
