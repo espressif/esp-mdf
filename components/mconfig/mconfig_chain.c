@@ -584,7 +584,7 @@ mdf_err_t mconfig_chain_master(const mconfig_data_t *mconfig_data, TickType_t du
     g_chain_master_duration_ticks = duration_ticks;
     g_filter_rssi = -120;
 
-    xTaskCreatePinnedToCore(mconfig_chain_master_task, "mconfig_chain_master", 8 * 1024,
+    xTaskCreatePinnedToCore(mconfig_chain_master_task, "mconfig_chain_master", 4 * 1024,
                             chain_data, CONFIG_MDF_TASK_DEFAULT_PRIOTY,
                             NULL, CONFIG_MDF_TASK_PINNED_TO_CORE);
 
