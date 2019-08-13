@@ -782,7 +782,7 @@ void app_main()
     /**
      * @brief Handling data between wifi mesh devices.
      */
-    xTaskCreate(node_handle_task, "node_handle", 8 * 1024,
+    xTaskCreate(node_handle_task, "node_handle", 4 * 1024,
                 NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
 
     /**

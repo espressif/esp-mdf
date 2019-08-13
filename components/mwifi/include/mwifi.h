@@ -413,7 +413,7 @@ void mwifi_print_config();
  * @brief  Send a packet to any node in the mesh network.
  *
  * @attention 1. If data encryption is enabled, you must ensure that the task that
- *               calls this function is greater than 8KB.
+ *               calls this function is greater than 4KB.
  *            2. When sending data to the root node, if the destination address
  *               is NULL, the root node receives it using mwifi_root_read(). If
  *               the destination address is the mac address of the root node or MWIFI_ADDR_ROOT, the
