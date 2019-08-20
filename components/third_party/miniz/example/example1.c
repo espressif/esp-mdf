@@ -74,7 +74,6 @@ void miniz_test_thread()
             assert(false);
         }
 
-        ESP_LOGI(__func__, "Now print data before compress and after compress");
         printf("memcmp return %d\n", memcmp((const char *)s_pStr, (const char *)pUncomp, uncomp_len));
         free(pCmp);
         free(pUncomp);

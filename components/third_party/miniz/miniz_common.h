@@ -1,4 +1,6 @@
 #pragma once
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "sdkconfig.h"
 #include <assert.h>
 #include <stdint.h>
@@ -26,15 +28,14 @@ typedef int mz_bool;
 #endif
 
 #ifdef MINIZ_NO_STDIO
-#define MZ_FILE void *
+#define MZ_FILE void*
 #else
 #include <stdio.h>
 #define MZ_FILE FILE
 #endif /* #ifdef MINIZ_NO_STDIO */
 
 #ifdef MINIZ_NO_TIME
-typedef struct mz_dummy_time_t_tag
-{
+typedef struct mz_dummy_time_t_tag {
     int m_dummy;
 } mz_dummy_time_t;
 #define MZ_TIME_T mz_dummy_time_t
@@ -51,15 +52,27 @@ typedef struct mz_dummy_time_t_tag
 #else
 // #define MZ_MALLOC(x) malloc(x)
 #define MZ_MALLOC(x) ({                                                         \
-    void *p = malloc(x);                                                        \
+    void* p = malloc(x);                                                        \
     if (p == NULL)                                                              \
         printf("%s: %u malloc size %zu bytes failed\n", __FILE__, __LINE__, x); \
     p;                                                                          \
 })
+#ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
+#define MZ_MALLOC_RETRY(x) ({                                                                \
+    void* p;                                                                                 \
+    while (1) {                                                                              \
+        p = malloc(x);                                                                       \
+        if (p != NULL)                                                                       \
+            break;                                                                           \
+        printf("%s: %u malloc size %zu bytes failed, retry later\n", __FILE__, __LINE__, x); \
+        vTaskDelay(pdMS_TO_TICKS(100));                                                      \
+    }                                                                                        \
+    p;                                                                                       \
+})
+#endif
 // #define MZ_FREE(x) free(x)
 #define MZ_FREE(x) ({ \
-    if (x != NULL)    \
-    {                 \
+    if (x != NULL) {  \
         free(x);      \
         x = NULL;     \
     }                 \
@@ -72,14 +85,14 @@ typedef struct mz_dummy_time_t_tag
 #define MZ_CLEAR_OBJ(obj) memset(&(obj), 0, sizeof(obj))
 
 #if MINIZ_USE_UNALIGNED_LOADS_AND_STORES && MINIZ_LITTLE_ENDIAN
-#define MZ_READ_LE16(p) *((const mz_uint16 *)(p))
-#define MZ_READ_LE32(p) *((const mz_uint32 *)(p))
+#define MZ_READ_LE16(p) *((const mz_uint16*)(p))
+#define MZ_READ_LE32(p) *((const mz_uint32*)(p))
 #else
-#define MZ_READ_LE16(p) ((mz_uint32)(((const mz_uint8 *)(p))[0]) | ((mz_uint32)(((const mz_uint8 *)(p))[1]) << 8U))
-#define MZ_READ_LE32(p) ((mz_uint32)(((const mz_uint8 *)(p))[0]) | ((mz_uint32)(((const mz_uint8 *)(p))[1]) << 8U) | ((mz_uint32)(((const mz_uint8 *)(p))[2]) << 16U) | ((mz_uint32)(((const mz_uint8 *)(p))[3]) << 24U))
+#define MZ_READ_LE16(p) ((mz_uint32)(((const mz_uint8*)(p))[0]) | ((mz_uint32)(((const mz_uint8*)(p))[1]) << 8U))
+#define MZ_READ_LE32(p) ((mz_uint32)(((const mz_uint8*)(p))[0]) | ((mz_uint32)(((const mz_uint8*)(p))[1]) << 8U) | ((mz_uint32)(((const mz_uint8*)(p))[2]) << 16U) | ((mz_uint32)(((const mz_uint8*)(p))[3]) << 24U))
 #endif
 
-#define MZ_READ_LE64(p) (((mz_uint64)MZ_READ_LE32(p)) | (((mz_uint64)MZ_READ_LE32((const mz_uint8 *)(p) + sizeof(mz_uint32))) << 32U))
+#define MZ_READ_LE64(p) (((mz_uint64)MZ_READ_LE32(p)) | (((mz_uint64)MZ_READ_LE32((const mz_uint8*)(p) + sizeof(mz_uint32))) << 32U))
 
 #ifdef _MSC_VER
 #define MZ_FORCEINLINE __forceinline
@@ -90,23 +103,20 @@ typedef struct mz_dummy_time_t_tag
 #endif
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-    extern void *miniz_def_alloc_func(void *opaque, size_t items, size_t size);
-    extern void miniz_def_free_func(void *opaque, void *address);
-    extern void *miniz_def_realloc_func(void *opaque, void *address, size_t items, size_t size);
+extern void* miniz_def_alloc_func(void* opaque, size_t items, size_t size);
+extern void miniz_def_free_func(void* opaque, void* address);
+extern void* miniz_def_realloc_func(void* opaque, void* address, size_t items, size_t size);
 
 #define MZ_UINT16_MAX (0xFFFFU)
 #define MZ_UINT32_MAX (0xFFFFFFFFU)
 
 #if defined(CONFIG_MINIZ_SPLIT_TDEFL_COMPRESSOR) || defined(CONFIG_MINIZ_SPLIT_TINFL_DECOMPRESSOR_TAG)
 #define MINIZ_ERROR_GOTO(con, lable) \
-    do                               \
-    {                                \
-        if (!con)                     \
-        {                            \
+    do {                             \
+        if (!con) {                  \
             goto lable;              \
         }                            \
     } while (0)

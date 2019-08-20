@@ -6,13 +6,14 @@ Miniz is a lossless, high performance data compression library in a single sourc
 
 Because the original miniz consumes too much memory and stack space, it is not suitable for esp32, so I made the following modifications. You can find original miniz here [richgel999/miniz](https://github.com/richgel999/miniz).
 
-* Tdefl_start_dynamic_block(...), tdefl_radix_sort_syms(...), large arrays in tdefl_optimize_huffman_table(...) are replaced with pointers and applied when needed to reduce stack consumption. This function can be turned on or off in `component config > MINIZ > Low stack usage`, which is enabled by default.
+* large arrays in tdefl_start_dynamic_block(...), tdefl_radix_sort_syms(...) and tdefl_optimize_huffman_table(...) are replaced with pointers and applied when needed to reduce stack consumption. This function can be turned on or off in `component config > MINIZ > Low stack usage`, which is enabled by default.
 * The array in tdefl_compressor can be replaced with a pointer. It is used separately for memory at initialization time. It is released after compression and reduces the memory size of a single application. This function can be turned on or off in `component > MINIZ > Allocate memory multiple times in compress`, which is enabled by default.
 * Large arrays in struct tinfl_decompressor_tag and tinfl_huff_table can be replaced with pointers and applied separately at initialization time for the same reason. This function can be turned on or off in `component > MINIZ > Allocate memory multiple times in decompress`, which is enabled by default.
 * TDEFL_LZ_DICT_SIZE is reduced from 32768 to 512
 * TDEFL_LZ_CODE_BUF_SIZE is reduced from 24*1024 to 512
 * TDEFL_LZ_DICT_SIZE is reduced from 32768 to 512
 * MZ_MALLOC(x) can print message when it failed
+* MZ_MALLOC_RETRY(x) can retry if malloc(x) return 0, it also can print message when it failed. Called in tdefl_start_dynamic_block(), tdefl_radix_sort_syms() and tdefl_optimize_huffman_table() 
 * MZ_FREE(x) can determine if x is NULL, if not set x to NULL after free()
 * Add Kconfig support
 
