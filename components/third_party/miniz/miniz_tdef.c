@@ -99,8 +99,7 @@ static tdefl_sym_freq* tdefl_radix_sort_syms(mz_uint num_syms, tdefl_sym_freq* p
 {
     mz_uint32 total_passes = 2, pass_shift, pass, i;
 #ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
-    mz_uint32* hist = (mz_uint32*)MZ_MALLOC(sizeof(mz_uint32) * (256 * 2));
-    MZ_ASSERT(hist != NULL);
+    mz_uint32* hist = (mz_uint32*)MZ_MALLOC_RETRY(sizeof(mz_uint32) * (256 * 2));
     memset(hist, 0, sizeof(mz_uint32) * (256 * 2));
 #else
     mz_uint32 hist[256 * 2];
@@ -116,8 +115,7 @@ static tdefl_sym_freq* tdefl_radix_sort_syms(mz_uint num_syms, tdefl_sym_freq* p
     while ((total_passes > 1) && (num_syms == hist[(total_passes - 1) * 256]))
         total_passes--;
 #ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
-    mz_uint* offsets = MZ_MALLOC(sizeof(mz_uint) * 256);
-    MZ_ASSERT(offsets);
+    mz_uint* offsets = MZ_MALLOC_RETRY(sizeof(mz_uint) * 256);
 #endif
     for (pass_shift = 0, pass = 0; pass < total_passes; pass++, pass_shift += 8) {
         const mz_uint32* pHist = &(hist[pass << 8]);
@@ -218,8 +216,7 @@ static void tdefl_optimize_huffman_table(tdefl_compressor* d, int table_num, int
 {
     int i, j, l;
 #ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
-    int* num_codes = (int*)MZ_MALLOC(sizeof(int) * (1 + TDEFL_MAX_SUPPORTED_HUFF_CODESIZE));
-    MZ_ASSERT(num_codes != NULL);
+    int* num_codes = (int*)MZ_MALLOC_RETRY(sizeof(int) * (1 + TDEFL_MAX_SUPPORTED_HUFF_CODESIZE));
     memset(num_codes, 0, sizeof(int) * (1 + TDEFL_MAX_SUPPORTED_HUFF_CODESIZE));
 #else
     int num_codes[1 + TDEFL_MAX_SUPPORTED_HUFF_CODESIZE];
@@ -258,8 +255,7 @@ static void tdefl_optimize_huffman_table(tdefl_compressor* d, int table_num, int
                 d->m_huff_code_sizes[table_num][pSyms[--j].m_sym_index] = (mz_uint8)(i);
     }
 #ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
-    mz_uint* next_code = (mz_uint*)MZ_MALLOC(sizeof(mz_uint) * (TDEFL_MAX_SUPPORTED_HUFF_CODESIZE + 1));
-    MZ_ASSERT(next_code != NULL);
+    mz_uint* next_code = (mz_uint*)MZ_MALLOC_RETRY(sizeof(mz_uint) * (TDEFL_MAX_SUPPORTED_HUFF_CODESIZE + 1));
 #endif
 
     next_code[1] = 0;
@@ -342,8 +338,7 @@ static void tdefl_start_dynamic_block(tdefl_compressor* d)
     int num_lit_codes, num_dist_codes, num_bit_lengths;
     mz_uint i, total_code_sizes_to_pack, num_packed_code_sizes, rle_z_count, rle_repeat_count, packed_code_sizes_index;
 #ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
-    mz_uint8* code_sizes_to_pack = (mz_uint8*)MZ_MALLOC(sizeof(mz_uint8) * (TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1));
-    MZ_ASSERT(code_sizes_to_pack != NULL);
+    mz_uint8* code_sizes_to_pack = (mz_uint8*)MZ_MALLOC_RETRY(sizeof(mz_uint8) * (TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1));
 #else
     mz_uint8 code_sizes_to_pack[TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1], packed_code_sizes[TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1];
 #endif
@@ -370,8 +365,7 @@ static void tdefl_start_dynamic_block(tdefl_compressor* d)
 
     memset(&d->m_huff_count[2][0], 0, sizeof(d->m_huff_count[2][0]) * TDEFL_MAX_HUFF_SYMBOLS_2);
 #ifdef CONFIG_MINIZ_MINIMIZE_STACK_CONSUME
-    mz_uint8* packed_code_sizes = (mz_uint8*)MZ_MALLOC(sizeof(mz_uint8) * (TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1));
-    MZ_ASSERT(packed_code_sizes != NULL);
+    mz_uint8* packed_code_sizes = (mz_uint8*)MZ_MALLOC_RETRY(sizeof(mz_uint8) * (TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1));
 #endif
     for (i = 0; i < total_code_sizes_to_pack; i++) {
         mz_uint8 code_size = code_sizes_to_pack[i];
