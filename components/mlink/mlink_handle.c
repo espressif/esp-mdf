@@ -725,7 +725,7 @@ static mdf_err_t mlink_handle_get_group(mlink_handle_data_t *handle_data)
         MDF_FREE(group_list);
     }
 
-    handle_data->resp_size = strlen(handle_data->resp_data);
+    handle_data->resp_size = (handle_data->resp_data == NULL) ? 0 : strlen(handle_data->resp_data);
 
     return ESP_OK;
 }
