@@ -479,9 +479,10 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
                 break;
 
             case CHARACTERISTIC_FORMAT_STRING:
-                ret = mlink_json_parse(characteristics_list[i], "value", value.value_string);
+                ret = mlink_json_parse(characteristics_list[i], "value", &value.value_string);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 ret = mlink_device_set_value(cid, value.value_string);
+				MDF_FREE(value.value_string);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 break;
 
