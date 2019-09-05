@@ -222,20 +222,24 @@ static mdf_err_t mlink_connection_add(httpd_req_t *req, uint16_t chunks_num)
 
 static mdf_err_t mlink_get_mesh_info(httpd_req_t *req)
 {
-    mdf_err_t ret           = ESP_OK;
+    mdf_err_t ret           = MDF_ERR_NO_MEM;
     char *routing_table_str = NULL;
     const char *status_code = "{\"status_code\":0}";
     char routing_table_size_str[8] = {0};
 
     ssize_t routing_table_size = esp_mesh_get_routing_table_size();
     mesh_addr_t *routing_table = MDF_CALLOC(routing_table_size, sizeof(mesh_addr_t));
+    MDF_ERROR_GOTO(!routing_table, EXIT, "");
 
     ret = esp_mesh_get_routing_table(routing_table, routing_table_size * sizeof(mesh_addr_t),
                                      &routing_table_size);
-    MDF_ERROR_GOTO(ret < 0, EXIT, "esp_mesh_get_routing_table, ret: %d", ret);
+    MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "esp_mesh_get_routing_table, ret: %d", ret);
 
     sprintf(routing_table_size_str, "%d", routing_table_size);
     routing_table_str = MDF_MALLOC(routing_table_size * 13);
+    ret = MDF_ERR_NO_MEM;
+    MDF_ERROR_GOTO(!routing_table_str, EXIT, "");
+
     char *tmp_ptr = routing_table_str;
 
     for (int i = 0; i < routing_table_size; i++) {
@@ -271,7 +275,6 @@ static mdf_err_t mlink_get_mesh_info(httpd_req_t *req)
 EXIT:
     MDF_FREE(routing_table);
     MDF_FREE(routing_table_str);
-
 
     if (ret != ESP_OK) {
         ret = httpd_resp_send_500(req);
@@ -381,6 +384,7 @@ static esp_err_t mlink_device_request(httpd_req_t *req)
     }
 
     httpd_data->addrs_list = MDF_MALLOC(httpd_hdr_value_len / 2);
+    MDF_ERROR_CHECK(!httpd_data->addrs_list, MDF_ERR_NO_MEM, "");
 
     for (char *tmp = httpd_hdr_value;; tmp++) {
         if (*tmp == ',' || *tmp == '\0') {
@@ -404,6 +408,7 @@ static esp_err_t mlink_device_request(httpd_req_t *req)
 
     httpd_data->size = req->content_len;
     httpd_data->data = MDF_MALLOC(req->content_len);
+    MDF_ERROR_CHECK(!httpd_data->data, MDF_ERR_NO_MEM, "");
 
     for (int i = 0, recv_size = 0; i < 5 && recv_size < req->content_len; ++i, recv_size += ret) {
         ret = httpd_req_recv(req, httpd_data->data + recv_size, req->content_len - recv_size);
@@ -491,7 +496,6 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
     mdf_err_t ret               = MDF_FAIL;
     char firmware_name[32]      = {0x0};
     int start_time              = xTaskGetTickCount();
-    size_t buf_size             = 1024;
     char *buf                   = NULL;
     size_t firmware_size        = req->content_len;
     uint8_t *addrs_list         = NULL;
@@ -515,7 +519,7 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
         goto EXIT;
     }
 
-    addrs_list = MDF_MALLOC(httpd_hdr_value_len / 2);
+    addrs_list = MDF_REALLOC_RETRY(NULL, httpd_hdr_value_len / 2);
 
     for (char *tmp = httpd_hdr_value;; tmp++) {
         if (*tmp == ',' || *tmp == '\0') {
@@ -539,10 +543,10 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
         goto EXIT;
     }
 
-    buf = MDF_MALLOC(buf_size);
+    buf = MDF_REALLOC_RETRY(NULL, MUPGRADE_PACKET_MAX_SIZE);
 
     for (int i = 10; i > 0 && firmware_size > 0; --i) {
-        ret = httpd_req_recv(req, buf, MIN(firmware_size, buf_size));
+        ret = httpd_req_recv(req, buf, MIN(firmware_size, MUPGRADE_PACKET_MAX_SIZE));
         MDF_ERROR_CONTINUE(ret == HTTPD_SOCK_ERR_TIMEOUT, "<HTTPD_SOCK_ERR_TIMEOUT> Read content data from the HTTP request");
         MDF_ERROR_GOTO(ret < 0, EXIT, "<%s> Read content data from the HTTP request",
                        mdf_err_to_name(ret));
@@ -571,7 +575,8 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
     mlink_httpd_resp_200(req);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Helper function for HTTP 200");
 
-    mlink_httpd_t *mlink_httpd = MDF_CALLOC(1, sizeof(mlink_httpd_t));
+    mlink_httpd_t *mlink_httpd = MDF_REALLOC_RETRY(NULL, sizeof(mlink_httpd_t));
+    memset(mlink_httpd, 0, sizeof(mlink_httpd_t));
     mlink_httpd->addrs_list = addrs_list;
     mlink_httpd->addrs_num  = addrs_num;
     addrs_list = NULL;
@@ -592,14 +597,13 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
     mdf_err_t ret               = MDF_FAIL;
     char firmware_name[32]      = {0x0};
     int start_time              = xTaskGetTickCount();
-    size_t buf_size             = 1024;
     char *buf                   = NULL;
     size_t firmware_size        = 0;
     uint8_t *addrs_list         = NULL;
     size_t addrs_num            = 0;
     char *httpd_hdr_value       = NULL;
     ssize_t httpd_hdr_value_len = 0;
-    char *firmware_url          = MDF_MALLOC(MLINK_HTTPD_FIRMWARE_URL_LEN);
+    char *firmware_url          = MDF_REALLOC_RETRY(NULL, MLINK_HTTPD_FIRMWARE_URL_LEN);
     esp_http_client_handle_t http_client_handle = NULL;
     esp_http_client_config_t http_client_config = {
         .url            = firmware_url,
@@ -623,7 +627,7 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
         goto EXIT;
     }
 
-    addrs_list = MDF_MALLOC(httpd_hdr_value_len / 2);
+    addrs_list = MDF_REALLOC_RETRY(NULL, httpd_hdr_value_len / 2);
 
     for (char *tmp = httpd_hdr_value;; tmp++) {
         if (*tmp == ',' || *tmp == '\0') {
@@ -679,10 +683,10 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
         goto EXIT;
     }
 
-    buf = MDF_MALLOC(buf_size);
+    buf = MDF_REALLOC_RETRY(NULL, MUPGRADE_PACKET_MAX_SIZE);
 
     while (firmware_size > 0) {
-        ssize_t size = esp_http_client_read(http_client_handle, buf, MIN(firmware_size, buf_size));
+        ssize_t size = esp_http_client_read(http_client_handle, buf, MIN(firmware_size, MUPGRADE_PACKET_MAX_SIZE));
         MDF_ERROR_GOTO(size < 0, EXIT, "<%s> Read data from http stream", mdf_err_to_name(ret));
 
         firmware_size -= size;
@@ -696,7 +700,8 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
     mlink_httpd_resp_200(req);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Helper function for HTTP 200");
 
-    mlink_httpd_t *mlink_httpd = MDF_CALLOC(1, sizeof(mlink_httpd_t));
+    mlink_httpd_t *mlink_httpd = MDF_REALLOC_RETRY(NULL, sizeof(mlink_httpd_t));
+    memset(mlink_httpd, 0, sizeof(mlink_httpd_t));
     mlink_httpd->addrs_list = addrs_list;
     mlink_httpd->addrs_num  = addrs_num;
     addrs_list = NULL;
@@ -746,7 +751,7 @@ static mdf_err_t mlink_httpd_resp_set_hdr(char **resp, const char *field, const 
     char *tmp_str   = NULL;
     size_t tmp_size = asprintf(&tmp_str, "%s: %s\r\n", field, value);
 
-    *resp = MDF_REALLOC(*resp, strlen(*resp) + tmp_size + 1);
+    *resp = MDF_REALLOC_RETRY(*resp, strlen(*resp) + tmp_size + 1);
     memcpy(*resp + strlen(*resp), tmp_str, tmp_size + 1);
 
     MDF_FREE(tmp_str);
@@ -762,7 +767,7 @@ static size_t mlink_httpd_resp_set_data(char **resp, const char *data, size_t si
     size_t tmp_size   = asprintf(&tmp_str, "Content-Length: %d\r\n\r\n", size);
     size_t total_size = strlen(*resp) + tmp_size + size;
 
-    *resp = MDF_REALLOC(*resp, total_size + 8);
+    *resp = MDF_REALLOC_RETRY(*resp, total_size + 8);
     memcpy(*resp + strlen(*resp), tmp_str, tmp_size + 1);
 
     if (data && size) {
@@ -928,6 +933,7 @@ mdf_err_t mlink_httpd_start(void)
 
     if (!g_conn_list) {
         g_conn_list = MDF_CALLOC(MLINK_HTTPD_MAX_CONNECT, sizeof(mlink_connection_t));
+        MDF_ERROR_CHECK(!g_conn_list, MDF_ERR_NO_MEM, "");
     }
 
     ret = httpd_start(&g_httpd_handle, &config);

@@ -465,6 +465,8 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type, void *da
     __mwifi_read(src_addr, data_type, (void *)data, size, wait_ticks, \
                  builtin_types_compatible_p(data, char *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
                  + builtin_types_compatible_p(data, uint8_t *) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
+                 + builtin_types_compatible_p(data, char []) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
+                 + builtin_types_compatible_p(data, uint8_t []) * MWIFI_DATA_MEMORY_MALLOC_EXTERNAL \
                  + builtin_types_compatible_p(data, char **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL \
                  + builtin_types_compatible_p(data, uint8_t **) * MWIFI_DATA_MEMORY_MALLOC_INTERNAL)
 

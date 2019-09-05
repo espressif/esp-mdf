@@ -169,8 +169,15 @@ mdf_err_t mwifi_init(mwifi_init_config_t *config)
 
     MDF_LOGI("esp-mdf version: %s", mdf_get_version());
 
-    g_init_config = MDF_CALLOC(1, sizeof(mwifi_init_config_t));
-    g_ap_config   = MDF_CALLOC(1, sizeof(mwifi_config_t));
+    if (!g_init_config) {
+        g_init_config = MDF_CALLOC(1, sizeof(mwifi_init_config_t));
+        MDF_ERROR_CHECK(!g_init_config, MDF_ERR_NO_MEM, "");
+    }
+
+    if (!g_ap_config) {
+        g_ap_config = MDF_CALLOC(1, sizeof(mwifi_config_t));
+        MDF_ERROR_CHECK(!g_ap_config, MDF_ERR_NO_MEM, "");
+    }
 
     memcpy(g_init_config, config, sizeof(mwifi_init_config_t));
     g_mwifi_inited_flag = true;
@@ -599,13 +606,13 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
             /**< Get the number of nodes in the subnet of a specific child */
             ret = esp_mesh_get_subnet_nodes_num(child_addr, &subnet_num);
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Get the number of nodes in the subnet of a specific child", mdf_err_to_name(ret));
-            transmit_data = MDF_REALLOC(transmit_data, mesh_data->size + subnet_num * MWIFI_ADDR_LEN);
+            transmit_data = MDF_REALLOC_RETRY(transmit_data, mesh_data->size + subnet_num * MWIFI_ADDR_LEN);
             mesh_addr_t *transmit_addr = (mesh_addr_t *)transmit_data;
             MDF_LOGV("subnet_num: %d", subnet_num);
 
             if (subnet_num) {
                 /**< Get nodes in the subnet of a specific child */
-                subnet_addr = MDF_MALLOC(subnet_num * sizeof(mesh_addr_t));
+                subnet_addr = MDF_REALLOC_RETRY(NULL, subnet_num * sizeof(mesh_addr_t));
                 ESP_ERROR_CHECK(esp_mesh_get_subnet_nodes_list(child_addr, subnet_addr, subnet_num));
             }
 
@@ -726,8 +733,10 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
      * @brief data compression
      */
     if (data_head.type.compression) {
+        ret = MDF_ERR_NO_MEM;
         compress_size = compressBound(size);
         compress_data = MDF_MALLOC(compress_size);
+        MDF_ERROR_GOTO(!compress_data, EXIT, "");
 
         ret = compress(compress_data, &compress_size, mesh_data.data, mesh_data.size);
         MDF_ERROR_GOTO(ret != MZ_OK, EXIT, "Compressed whitelist failed, ret: 0x%x", -ret);
@@ -745,7 +754,10 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
 
     /**< Send a package as a group */
     if (!to_root && data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
+        ret = MDF_ERR_NO_MEM;
         uint8_t *group_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
+        MDF_ERROR_GOTO(!compress_data, EXIT, "");
+
         memcpy(group_data, dest_addrs, MWIFI_ADDR_LEN);
         memcpy(group_data + MWIFI_ADDR_LEN, mesh_data.data, mesh_data.size);
         mesh_data.tos  = MESH_TOS_P2P;
@@ -805,7 +817,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     for (;;) {
         recv_size  = 0;
         total_size = 0;
-        recv_data  = MDF_REALLOC(recv_data, MWIFI_PAYLOAD_LEN);
+        recv_data  = MDF_REALLOC_RETRY(recv_data, MWIFI_PAYLOAD_LEN);
 
         for (int expect_seq = 0, recv_ticks = 0; !recv_size || recv_size < total_size; expect_seq++) {
             mesh_data.size = recv_size ? total_size - recv_size : MWIFI_PAYLOAD_LEN;
@@ -863,7 +875,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             s_data_magic = data_head.magic;
             total_size   = (data_head.total_size_hight << 12) + data_head.total_size_low;
             recv_size   += mesh_data.size;
-            recv_data    = MDF_REALLOC(recv_data, total_size);
+            recv_data    = MDF_REALLOC_RETRY(recv_data, total_size);
         }
 
         self_data_flag = data_head.transmit_self;
@@ -925,7 +937,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             do {
                 mz_rate = (!mz_rate) ? 5 : mz_rate;
                 *size = mesh_data.size * mz_rate;
-                *((uint8_t **)data) = MDF_REALLOC(*((uint8_t **)data), *size);
+                *((uint8_t **)data) = MDF_REALLOC_RETRY(*((uint8_t **)data), *size);
                 mz_ret = uncompress(*((uint8_t **)data), (mz_ulong *)size, mesh_data.data, mesh_data.size);
                 mz_rate += 2;
                 ret = MDF_FAIL;
@@ -945,7 +957,7 @@ mdf_err_t __mwifi_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     } else {
         if (type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL) {
             *size = mesh_data.size;
-            *((uint8_t **)data) = MDF_MALLOC(mesh_data.size);
+            *((uint8_t **)data) = MDF_REALLOC_RETRY(NULL, mesh_data.size);
             memcpy(*((uint8_t **)data), mesh_data.data, mesh_data.size);
         } else {
             ret = (*size < mesh_data.size) ? MDF_ERR_BUF : MDF_FAIL;
@@ -1015,8 +1027,10 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
      * @brief data compression
      */
     if (data_head.type.compression) {
+        ret = MDF_ERR_NO_MEM;
         mz_ulong compress_size = compressBound(size);
         compress_data = MDF_MALLOC(compress_size);
+        MDF_ERROR_GOTO(!compress_data, EXIT, "");
 
         ret = compress(compress_data, &compress_size, (uint8_t *)data, size);
         MDF_ERROR_GOTO(ret != MZ_OK, EXIT, "Compressed whitelist failed, ret: 0x%x", -ret);
@@ -1039,8 +1053,10 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
          * @brief If destination adress is any device or other device expect root, get all nodes adress.
          */
         if (MWIFI_ADDR_IS_ANY(addrs_list) || MWIFI_ADDR_IS_BROADCAST(addrs_list)) {
+            ret = MDF_ERR_NO_MEM;
             addrs_num  = esp_mesh_get_routing_table_size();
             tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
+            MDF_ERROR_GOTO(!tmp_addrs, EXIT, "");
             ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)tmp_addrs,
                             addrs_num * sizeof(mesh_addr_t), (int *)&addrs_num));
 
@@ -1067,7 +1083,9 @@ mdf_err_t mwifi_root_write(const uint8_t *addrs_list, size_t addrs_num,
                             mdf_err_to_name(ret), MAC2STR(addrs_list));
         }
     } else if (data_type->communicate == MWIFI_COMMUNICATE_MULTICAST) {
+        ret = MDF_ERR_NO_MEM;
         tmp_addrs = MDF_MALLOC(addrs_num * sizeof(mesh_addr_t));
+        MDF_ERROR_GOTO(!tmp_addrs, EXIT, "");
         memcpy(tmp_addrs, addrs_list, addrs_num * sizeof(mesh_addr_t));
         MDF_LOGD("addrs_num: %d, addrs_list: " MACSTR ", mesh_data.size: %d",
                  addrs_num, MAC2STR(tmp_addrs), mesh_data.size);
@@ -1112,7 +1130,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     mwifi_data_head_t data_head = {0x0};
     TickType_t start_ticks      = xTaskGetTickCount();
     ssize_t recv_size           = 0;
-    uint8_t *recv_data          = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    uint8_t *recv_data          = MDF_REALLOC(NULL, MWIFI_PAYLOAD_LEN);
     size_t total_size           = 0;
 
     mesh_data_t mesh_data = {0x0};
@@ -1162,7 +1180,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
 
         total_size = (data_head.total_size_hight << 12) + data_head.total_size_low;
         recv_size += mesh_data.size;
-        recv_data  = MDF_REALLOC(recv_data, total_size);
+        recv_data  = MDF_REALLOC_RETRY(recv_data, total_size);
     }
 
     memcpy(data_type, &data_head.type, sizeof(mwifi_data_type_t));
@@ -1175,7 +1193,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             do {
                 mz_rate = (!mz_rate) ? 5 : mz_rate;
                 *size = recv_size * mz_rate;
-                *((uint8_t **)data) = MDF_REALLOC(*((uint8_t **)data), *size);
+                *((uint8_t **)data) = MDF_REALLOC_RETRY(*((uint8_t **)data), *size);
                 mz_ret = uncompress(*((uint8_t **)data), (mz_ulong *)size, recv_data, recv_size);
                 mz_rate += 2;
                 ret = MDF_FAIL;
@@ -1195,7 +1213,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
     } else {
         if (type == MWIFI_DATA_MEMORY_MALLOC_INTERNAL) {
             *size = recv_size;
-            *((uint8_t **)data) = MDF_MALLOC(recv_size);
+            *((uint8_t **)data) = MDF_REALLOC_RETRY(NULL, recv_size);
             memcpy(*((uint8_t **)data), recv_data, recv_size);
         } else {
             ret = (*size < recv_size) ? MDF_ERR_BUF : MDF_FAIL;

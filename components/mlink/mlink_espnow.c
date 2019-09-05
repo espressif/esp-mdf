@@ -41,6 +41,7 @@ mdf_err_t __mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, cons
     mdf_err_t ret      = MDF_OK;
     size_t espnow_size = sizeof(mlink_espnow_t) + size + addrs_num * ESP_NOW_ETH_ALEN;
     mlink_espnow_t *espnow_data = MDF_MALLOC(espnow_size);
+    MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
 
     espnow_data->size      = size;
     espnow_data->addrs_num = addrs_num;
@@ -78,6 +79,7 @@ mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t *
     *addrs_num = 0;
 
     mlink_espnow_t *espnow_data = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN);
+    MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
 
     /**< read data from espnow */
     ret = mespnow_read(MESPNOW_TRANS_PIPE_CONTROL, src_addr,
@@ -88,6 +90,12 @@ mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t *
     *data = MDF_MALLOC(espnow_data->size);
     *addrs_num  = espnow_data->addrs_num;
     *addrs_list = MDF_MALLOC(*addrs_num * ESP_NOW_ETH_ALEN);
+
+    if(!(*data) || !(*addrs_list)){
+        ret = MDF_ERR_NO_MEM;
+        MDF_FREE(*data);
+        MDF_FREE(*addrs_list);
+    }
 
     if (type) {
         *type = espnow_data->type;

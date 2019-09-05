@@ -213,9 +213,9 @@ static void mconfig_blufi_dh_negotiate_data_handler(uint8_t *input_data, ssize_t
             MDF_LOGD("SEC_TYPE_DH_PARAM_DATA");
             mdf_err_t ret = MDF_OK;
             uint8_t aes_key[MCONFIG_AES_KEY_LEN] = {0};
-            uint8_t *param   = MDF_MALLOC(s_dh_param_len);
-            uint8_t *pubkey  = MDF_MALLOC(MCONFIG_DH_PUBKEY_LEN);
-            uint8_t *privkey = MDF_MALLOC(MCONFIG_DH_PRIVKEY_LEN);
+            uint8_t *param   = MDF_REALLOC_RETRY(NULL, s_dh_param_len);
+            uint8_t *pubkey  = MDF_REALLOC_RETRY(NULL, MCONFIG_DH_PUBKEY_LEN);
+            uint8_t *privkey = MDF_REALLOC_RETRY(NULL, MCONFIG_DH_PRIVKEY_LEN);
 
             memcpy(param, input_data + 1, input_len - 1);
 
@@ -288,8 +288,10 @@ static uint16_t mconfig_blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len)
 
 static mdf_err_t mconfig_blufi_security_init(void)
 {
-    g_rsa_privkey   = MDF_CALLOC(1, MCONFIG_RSA_PRIVKEY_PEM_SIZE);
-    g_rsa_pubkey    = MDF_CALLOC(1, MCONFIG_RSA_PUBKEY_PEM_SIZE);
+    g_rsa_privkey = MDF_CALLOC(1, MCONFIG_RSA_PRIVKEY_PEM_SIZE);
+    MDF_ERROR_CHECK(!g_rsa_privkey, MDF_ERR_NO_MEM, "");
+    g_rsa_pubkey  = MDF_CALLOC(1, MCONFIG_RSA_PUBKEY_PEM_SIZE);
+    MDF_ERROR_CHECK(!g_rsa_pubkey, MDF_ERR_NO_MEM, "");
     mdf_err_t ret = mconfig_rsa_gen_key(g_rsa_privkey, g_rsa_pubkey);
 
     if (ret != ESP_OK) {
@@ -613,7 +615,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             mconfig_ble_connect_timer_delete();
 
             if (!g_recv_config) {
-                g_recv_config = MDF_MALLOC(sizeof(mconfig_data_t));
+                g_recv_config = MDF_REALLOC_RETRY(NULL, sizeof(mconfig_data_t));
             }
 
             memset(g_recv_config, 0, sizeof(mconfig_data_t));
@@ -804,7 +806,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
 
                     case BLUFI_DATA_WHITELIST: {
                         size_t tmp_size = sizeof(mconfig_data_t) + g_recv_config->whitelist_size;
-                        g_recv_config = MDF_REALLOC(g_recv_config, tmp_size + blufi_data->len);
+                        g_recv_config = MDF_REALLOC_RETRY(g_recv_config, tmp_size + blufi_data->len);
 
                         memcpy((uint8_t *)g_recv_config->whitelist_data + g_recv_config->whitelist_size,
                                blufi_data->data, blufi_data->len);

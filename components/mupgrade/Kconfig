@@ -40,7 +40,7 @@ menu "MDF Mupgrade"
 
     config MUPGRADE_RESTART_COUNT
         int "How many times to restart continuously"
-        default 10
+        default 15
         depends on MUPGRADE_VERSION_FALLBACK_RESTART
         help
         How many times to restart continuously.

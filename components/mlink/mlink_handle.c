@@ -77,6 +77,7 @@ mdf_err_t mlink_add_device(uint32_t tid, const char *name, const char *version)
 
     if (!g_device_info) {
         g_device_info = MDF_MALLOC(sizeof(mlink_device_t));
+        MDF_ERROR_CHECK(!g_device_info, MDF_ERR_NO_MEM, "");
     }
 
     memset(g_device_info, 0, sizeof(mlink_device_t));
@@ -169,6 +170,7 @@ mdf_err_t mlink_add_characteristic(uint16_t cid, const char *name, characteristi
 
     g_device_info->characteristics = MDF_REALLOC(g_device_info->characteristics,
                                      (g_device_info->characteristics_num + 1) * sizeof(mlink_characteristics_t));
+    MDF_ERROR_CHECK(!g_device_info->characteristics, MDF_ERR_NO_MEM, "");
     mlink_characteristics_t *characteristics = g_device_info->characteristics + g_device_info->characteristics_num;
 
     characteristics->cid    = cid;
@@ -210,6 +212,8 @@ mdf_err_t mlink_add_characteristic_handle(mlink_characteristic_func_t get_value_
 
     if (mdf_info_load("group_num", &group_num, sizeof(ssize_t)) == MDF_OK) {
         mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+        MDF_ERROR_CHECK(!group_list, MDF_ERR_NO_MEM, "");
+
         mdf_info_load("group_list", group_list, sizeof(mesh_addr_t) * group_num);
 
         ret = esp_mesh_set_group_id((mesh_addr_t *)group_list, group_num);
@@ -291,6 +295,7 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
 
     if (group_num > 0) {
         mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+        MDF_ERROR_CHECK(!group_list, MDF_ERR_NO_MEM, "");
 
         if (esp_mesh_get_group_list(group_list, group_num) == MDF_OK) {
             char *group_str = NULL;
@@ -507,7 +512,9 @@ static mdf_err_t mlink_handle_add_device(mlink_handle_data_t *handle_data)
     uint32_t duration_ms         = 30000;
     int8_t rssi                  = -120;
 
+    ret = MDF_ERR_NO_MEM;
     mconfig_data_t *mconfig_data = MDF_CALLOC(1, sizeof(mconfig_data_t));
+    MDF_ERROR_GOTO(!mconfig_data, EXIT, "");
 
     ret = mwifi_get_config(&mconfig_data->config);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> Get the configuration of the AP", mdf_err_to_name(ret));
@@ -518,12 +525,16 @@ static mdf_err_t mlink_handle_add_device(mlink_handle_data_t *handle_data)
     ret = mlink_json_parse(handle_data->req_data, "whitelist", &whitelist_num);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: whitelist");
 
+    ret = MDF_ERR_NO_MEM;
     whitelist_json = MDF_CALLOC(whitelist_num, sizeof(char *));
+    MDF_ERROR_GOTO(!whitelist_json, EXIT, "");
     ret = mlink_json_parse(handle_data->req_data, "whitelist", whitelist_json);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: whitelist");
 
+    ret = MDF_ERR_NO_MEM;
     mconfig_data->whitelist_size = whitelist_num * sizeof(mconfig_whitelist_t);
     mconfig_data = MDF_REALLOC(mconfig_data, sizeof(mconfig_data_t) + mconfig_data->whitelist_size);
+    MDF_ERROR_GOTO(!mconfig_data, EXIT, "<MDF_ERR_NO_MEM> MDF_REALLOC mconfig_data");
 
     for (int i = 0; i < whitelist_num && i < CONFIG_MWIFI_CAPACITY_NUM; ++i) {
         mlink_mac_str2hex(whitelist_json[i], (mconfig_data->whitelist_data + i)->addr);
@@ -675,6 +686,7 @@ static mdf_err_t mlink_handle_set_group(mlink_handle_data_t *handle_data)
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
 
     group_json = MDF_CALLOC(group_num, sizeof(char *));
+    MDF_ERROR_CHECK(!group_json, MDF_ERR_NO_MEM, "");
     ret = mlink_json_parse(handle_data->req_data, "group", group_json);
     MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "Parse the json formatted string: group");
 
@@ -691,6 +703,8 @@ static mdf_err_t mlink_handle_set_group(mlink_handle_data_t *handle_data)
     do {
         ssize_t group_num = esp_mesh_get_group_num();
         mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+        MDF_ERROR_GOTO(!group_list, EXIT, "");
+
         esp_mesh_get_group_list(group_list, group_num);
         mdf_info_save("group_num", &group_num, sizeof(ssize_t));
         mdf_info_save("group_list", group_list, sizeof(mesh_addr_t) * group_num);
@@ -709,6 +723,7 @@ static mdf_err_t mlink_handle_get_group(mlink_handle_data_t *handle_data)
 
     if (group_num) {
         mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+        MDF_ERROR_CHECK(!group_list, MDF_ERR_NO_MEM, "");
 
         if (esp_mesh_get_group_list(group_list, group_num) == MDF_OK) {
             char *group_str = NULL;
@@ -759,6 +774,8 @@ static mdf_err_t mlink_handle_remove_group(mlink_handle_data_t *handle_data)
 
         if (group_num > 0) {
             mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
+            MDF_ERROR_GOTO(!group_list, EXIT, "");
+
             esp_mesh_get_group_list(group_list, group_num);
             mdf_info_save("group_num", &group_num, sizeof(ssize_t));
             mdf_info_save("group_list", group_list, sizeof(mesh_addr_t) * group_num);

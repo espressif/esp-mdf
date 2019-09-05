@@ -69,6 +69,7 @@ mdf_err_t mdebug_espnow_write(const uint8_t *dest_addr, const void *data, size_t
 
     mdf_err_t ret = MDF_OK;
     mdebug_espnow_data_t *espnow_data = MDF_MALLOC(sizeof(mdebug_espnow_data_t) + size);
+    MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
 
     espnow_data->type = type;
     memcpy(espnow_data->data, data, size);
@@ -97,6 +98,7 @@ mdf_err_t mdebug_espnow_read(uint8_t *src_addr, void *data, size_t *size,
 {
     mdf_err_t ret = MDF_OK;
     mdebug_espnow_data_t *espnow_data = MDF_MALLOC(sizeof(mdebug_espnow_data_t) + *size);
+    MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
 
     ret = mespnow_read(MESPNOW_TRANS_PIPE_DEBUG, src_addr, espnow_data, size, wait_ticks);
 
@@ -140,6 +142,7 @@ ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
 
     log_data_size = sizeof(mdebug_log_queue_t) + log_size + 1;
     log_data = MDF_MALLOC(log_data_size);
+    MDF_ERROR_GOTO(!log_data, EXIT, "");
     log_data->size = log_data_size;
 
     vsnprintf((char *)log_data->data, log_size, fmt, vp);
@@ -176,7 +179,7 @@ static void mdebug_espnow_send_task(void *arg)
     mdf_err_t ret                = ESP_OK;
     uint8_t src_addr[6]          = { 0 };
     size_t recv_size             = 0;
-    uint8_t *recv_data           = MDF_MALLOC(MESPNOW_PAYLOAD_LEN);
+    uint8_t *recv_data           = MDF_REALLOC_RETRY(NULL, MESPNOW_PAYLOAD_LEN);
     mdebug_espnow_t recv_type    = 0;
 
     for (;;) {
@@ -231,6 +234,7 @@ mdf_err_t mdebug_espnow_init()
     }
 
     g_log_config = MDF_CALLOC(1, sizeof(mdebug_log_config_t));
+    MDF_ERROR_CHECK(!g_log_config, MDF_ERR_NO_MEM, "");
     mdebug_log_get_config(g_log_config);
 
     /**< register espnow log redirect function */

@@ -74,12 +74,12 @@ void mdf_mem_print_heap(void);
  */
 #define MDF_MALLOC(size) ({ \
         void *ptr = malloc(size); \
-        if(!ptr) { \
-            MDF_LOGE("<ESP_ERR_NO_MEM> Malloc size: %d, ptr: %p, heap free: %d", (int)size, ptr, esp_get_free_heap_size()); \
-            assert(ptr); \
-        } \
         if (MDF_MEM_DEBUG) { \
-            mdf_mem_add_record(ptr, size, TAG, __LINE__); \
+            if(!ptr) { \
+                MDF_LOGW("<ESP_ERR_NO_MEM> Malloc size: %d, ptr: %p, heap free: %d", (int)size, ptr, esp_get_free_heap_size()); \
+            } else { \
+                mdf_mem_add_record(ptr, size, TAG, __LINE__); \
+            } \
         } \
         ptr; \
     })
@@ -96,12 +96,12 @@ void mdf_mem_print_heap(void);
  */
 #define MDF_CALLOC(n, size) ({ \
         void *ptr = calloc(n, size); \
-        if(!ptr) { \
-            MDF_LOGE("<ESP_ERR_NO_MEM> Calloc size: %d, ptr: %p, heap free: %d", (int)(n) * (size), ptr, esp_get_free_heap_size()); \
-            assert(ptr); \
-        } \
         if (MDF_MEM_DEBUG) { \
-            mdf_mem_add_record(ptr, (n) * (size), TAG, __LINE__); \
+            if(!ptr) { \
+                MDF_LOGW("<ESP_ERR_NO_MEM> Calloc size: %d, ptr: %p, heap free: %d", (int)(n) * (size), ptr, esp_get_free_heap_size()); \
+            } else { \
+                mdf_mem_add_record(ptr, (n) * (size), TAG, __LINE__); \
+            } \
         } \
         ptr; \
     })
@@ -118,9 +118,33 @@ void mdf_mem_print_heap(void);
  */
 #define MDF_REALLOC(ptr, size) ({ \
         void *new_ptr = realloc(ptr, size); \
-        if(!new_ptr) { \
-            MDF_LOGE("<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
-            assert(new_ptr); \
+        if (MDF_MEM_DEBUG) { \
+            if(!new_ptr) { \
+                MDF_LOGW("<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
+            } else { \
+                mdf_mem_remove_record(ptr, TAG, __LINE__); \
+                mdf_mem_add_record(new_ptr, size, TAG, __LINE__); \
+            } \
+        } \
+        new_ptr; \
+    })
+
+
+/**
+ * @brief  Reallocate memory, If it fails, it will retry until it succeeds
+ *
+ * @param  ptr   Memory pointer
+ * @param  size  Block memory size
+ *
+ * @return
+ *     - valid pointer on success
+ *     - NULL when any errors
+ */
+#define MDF_REALLOC_RETRY(ptr, size) ({ \
+        void *new_ptr = NULL; \
+        while (!(new_ptr = realloc(ptr, size))) { \
+            MDF_LOGW("<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
+            vTaskDelay(pdMS_TO_TICKS(100)); \
         } \
         if (MDF_MEM_DEBUG) { \
             mdf_mem_remove_record(ptr, TAG, __LINE__); \

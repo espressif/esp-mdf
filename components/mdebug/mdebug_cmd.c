@@ -74,7 +74,7 @@ static void register_version()
         .hint = NULL,
         .func = &version_func,
     };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
 static struct {
@@ -92,7 +92,7 @@ static int log_func(int argc, char **argv)
     mdf_err_t ret = MDF_OK;
     const char *level_str[6] = {"NONE", "ERR", "WARN", "INFO", "DEBUG", "VER"};
 
-    if (arg_parse(argc, argv, (void**) &log_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **) &log_args) != ESP_OK) {
         arg_print_errors(stderr, log_args.end, argv[0]);
         return MDF_FAIL;
     }
@@ -158,7 +158,7 @@ static void register_restart()
         .hint    = NULL,
         .func    = &restart_func,
     };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
 /**
@@ -197,7 +197,7 @@ static void register_reset()
         .hint = NULL,
         .func = &reset_func,
     };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
 /**
@@ -226,7 +226,7 @@ static void register_heap()
         .hint = NULL,
         .func = &heap_func,
     };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
 static struct {
@@ -248,7 +248,7 @@ static int coredump_func(int argc, char **argv)
     ssize_t coredump_size = 0;
     const esp_partition_t *coredump_part = NULL;
 
-    if (arg_parse(argc, argv, (void**) &coredump_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **) &coredump_args) != ESP_OK) {
         arg_print_errors(stderr, coredump_args.end, argv[0]);
         return MDF_FAIL;
     }
@@ -267,7 +267,8 @@ static int coredump_func(int argc, char **argv)
     if (coredump_args.send_length->count) {
         uint8_t dest_addr[6] = {0x0};
         MDF_LOGI("Core dump is length: %d Bytes", coredump_size);
-        if(mac_str2hex(coredump_args.send_length->sval[0], dest_addr)) {
+
+        if (mac_str2hex(coredump_args.send_length->sval[0], dest_addr)) {
             char *log_str = NULL;
             asprintf(&log_str, "Core dump is length: %d Bytes", coredump_size);
             mdebug_espnow_write(dest_addr, log_str, strlen(log_str), MDEBUG_ESPNOW_LOG, portMAX_DELAY);
@@ -277,7 +278,7 @@ static int coredump_func(int argc, char **argv)
 
     if (coredump_args.output->count && coredump_size > 0) {
 #define COREDUMP_BUFFER_SIZE 1024
-        uint8_t *buffer = MDF_MALLOC(COREDUMP_BUFFER_SIZE);
+        uint8_t *buffer = MDF_REALLOC_RETRY(NULL, COREDUMP_BUFFER_SIZE);
         MDF_LOGI("\n================= CORE DUMP START =================\n");
 
         for (int offset = 4; offset < coredump_size; offset += COREDUMP_BUFFER_SIZE) {
@@ -304,8 +305,7 @@ static int coredump_func(int argc, char **argv)
         MDF_ERROR_CHECK(ret == false, ESP_ERR_INVALID_ARG,
                         "The format of the address is incorrect. Please enter the format as xx:xx:xx:xx:xx:xx");
 
-        packet = MDF_CALLOC(1, sizeof(mdebug_coredump_packet_t));
-
+        packet = MDF_REALLOC_RETRY(NULL, sizeof(mdebug_coredump_packet_t));
 
         if (coredump_args.seq->count) {
             packet->seq = coredump_args.seq->ival[0];
