@@ -90,7 +90,7 @@ esp_err_t __mlink_json_parse(const char *json_str, const char *key,
 
                 case cJSON_String:
                     if (value_type == MLINK_JSON_TYPE_POINTER) {
-                        *((char **)value) = MDF_MALLOC(strlen(pSub->valuestring) + 1);
+                        *((char **)value) = MDF_REALLOC_RETRY(NULL, strlen(pSub->valuestring) + 1);
                         memcpy(*((char **)value), pSub->valuestring, strlen(pSub->valuestring) + 1);
                     } else {
                         memcpy(value, pSub->valuestring, strlen(pSub->valuestring) + 1);
@@ -124,8 +124,9 @@ esp_err_t __mlink_json_parse(const char *json_str, const char *key,
                         }
 
                         if (item->type == cJSON_String) {
-                            *array_index = MDF_CALLOC(1, strlen(item->valuestring) + 1);
+                            *array_index = MDF_REALLOC_RETRY(NULL, strlen(item->valuestring) + 1);
                             strcpy(*array_index, item->valuestring);
+                            (*array_index)[strlen(item->valuestring)] = '\0';
                             array_index++;
                             continue;
                         }
@@ -173,7 +174,7 @@ ssize_t __mlink_json_pack(char **json_ptr, const char *key, int value, int value
         if (!*json_ptr) {
             *json_ptr = MDF_CALLOC(1, value_len + strlen(key) + 16);
         } else {
-            *json_ptr = MDF_REALLOC(*json_ptr, value_len + strlen(key) + 16 + strlen(*json_ptr));
+            *json_ptr = MDF_REALLOC_RETRY(*json_ptr, value_len + strlen(key) + 16 + strlen(*json_ptr));
         }
 
         json_str = *json_ptr;
@@ -249,9 +250,10 @@ ssize_t mlink_json_pack_double(char **json_ptr, const char *key, double value)
     MDF_PARAM_CHECK(json_ptr);
 
     if (!*json_ptr) {
-        *json_ptr = MDF_CALLOC(1, strlen(key) + 32);
+        *json_ptr = MDF_REALLOC_RETRY(NULL, strlen(key) + 32);
+        memset(*json_ptr, 0, strlen(key) + 32);
     } else {
-        *json_ptr = MDF_REALLOC(*json_ptr, strlen(key) + 32 + strlen(*json_ptr));
+        *json_ptr = MDF_REALLOC_RETRY(*json_ptr, strlen(key) + 32 + strlen(*json_ptr));
     }
 
     char *json_str = *json_ptr;

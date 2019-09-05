@@ -108,6 +108,11 @@ void mdf_mem_print_heap(void)
 {
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )
     char *task_list_buffer = MDF_MALLOC(uxTaskGetNumberOfTasks() * 64);
+
+    if (!task_list_buffer) {
+        return ;
+    }
+
     vTaskList(task_list_buffer);
 
     MDF_LOGI("Task Lists:\nTask Name\tStatus\tPrio\tHWM\tTask\n%s\nCurrent task, Name: %s, HWM: %d\n",

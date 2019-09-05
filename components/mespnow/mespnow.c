@@ -71,10 +71,11 @@ static const uint8_t g_oui[MESPNOW_OUI_LEN]                = {0x4E, 0x4F}; /**< 
 
 static EventGroupHandle_t g_event_group                    = NULL;
 static xQueueHandle g_espnow_queue[MESPNOW_TRANS_PIPE_MAX] = {NULL};
-static uint8_t g_espnow_queue_size[MESPNOW_TRANS_PIPE_MAX] = {CONFIG_MESPNOW_TRANS_PIPE_DEBUG_QUEUE_SIZE, 
-                                                                CONFIG_MESPNOW_TRANS_PIPE_CONTROL_QUEUE_SIZE, 
-                                                                CONFIG_MESPNOW_TRANS_PIPE_MCONFIG_QUEUE_SIZE, 
-                                                                CONFIG_MESPNOW_TRANS_PIPE_RESERVED_QUEUE_SIZE};
+static uint8_t g_espnow_queue_size[MESPNOW_TRANS_PIPE_MAX] = {CONFIG_MESPNOW_TRANS_PIPE_DEBUG_QUEUE_SIZE,
+                                                              CONFIG_MESPNOW_TRANS_PIPE_CONTROL_QUEUE_SIZE,
+                                                              CONFIG_MESPNOW_TRANS_PIPE_MCONFIG_QUEUE_SIZE,
+                                                              CONFIG_MESPNOW_TRANS_PIPE_RESERVED_QUEUE_SIZE
+                                                             };
 static uint32_t g_last_magic[MESPNOW_TRANS_PIPE_MAX]       = {0};
 
 /**< callback function of sending ESPNOW data */
@@ -145,6 +146,11 @@ static void mespnow_recv_cb(const uint8_t *addr, const uint8_t *data, int size)
     }
 
     mespnow_queue_data_t *q_data = MDF_MALLOC(sizeof(mespnow_queue_data_t) + size);
+
+    if (!q_data) {
+        return;
+    }
+
     memcpy(q_data->data, data, size);
     memcpy(q_data->addr, addr, ESP_NOW_ETH_ALEN);
 
@@ -227,7 +233,9 @@ mdf_err_t mespnow_write(mespnow_trans_pipe_e pipe, const uint8_t *dest_addr,
         return MDF_ERR_TIMEOUT;
     }
 
-    espnow_data             = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN);
+    espnow_data = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN);
+    MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
+
     espnow_data->pipe       = pipe;
     espnow_data->seq        = 0;
     espnow_data->total_size = write_size;

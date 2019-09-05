@@ -117,6 +117,8 @@ mdf_err_t mdf_event_loop_delay_send(mdf_event_loop_t event, void *ctx, TickType_
     }
 
     mdf_event_loop_data_t *event_data = MDF_MALLOC(sizeof(mdf_event_loop_data_t));
+    MDF_ERROR_CHECK(!event_data, MDF_ERR_NO_MEM, "<MDF_ERR_NO_MEM> g_upgrade_config");
+
     event_data->event = event;
     event_data->ctx   = ctx;
 

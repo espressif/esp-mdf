@@ -22,6 +22,7 @@ mdf_err_t mconfig_queue_write(const mconfig_data_t *config_data, TickType_t wait
     MDF_PARAM_CHECK(config_data);
 
     mconfig_data_t *q_data = MDF_MALLOC(sizeof(mconfig_data_t) + config_data->whitelist_size);
+    MDF_ERROR_CHECK(!q_data, MDF_ERR_NO_MEM, "");
 
     if (!g_mconfig_queue) {
         g_mconfig_queue = xQueueCreate(1, sizeof(mconfig_data_t *));
@@ -52,7 +53,10 @@ mdf_err_t mconfig_queue_read(mconfig_data_t **config_data, TickType_t wait_ticks
         return MDF_ERR_TIMEOUT;
     }
 
-    *config_data = MDF_MALLOC(sizeof(mconfig_data_t) + q_data->whitelist_size);
+    if (!(*config_data = MDF_MALLOC(sizeof(mconfig_data_t) + q_data->whitelist_size))) {
+        MDF_FREE(q_data);
+        return MDF_ERR_NO_MEM;
+    }
 
     memcpy(*config_data, q_data, sizeof(mconfig_data_t));
     memcpy((*config_data)->whitelist_data, q_data->whitelist_data, q_data->whitelist_size);

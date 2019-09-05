@@ -287,7 +287,11 @@ mdf_err_t mlink_sniffer_data(uint8_t **data, size_t *size)
                                               sniffer_node->data.size - 1, &timestamp_len);
 
         *size += sniffer_node->data.size + sizeof(sniffer_node->data.size);
-        *data = MDF_REALLOC(*data, *size);
+
+        if(!(*data = MDF_REALLOC(*data, *size))){
+            MDF_FREE(*data);
+            return MDF_ERR_NO_MEM;
+        }
 
         *((uint32_t *)timestamp_ptr) = timestamp - *((uint32_t *)timestamp_ptr);
         memcpy(*data + data_size, &sniffer_node->data, sniffer_node->data.size + sizeof(sniffer_node->data.size));

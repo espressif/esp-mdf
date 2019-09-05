@@ -259,7 +259,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             MDF_LOGI("ESP_GATTS_READ_EVT");
 
             if (ret == SPP_IDX_DATA_VAL && g_gatts_event_read_cb) {
-                uint8_t *data = MDF_CALLOC(1, SPP_DATA_MAX_LEN);
+                uint8_t *data = MDF_REALLOC_RETRY(NULL, SPP_DATA_MAX_LEN);
                 size_t size = g_gatts_event_read_cb(data, SPP_DATA_MAX_LEN);
 
                 esp_ble_gatts_send_indicate(g_spp_gatts_if, g_spp_conn_id, g_spp_handle_table[SPP_IDX_DATA_VAL],

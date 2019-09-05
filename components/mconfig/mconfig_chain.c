@@ -123,7 +123,7 @@ static bool mconfig_device_verify(mconfig_whitelist_t *whitelist_data, size_t wh
 
 static void mconfig_chain_master_task(void *arg)
 {
-    mdf_err_t ret                  = 0;
+    mdf_err_t ret                  = MDF_ERR_NO_MEM;
     size_t espnow_size             = 0;
     uint8_t *espnow_data           = MDF_MALLOC(ESPNOW_BUFFER_LEN);
     char *pubkey_pem               = MDF_MALLOC(MCONFIG_RSA_PUBKEY_PEM_SIZE + 1);
@@ -144,6 +144,9 @@ static void mconfig_chain_master_task(void *arg)
         .vendor_oui      = {MDF_VENDOR_OUI[0], MDF_VENDOR_OUI[1], MDF_VENDOR_OUI[2]},
         .vendor_oui_type = VENDOR_OUI_TYPE_CONFIG,
     };
+
+    MDF_ERROR_GOTO(!espnow_data, EXIT, "");
+    MDF_ERROR_GOTO(!pubkey_pem, EXIT, "");
 
     MDF_LOGI("Start send network configured");
 
@@ -244,6 +247,7 @@ static void mconfig_chain_master_task(void *arg)
             /**< Compression date to improve transmission efficiency */
             mz_ulong whitelist_compress_size = compressBound(mconfig_data->whitelist_size);
             whitelist_compress_data          = MDF_CALLOC(1, (int)whitelist_compress_size);
+            MDF_ERROR_CONTINUE(!whitelist_compress_data, "");
 
             ret = compress(whitelist_compress_data, &whitelist_compress_size,
                            (uint8_t *)mconfig_data->whitelist_data, mconfig_data->whitelist_size);
@@ -270,6 +274,8 @@ static void mconfig_chain_master_task(void *arg)
 
 #endif /**< CONFIG_MCONFIG_WHITELIST_ENABLE */
     }
+
+EXIT:
 
     MDF_LOGI("End send network configured");
 
@@ -331,7 +337,7 @@ static bool scan_mesh_device(uint8_t *bssid, int8_t *rssi)
 
 static void mconfig_chain_slave_task(void *arg)
 {
-    mdf_err_t ret                   = MDF_OK;
+    mdf_err_t ret                   = MDF_ERR_NO_MEM;
     size_t espnow_size              = 0;
     uint8_t *espnow_data            = MDF_MALLOC(ESPNOW_BUFFER_LEN);
     char *privkey_pem               = MDF_CALLOC(1, MCONFIG_RSA_PRIVKEY_PEM_SIZE);
@@ -345,6 +351,11 @@ static void mconfig_chain_slave_task(void *arg)
     size_t aes_iv_offset            = 0;
 
     mconfig_chain_data_t *chain_data = MDF_MALLOC(sizeof(mconfig_chain_data_t));
+
+    MDF_ERROR_GOTO(!espnow_data, EXIT, "");
+    MDF_ERROR_GOTO(!privkey_pem, EXIT, "");
+    MDF_ERROR_GOTO(!pubkey_pem, EXIT, "");
+    MDF_ERROR_GOTO(!chain_data, EXIT, "");
 
     ESP_ERROR_CHECK(mconfig_rsa_gen_key(privkey_pem, pubkey_pem));
     MDF_LOGI("Generate RSA public and private keys");
@@ -435,12 +446,15 @@ static void mconfig_chain_slave_task(void *arg)
 #ifdef CONFIG_MCONFIG_WHITELIST_ENABLE
 
         chain_data = MDF_REALLOC(chain_data, sizeof(mconfig_chain_data_t) + chain_data->mconfig_data.whitelist_size);
+        MDF_ERROR_CONTINUE(!chain_data, "");
+
         int retry_count                  = MCONFIG_CHAIN_SEND_RETRY_NUM;
         mconfig_data_t *mconfig_data     = &chain_data->mconfig_data;
         mz_ulong whitelist_size          = mconfig_data->whitelist_size;
         mz_ulong whitelist_compress_size = 0;
         uint8_t *whitelist_compress_data = MDF_MALLOC(mconfig_data->whitelist_size + 64);
         uint8_t src_addr[ESP_NOW_ETH_ALEN] = {0};
+        MDF_ERROR_CONTINUE(!whitelist_compress_data, "");
 
         do {
             whitelist_compress_size = mconfig_data->whitelist_size + 64;
@@ -490,6 +504,8 @@ static void mconfig_chain_slave_task(void *arg)
 
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(NULL));
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+
+EXIT:
 
     MDF_FREE(pubkey_pem);
     MDF_FREE(privkey_pem);
@@ -580,6 +596,7 @@ mdf_err_t mconfig_chain_master(const mconfig_data_t *mconfig_data, TickType_t du
 
     size_t chain_size = sizeof(mconfig_chain_data_t) + mconfig_data->whitelist_size;
     mconfig_chain_data_t *chain_data = MDF_MALLOC(chain_size);
+    MDF_ERROR_CHECK(!chain_data, MDF_ERR_NO_MEM, "");
     memcpy(&chain_data->mconfig_data, mconfig_data, sizeof(mconfig_data_t) + mconfig_data->whitelist_size);
     g_chain_master_duration_ticks = duration_ticks;
     g_filter_rssi = -120;
