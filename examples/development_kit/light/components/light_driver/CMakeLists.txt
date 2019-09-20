@@ -1,6 +1,6 @@
 
 set(COMPONENT_SRCS "light_driver.c"
-                    "iot_light.c")
+                    "iot_led.c")
 
 set(COMPONENT_ADD_INCLUDEDIRS ". include")
 
