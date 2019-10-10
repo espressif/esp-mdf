@@ -52,7 +52,7 @@ typedef struct {
     uint32_t tid;                             /**< The identifier of the device type */
     char name[32];                            /**< The name of the device */
     char position[32];                        /**< The position the device */
-    char version[16];                         /**< The version of the device */
+    char version[32];                         /**< The version of the device */
     uint8_t characteristics_num;              /**< The number of device attributes */
     mlink_characteristics_t *characteristics; /**< The characteristics of the device */
 } mlink_device_t;
@@ -257,6 +257,9 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
     handle_data->resp_data       = NULL;
     char *characteristics_list   = NULL;
     characteristic_value_t value = {0};
+    mesh_addr_t parent_bssid     = {0};
+    uint8_t parent_mac[6]        = {0};
+    uint8_t self_mac[6]          = {0};
     mlink_characteristics_t *characteristic = g_device_info->characteristics;
 
     const char *characteristic_format_int =
@@ -276,9 +279,20 @@ static mdf_err_t mlink_handle_get_info(mlink_handle_data_t *handle_data)
     }
 
     sprintf(tmp_str, "%d", g_device_info->tid);
+    esp_mesh_get_parent_bssid(&parent_bssid);
+
+    if (esp_mesh_get_layer() == MESH_ROOT) {
+        memcpy(parent_mac, parent_bssid.addr, 6);
+    } else {
+        mlink_mac_ap2sta(parent_bssid.addr, parent_mac);
+    }
+
+    esp_wifi_get_mac(ESP_IF_WIFI_STA, self_mac);
 
     mlink_json_pack(&handle_data->resp_data, "tid", tmp_str);
     mlink_json_pack(&handle_data->resp_data, "name", g_device_info->name);
+    mlink_json_pack(&handle_data->resp_data, "self_mac", mlink_mac_hex2str(self_mac, tmp_str));
+    mlink_json_pack(&handle_data->resp_data, "parent_mac",  mlink_mac_hex2str(parent_mac, tmp_str));
     mlink_json_pack(&handle_data->resp_data, "mesh_id", mlink_mac_hex2str(mesh_id.addr, tmp_str));
     mlink_json_pack(&handle_data->resp_data, "version", g_device_info->version);
     mlink_json_pack(&handle_data->resp_data, "idf_version", esp_get_idf_version());
@@ -487,7 +501,7 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
                 ret = mlink_json_parse(characteristics_list[i], "value", &value.value_string);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 ret = mlink_device_set_value(cid, value.value_string);
-				MDF_FREE(value.value_string);
+                MDF_FREE(value.value_string);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 break;
 
