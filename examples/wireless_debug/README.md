@@ -8,7 +8,14 @@ ESP-NOW debug receiver board can receive debugging data from ESP-MESH devices on
 <img src="espnow_debug.png" width="800">
 </div>
 
-> If the ESP-NOW debug receiver board is on the same channel with ESP-MESH network, you don't need to connect the borad with the router.
+> Note:
+> 1. If the ESP-NOW debug receiver board is on the same channel with ESP-MESH network, you don't need to connect the borad with the router.
+> 2. The following code needs to be added to the monitored ESP-MESH device:
+>    ```c
+>    MDF_ERROR_ASSERT(mdebug_console_init());
+>    MDF_ERROR_ASSERT(mdebug_espnow_init());
+>    mdebug_cmd_register_common();
+>    ```
 
 ESP-NOW debug receiver board provides the following features:
 

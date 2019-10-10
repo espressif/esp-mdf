@@ -289,7 +289,7 @@ static int wifi_config_func(int argc, char **argv)
     if (strlen((char *)wifi_config.sta.ssid)) {
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
         ESP_ERROR_CHECK(esp_wifi_connect());
-    } else {
+    } else if(wifi_config.sta.channel > 0 && wifi_config.sta.channel <= 14){
         ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
         MDF_LOGI("Set primary/secondary channel of ESP32, channel: %d", wifi_config.sta.channel);
     }
