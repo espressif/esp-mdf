@@ -296,7 +296,7 @@ esp_err_t esp_wifi_vnd_mesh_get(mesh_assoc_t *mesh_assoc);
  *    - MDF_ERR_MWIFI_NOT_INIT
  *    - MDF_ERR_MWIFI_INITED
  */
-mdf_err_t mwifi_init(mwifi_init_config_t *config);
+mdf_err_t mwifi_init(const mwifi_init_config_t *config);
 
 
 /**
@@ -322,7 +322,7 @@ mdf_err_t mwifi_deinit(void);
  *    - MDF_OK
  *    - MDF_ERR_MWIFI_ARGUMENT
  */
-mdf_err_t mwifi_set_init_config(mwifi_init_config_t *init_config);
+mdf_err_t mwifi_set_init_config(const mwifi_init_config_t *init_config);
 
 /**
  * @brief  Get Mwifi init configuration.
@@ -344,7 +344,7 @@ mdf_err_t mwifi_get_init_config(mwifi_init_config_t *init_config);
  *    - MDF_OK
  *    - MDF_ERR_MWIFI_ARGUMENT
  */
-mdf_err_t mwifi_set_config(mwifi_config_t *config);
+mdf_err_t mwifi_set_config(const mwifi_config_t *config);
 
 /**
  * @brief  Get the configuration of the AP

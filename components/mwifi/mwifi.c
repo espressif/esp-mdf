@@ -162,7 +162,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
     mdf_event_loop_send(event.id, &s_evet_info);
 }
 
-mdf_err_t mwifi_init(mwifi_init_config_t *config)
+mdf_err_t mwifi_init(const mwifi_init_config_t *config)
 {
     MDF_PARAM_CHECK(config);
     MDF_ERROR_CHECK(g_mwifi_inited_flag, MDF_ERR_MWIFI_INITED, "Mwifi has been initialized");
@@ -437,7 +437,7 @@ mdf_err_t mwifi_deinit()
     return MDF_OK;
 }
 
-mdf_err_t mwifi_set_init_config(mwifi_init_config_t *init_config)
+mdf_err_t mwifi_set_init_config(const mwifi_init_config_t *init_config)
 {
     MDF_PARAM_CHECK(init_config);
     MDF_ERROR_CHECK(!g_mwifi_inited_flag, MDF_ERR_MWIFI_NOT_INIT, "Mwifi isn't initialized");
@@ -457,7 +457,7 @@ mdf_err_t mwifi_get_init_config(mwifi_init_config_t *init_config)
     return MDF_OK;
 }
 
-mdf_err_t mwifi_set_config(mwifi_config_t *config)
+mdf_err_t mwifi_set_config(const mwifi_config_t *config)
 {
     MDF_ERROR_CHECK(!g_mwifi_inited_flag, MDF_ERR_MWIFI_NOT_INIT, "Mwifi isn't initialized");
     MDF_PARAM_CHECK(config);
