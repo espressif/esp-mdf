@@ -484,6 +484,8 @@ EXIT:
     ret = (result->unfinished_num > 0) ? MDF_ERR_MUPGRADE_FIRMWARE_INCOMPLETE : MDF_OK;
     g_mupgrade_send_running_flag = false;
 
+    mdf_event_loop_send(MDF_EVENT_MUPGRADE_SEND_FINISH, (void *)ret);
+
     if (res) {
         memcpy(res, result, sizeof(mupgrade_result_t));
     } else {
