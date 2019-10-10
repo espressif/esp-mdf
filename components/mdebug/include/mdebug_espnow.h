@@ -68,6 +68,15 @@ typedef struct {
 mdf_err_t mdebug_espnow_init(void);
 
 /**
+ * @brief  De-initialize the wireless debug receiver
+ *
+ * @return
+ *     - MDF_OK
+ *     - MDF_FAIL
+ */
+mdf_err_t mdebug_espnow_deinit(void);
+
+/**
  * @brief  Send debug data with ESP-NOW
  *
  * @param  dest_addr  Destination address
