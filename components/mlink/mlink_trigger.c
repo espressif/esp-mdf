@@ -450,7 +450,5 @@ mdf_err_t mlink_trigger_init()
 
 bool mlink_trigger_is_exist()
 {
-    MDF_ERROR_CHECK(!g_trigger_list, false, "Mlink_trigger is not initialized");
-
-    return (g_trigger_list->next == NULL) ? false : true;
+    return (!g_trigger_list || g_trigger_list->next == NULL) ? false : true;
 }

@@ -100,7 +100,7 @@ static void initialize_console()
 
     /**< Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);
-    linenoiseSetHintsCallback((linenoiseHintsCallback*) &esp_console_get_hint);
+    linenoiseSetHintsCallback((linenoiseHintsCallback *) &esp_console_get_hint);
 
     /**< Set command history size */
     linenoiseHistorySetMaxLen(100);
@@ -162,6 +162,7 @@ mdf_err_t mdebug_console_init()
     /** Wait until uart tx full empty and the last char send ok. */
     fflush(stdout);
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+
 #if CONFIG_MDEBUG_STORE_HISTORY
     initialize_filesystem();
 #endif /**< CONFIG_MDEBUG_STORE_HISTORY */
@@ -202,8 +203,11 @@ mdf_err_t mdebug_console_init()
 
 mdf_err_t mdebug_console_deinit()
 {
+    mdf_err_t ret = MDF_OK;
     g_running_flag = false;
-    esp_console_deinit();
+
+    ret = esp_console_deinit();
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "de-initialize console module");
 
     return MDF_OK;
 }

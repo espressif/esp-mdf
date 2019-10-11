@@ -47,6 +47,7 @@ extern "C" {
 #define MDF_EVENT_MUPGRADE_FINISH            (MDF_EVENT_MUPGRADE_BASE + 3) /**< The upgrade is complete and the new firmware will run after the reboot */
 #define MDF_EVENT_MUPGRADE_STOPED            (MDF_EVENT_MUPGRADE_BASE + 4) /**< Stop upgrading */
 #define MDF_EVENT_MUPGRADE_FIRMWARE_DOWNLOAD (MDF_EVENT_MUPGRADE_BASE + 5) /**< Start firmware write flash  */
+#define MDF_EVENT_MUPGRADE_SEND_FINISH       (MDF_EVENT_MUPGRADE_BASE + 6) /**< Send the firmware to other devices to complete */
 
 /**
  * @brief Firmware subcontract upgrade

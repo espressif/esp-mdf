@@ -70,6 +70,16 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             MDF_LOGI("MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED");
             break;
 
+        /**< Add a custom communication process */
+        case MDF_EVENT_MCONFIG_BLUFI_RECV: {
+            mconfig_blufi_data_t *blufi_data = (mconfig_blufi_data_t *)ctx;
+            MDF_LOGI("recv data: %.*s", blufi_data->size, blufi_data->data);
+
+            // ret = mconfig_blufi_send(blufi_data->data, blufi_data->size);
+            // MDF_ERROR_BREAK(ret != MDF_OK, "<%> mconfig_blufi_send", mdf_err_to_name(ret));
+            break;
+        }
+
         default:
             break;
     }

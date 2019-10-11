@@ -44,15 +44,10 @@ mdf_err_t __mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, cons
     MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
 
     espnow_data->size      = size;
+    espnow_data->type      = type;
     espnow_data->addrs_num = addrs_num;
     memcpy(espnow_data->data, data, size);
     memcpy(espnow_data->data + size, addrs_list, addrs_num * ESP_NOW_ETH_ALEN);
-
-    if (!type) {
-        memset(&espnow_data->type, 0, sizeof(espnow_data->type));
-    } else {
-        espnow_data->type = type;
-    }
 
     /**< write date package to espnow. */
     ret = mespnow_write(MESPNOW_TRANS_PIPE_CONTROL, g_espnow_config.parent_bssid,
@@ -72,13 +67,13 @@ mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t *
     MDF_PARAM_CHECK(addrs_list);
 
     mdf_err_t ret      = MDF_OK;
-    size_t espnow_size = ESP_NOW_MAX_DATA_LEN;
+    size_t espnow_size = ESP_NOW_MAX_DATA_LEN * 4;
     uint8_t src_addr[ESP_NOW_ETH_ALEN] = {0x0};
     *size = 0;
     *data = NULL;
     *addrs_num = 0;
 
-    mlink_espnow_t *espnow_data = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN);
+    mlink_espnow_t *espnow_data = MDF_MALLOC(ESP_NOW_MAX_DATA_LEN * 4);
     MDF_ERROR_CHECK(!espnow_data, MDF_ERR_NO_MEM, "");
 
     /**< read data from espnow */
@@ -91,7 +86,7 @@ mdf_err_t __mlink_espnow_read(uint8_t **addrs_list, size_t *addrs_num, uint8_t *
     *addrs_num  = espnow_data->addrs_num;
     *addrs_list = MDF_MALLOC(*addrs_num * ESP_NOW_ETH_ALEN);
 
-    if(!(*data) || !(*addrs_list)){
+    if (!(*data) || !(*addrs_list)) {
         ret = MDF_ERR_NO_MEM;
         MDF_FREE(*data);
         MDF_FREE(*addrs_list);

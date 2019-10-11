@@ -29,7 +29,7 @@ typedef struct {
     char data[0];
 } mdebug_log_queue_t;
 
-
+#define MDEBUG_ESPNOW_TIMEOUT_MS (30 * 1000)
 #define MDEBUG_ESPNOW_STORE_KEY  "mdebug_espnow"
 #define MDEBUG_ESPNOW_QUEUE_SIZE (10)
 #define MDEBUG_LOG_MAX_SIZE      (MESPNOW_PAYLOAD_LEN * 2 - sizeof(mdebug_espnow_data_t))
@@ -38,6 +38,8 @@ typedef struct {
 static xQueueHandle g_espnow_log_queue  = NULL;
 static mdebug_log_config_t *g_log_config = NULL;
 static const char *TAG  = "mdebug_espnow";
+static TaskHandle_t g_espnow_send_task_handle = NULL;
+static TaskHandle_t g_log_send_task_handle    = NULL;
 
 mdf_err_t mdebug_log_get_config(mdebug_log_config_t *config)
 {
@@ -163,14 +165,15 @@ static void mdebug_log_send_task(void *arg)
 {
     mdebug_log_queue_t *log_data = NULL;
 
-    for (;;) {
-        if (xQueueReceive(g_espnow_log_queue, &log_data, portMAX_DELAY) == pdPASS) {
+    for (; g_log_config;) {
+        if (xQueueReceive(g_espnow_log_queue, &log_data, pdMS_TO_TICKS(MDEBUG_ESPNOW_TIMEOUT_MS)) == pdPASS) {
             mdebug_espnow_write(g_log_config->dest_addr, log_data->data,
-                                log_data->size, MDEBUG_ESPNOW_LOG, portMAX_DELAY);
+                                log_data->size, MDEBUG_ESPNOW_LOG, pdMS_TO_TICKS(MDEBUG_ESPNOW_TIMEOUT_MS));
             MDF_FREE(log_data);
         }
     }
 
+    g_log_send_task_handle = NULL;
     vTaskDelete(NULL);
 }
 
@@ -182,10 +185,10 @@ static void mdebug_espnow_send_task(void *arg)
     uint8_t *recv_data           = MDF_REALLOC_RETRY(NULL, MESPNOW_PAYLOAD_LEN);
     mdebug_espnow_t recv_type    = 0;
 
-    for (;;) {
+    for (; g_log_config;) {
         recv_size = MESPNOW_PAYLOAD_LEN - 1;
 
-        if (mdebug_espnow_read(src_addr, recv_data, &recv_size, &recv_type, portMAX_DELAY) == MDF_OK) {
+        if (mdebug_espnow_read(src_addr, recv_data, &recv_size, &recv_type, pdMS_TO_TICKS(MDEBUG_ESPNOW_TIMEOUT_MS)) == MDF_OK) {
             MDF_LOGV("recv_size: %d, recv_data: %s", recv_size, recv_data);
 
             switch (recv_type) {
@@ -213,6 +216,7 @@ static void mdebug_espnow_send_task(void *arg)
     }
 
     MDF_FREE(recv_data);
+    g_espnow_send_task_handle = NULL;
     vTaskDelete(NULL);
 }
 
@@ -240,21 +244,27 @@ mdf_err_t mdebug_espnow_init()
     /**< register espnow log redirect function */
     esp_log_set_vprintf(mdebug_log_vprintf);
 
-    g_espnow_log_queue = xQueueCreate(MDEBUG_ESPNOW_QUEUE_SIZE, sizeof(mdebug_espnow_data_t *));
-    MDF_ERROR_CHECK(!g_espnow_log_queue, ESP_FAIL, "g_espnow_log_queue create fail");
+    if (!g_espnow_log_queue) {
+        g_espnow_log_queue = xQueueCreate(MDEBUG_ESPNOW_QUEUE_SIZE, sizeof(mdebug_espnow_data_t *));
+        MDF_ERROR_CHECK(!g_espnow_log_queue, ESP_FAIL, "g_espnow_log_queue create fail");
+    }
 
-    xTaskCreatePinnedToCore(mdebug_espnow_send_task, "mdebug_espnow", 3 * 1024,
-                            NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY - 1,
-                            NULL, CONFIG_MDF_TASK_PINNED_TO_CORE);
+    if (!g_espnow_send_task_handle) {
+        xTaskCreatePinnedToCore(mdebug_espnow_send_task, "mdebug_espnow_send", 3 * 1024,
+                                NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY - 1,
+                                &g_espnow_send_task_handle, CONFIG_MDF_TASK_PINNED_TO_CORE);
+    }
 
-    xTaskCreatePinnedToCore(mdebug_log_send_task, "mdebug_log_send", 3 * 1024,
-                            NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY - 1,
-                            NULL, CONFIG_MDF_TASK_PINNED_TO_CORE);
+    if (!g_log_send_task_handle) {
+        xTaskCreatePinnedToCore(mdebug_log_send_task, "mdebug_log_send", 3 * 1024,
+                                NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY - 1,
+                                &g_log_send_task_handle, CONFIG_MDF_TASK_PINNED_TO_CORE);
+    }
 
     return ESP_OK;
 }
 
-mdf_err_t mdebug_deinit()
+mdf_err_t mdebug_espnow_deinit()
 {
     if (g_log_config) {
         mdebug_log_queue_t *log_data = NULL;

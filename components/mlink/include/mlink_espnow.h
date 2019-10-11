@@ -62,7 +62,7 @@ typedef struct {
 mdf_err_t __mlink_espnow_write(const uint8_t *addrs_list, size_t addrs_num, const void *data,
                                size_t size, uint32_t type, TickType_t wait_ticks);
 #define mlink_espnow_write_6(addrs_list,addrs_num,data,size,type,wait_ticks) __mlink_espnow_write(addrs_list,addrs_num,data,size,type,wait_ticks)
-#define mlink_espnow_write_5(addrs_list,addrs_num,data,size,wait_ticks) mlink_espnow_write_6(addrs_list,addrs_num,data,size,NULL,wait_ticks)
+#define mlink_espnow_write_5(addrs_list,addrs_num,data,size,wait_ticks) mlink_espnow_write_6(addrs_list,addrs_num,data,size,0,wait_ticks)
 #define mlink_espnow_write(...)\
     __PASTE(mlink_espnow_write_, COUNT_PARMS(__VA_ARGS__))(__VA_ARGS__)
 

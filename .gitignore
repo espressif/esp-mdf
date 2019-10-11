@@ -24,7 +24,10 @@ GPATH
 *.sublime-project
 *.sublime-workspace
 
- Doc build artifacts
+# vscode
+.vscode/
+
+# Doc build artifacts
 docs/*/_build/
 docs/*/doxygen-warning-log.txt
 docs/*/sphinx-warning-log.txt

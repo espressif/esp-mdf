@@ -595,7 +595,7 @@ EXIT:
 static esp_err_t mlink_ota_url(httpd_req_t *req)
 {
     mdf_err_t ret               = MDF_FAIL;
-    char firmware_name[32]      = {0x0};
+    char *firmware_name         = NULL;
     int start_time              = xTaskGetTickCount();
     char *buf                   = NULL;
     size_t firmware_size        = 0;
@@ -671,7 +671,8 @@ static esp_err_t mlink_ota_url(httpd_req_t *req)
         goto EXIT;
     }
 
-    sscanf(firmware_url, "%*[^//]//%*[^/]/%[^.bin]", firmware_name);
+    firmware_name = strrchr(firmware_url, '/') + 1;
+    firmware_name[strlen(firmware_name) - 3] = '\0';
 
     MDF_LOGD("firmware, name: %s, size: %d", firmware_name, firmware_size);
 

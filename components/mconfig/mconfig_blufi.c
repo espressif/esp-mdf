@@ -599,6 +599,9 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             MDF_LOGD("data_len: %d, custom_data: %.*s",
                      param->custom_data.data_len, param->custom_data.data_len, param->custom_data.data);
 
+            mconfig_ble_connect_timer_delete();
+            mconfig_ble_connect_timer_create();
+
             ret = mdf_event_loop(MDF_EVENT_MCONFIG_BLUFI_RECV, &param->custom_data);
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mdf_event_loop", mdf_err_to_name(ret));
             break;
@@ -660,7 +663,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
 
                     case BLUFI_DATA_MESH_ID:
                         if (blufi_data->len != sizeof(g_recv_config->config.mesh_id)
-                                && !MWIFI_ADDR_IS_EMPTY(blufi_data->data)) {
+                                || MWIFI_ADDR_IS_EMPTY(blufi_data->data)) {
                             MDF_LOGW("Mesh id: %s, len: %d", blufi_data->data, blufi_data->len);
                             config_flag = false;
                             break;
