@@ -103,6 +103,18 @@ build_example_mwifi_norouter:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/no_router"
 
+build_example_mwifi_console_test:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mwifi"
+    EXAMPLE_PATH: "examples/function_demo/mwifi/console_test"
+
+build_example_mwifi_mqtt_example:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mwifi"
+    EXAMPLE_PATH: "examples/function_demo/mwifi/mqtt_example"
+
 build_example_mcommon:
   <<: *build_template
   variables:
