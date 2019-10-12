@@ -833,7 +833,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
     if (!to_root && data_head.type.group && data_type->communicate != MWIFI_COMMUNICATE_BROADCAST) {
         ret = MDF_ERR_NO_MEM;
         uint8_t *group_data = MDF_MALLOC(mesh_data.size + MWIFI_ADDR_LEN);
-        MDF_ERROR_GOTO(!compress_data, EXIT, "");
+        MDF_ERROR_GOTO(!group_data, EXIT, "");
 
         memcpy(group_data, dest_addrs, MWIFI_ADDR_LEN);
         memcpy(group_data + MWIFI_ADDR_LEN, mesh_data.data, mesh_data.size);
