@@ -334,7 +334,7 @@ static void espnow_to_mwifi_task(void *arg)
 
         for (int i = 0; i < addrs_num; ++i) {
             ret = mwifi_write(addrs_list  + 6 * i, &mwifi_type, data, size, true);
-            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
+            MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", mdf_err_to_name(ret));
         }
 
         MDF_FREE(data);
@@ -392,7 +392,7 @@ mdf_err_t mlink_ble_write(void *data, size_t size)
         MDF_FREE(addr_list_json[i]);
 
         ret = mwifi_write(addr, &mwifi_type, body, strlen(body), true);
-        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> mwifi_write", esp_err_to_name(ret));
+        MDF_ERROR_GOTO(ret != MDF_OK, EXIT, "<%s> mwifi_write", mdf_err_to_name(ret));
     }
 
 EXIT:
@@ -480,6 +480,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             mdf_info_load("ap_config", &ap_config, sizeof(mwifi_config_t));
             esp_wifi_get_channel(&ap_config.channel, &second);
+            esp_mesh_get_parent_bssid((mesh_addr_t *)ap_config.router_bssid);
             mwifi_set_config(&ap_config);
             mdf_info_save("ap_config", &ap_config, sizeof(mwifi_config_t));
             break;
@@ -566,7 +567,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
                 .protocol = MLINK_PROTO_NOTICE,
             };
             ret = mwifi_write(NULL, &mwifi_type, "ota_status", strlen("ota_status"), true);
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", mdf_err_to_name(ret));
             break;
         }
 
@@ -613,7 +614,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
                 .protocol = MLINK_PROTO_NOTICE,
             };
             ret = mwifi_write(NULL, &mwifi_type, "sniffer", strlen("sniffer"), true);
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", esp_err_to_name(ret));
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", mdf_err_to_name(ret));
             break;
         }
 
