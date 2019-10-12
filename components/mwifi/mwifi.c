@@ -15,6 +15,8 @@
 #include "mwifi.h"
 #include "miniz.h"
 
+#define MWIFI_WAIVE_ROOT_TIMEOUT_MS 60000
+
 typedef struct {
     uint32_t magic;                   /**< Filter duplicate packets */
     struct {
@@ -37,6 +39,7 @@ static mwifi_config_t *g_ap_config        = NULL;
 static mwifi_init_config_t *g_init_config = NULL;
 static bool g_rootless_flag                       = false;
 static mesh_event_toDS_state_t g_toDs_status_flag = false;
+static esp_timer_handle_t g_waive_root_timer      = NULL;
 
 bool mwifi_is_started()
 {
@@ -59,6 +62,56 @@ bool mwifi_get_root_status()
     return g_toDs_status_flag;
 }
 
+#ifdef CONFIG_MWIFI_WAIVE_ROOT
+
+static void mwifi_waive_root_timer_delete(void)
+{
+    if (g_waive_root_timer) {
+        esp_timer_stop(g_waive_root_timer);
+        esp_timer_delete(g_waive_root_timer);
+        g_waive_root_timer = NULL;
+    }
+}
+
+static void mwifi_waive_root_timercb(void *timer)
+{
+    if (!g_waive_root_timer) {
+        MDF_LOGW("Timer has been deleted");
+        return ;
+    }
+
+    static int s_waive_root_count = 1;
+
+    if (esp_mesh_is_root() && esp_mesh_get_total_node_num() > 1
+            && mwifi_get_parent_rssi() < CONFIG_MWIFI_WAIVE_ROOT_RSSI) {
+        esp_mesh_waive_root(NULL, MESH_VOTE_REASON_ROOT_INITIATED);
+        s_waive_root_count = (s_waive_root_count < 15) ? s_waive_root_count * 2 : 15;
+        MDF_LOGI("Reselect root, current_rssi: %d, waive_rssi: %d", mwifi_get_parent_rssi(), CONFIG_MWIFI_WAIVE_ROOT_RSSI);
+
+        ESP_ERROR_CHECK(esp_timer_stop(g_waive_root_timer));
+        ESP_ERROR_CHECK(esp_timer_start_periodic(g_waive_root_timer, s_waive_root_count * MWIFI_WAIVE_ROOT_TIMEOUT_MS * 1000U));
+    }
+}
+
+static mdf_err_t mwifi_waive_root_timer_create(void)
+{
+    mdf_err_t ret = MDF_OK;
+    esp_timer_create_args_t timer_conf = {
+        .callback = mwifi_waive_root_timercb,
+        .name     = "mwifi_waive_root"
+    };
+
+    ret = esp_timer_create(&timer_conf, &g_waive_root_timer);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Create an esp_timer instance");
+
+    ret = esp_timer_start_periodic(g_waive_root_timer, MWIFI_WAIVE_ROOT_TIMEOUT_MS * 1000U);
+    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Start one-shot timer");
+
+    return MDF_OK;
+}
+
+#endif /**< CONFIG_MWIFI_WAIVE_ROOT */
+
 static void esp_mesh_event_cb(mesh_event_t event)
 {
     MDF_LOGD("esp_mesh_event_cb event.id: %d", event.id);
@@ -80,6 +133,22 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
             break;
 
+#ifdef CONFIG_MWIFI_WAIVE_ROOT
+
+        case MESH_EVENT_ROOT_GOT_IP:
+            mwifi_waive_root_timer_delete();
+            mwifi_waive_root_timer_create();
+            break;
+
+        case MESH_EVENT_LAYER_CHANGE:
+            if (!esp_mesh_is_root()) {
+                mwifi_waive_root_timer_delete();
+            }
+
+            break;
+
+#endif /**< CONFIG_MWIFI_WAIVE_ROOT */
+
         case MESH_EVENT_ROOT_LOST_IP:
             MDF_LOGI("Root loses the IP address");
             esp_mesh_disconnect();
@@ -95,6 +164,14 @@ static void esp_mesh_event_cb(mesh_event_t event)
             if (s_disconnected_count++ > 30) {
                 s_disconnected_count = 0;
                 mdf_event_loop_send(MDF_EVENT_MWIFI_NO_PARENT_FOUND, NULL);
+
+#ifdef CONFIG_MWIFI_WAIVE_ROOT
+
+                if (esp_mesh_is_root()) {
+                    esp_mesh_waive_root(NULL, MESH_VOTE_REASON_ROOT_INITIATED);
+                }
+
+#endif /**< CONFIG_MWIFI_WAIVE_ROOT */
             }
 
             break;

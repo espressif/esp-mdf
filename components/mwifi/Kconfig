@@ -133,10 +133,26 @@ menu "MDF Mwifi"
                 Allowed number of changes a parent node can introduce into its information element (IE),
                 before the leaf nodes must update their own IEs accordingly
 
+        config MWIFI_WAIVE_ROOT
+            bool "Reselect the root when the RSSI is weak"
+            default y
+            help
+                Cause the root device to give up (waive) its mesh root status,
+                A device is elected root primarily based on RSSI from the external router
+
+        config MWIFI_WAIVE_ROOT_RSSI
+            int "Reselect the RSSI threshold of the root node"
+            range -120 0
+            default -70
+            depends on MWIFI_WAIVE_ROOT
+            help
+                When the RSSI between the root and the router is lower than this value,
+                the reselection root is triggered.
+
     endmenu
 
     menu "Transmission config"
-    
+
         config MWIFI_XON_QSIZE
             int "The number of mesh buffer queues"
             default 32
