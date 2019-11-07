@@ -59,12 +59,12 @@ mdf_err_t mwifi_post_root_status(bool status)
 
 bool mwifi_get_root_status()
 {
-    if (g_toDs_status_flag) {
-        mdf_err_t ret           = MDF_FAIL;
+    if (!g_toDs_status_flag) {
         mesh_assoc_t mesh_assoc = {0x0};
 
-        ret = esp_wifi_vnd_mesh_get(&mesh_assoc);
-        MDF_ERROR_CHECK(ret != MDF_OK, -120, "Get mesh networking IE");
+        if (esp_wifi_vnd_mesh_get(&mesh_assoc) == MDF_OK) {
+            g_toDs_status_flag = mesh_assoc.toDS;
+        }
     }
 
     return g_toDs_status_flag && !g_rootless_flag;
