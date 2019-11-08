@@ -42,7 +42,7 @@ static mdf_err_t initialize_filesystem()
     esp_err_t ret = MDF_OK;
     static wl_handle_t wl_handle;
     const esp_vfs_fat_mount_config_t mount_config = {
-        .max_files = 4,
+        .max_files = 1,
         .format_if_mount_failed = true
     };
 

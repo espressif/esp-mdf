@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef __MDF_ESPNOW_DEBUG_H__
 #define __MDF_ESPNOW_DEBUG_H__
 
@@ -19,13 +20,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /**< _cplusplus */
-
-/**
- * @brief Log sending configuration
- */
-typedef struct {
-    uint8_t dest_addr[6]; /**< Turn off log sending if all is zero */
-} mdebug_log_config_t;
 
 /**
  * @brief Type of data sent during wireless debugging
@@ -50,7 +44,7 @@ enum {
  */
 typedef struct {
     uint8_t type;  /**< Type of packet */
-    int16_t size;  /**< size of data */
+    int16_t size;  /**< Size of data */
     int16_t seq;   /**< Sequence */
     uint8_t data[230]; /**< data */
 }  __attribute__((packed)) mdebug_coredump_packet_t;
@@ -107,29 +101,6 @@ mdf_err_t mdebug_espnow_write(const uint8_t *dest_addr, const void *data, size_t
  */
 mdf_err_t mdebug_espnow_read(uint8_t *src_addr, void *data, size_t *size,
                              mdebug_espnow_t *type, TickType_t wait_ticks);
-
-
-/**
- * @brief  Get the configuration of the log during wireless debugging
- *
- * @param  config The configuration of the log
- *
- * @return
- *     - MDF_OK
- *     - MDF_FAIL
- */
-mdf_err_t mdebug_log_get_config(mdebug_log_config_t *config);
-
-/**
- * @brief  Set the configuration of the log during wireless debugging
- *
- * @param  config The configuration of the log
- *
- * @return
- *     - MDF_OK
- *     - MDF_FAIL
- */
-mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config);
 
 #ifdef __cplusplus
 }

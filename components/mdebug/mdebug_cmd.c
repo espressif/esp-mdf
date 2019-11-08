@@ -17,7 +17,9 @@
 #include "wpa2/utils/base64.h"
 
 #include "mdf_common.h"
-#include "mdebug_espnow.h"
+#include "mdebug.h"
+
+#define MDEBUG_LOG_MAX_SIZE   (MESPNOW_PAYLOAD_LEN * 2 - 2)  /**< Set log length size */
 
 static const char *TAG = "mdebug_cmd";
 
@@ -45,7 +47,7 @@ static int version_func(int argc, char **argv)
 {
     esp_chip_info_t chip_info = {0};
 
-    /**< pint system information */
+    /**< Pint system information */
     esp_chip_info(&chip_info);
     MDF_LOGI("ESP-IDF version  : %s", esp_get_idf_version());
     MDF_LOGI("ESP-MDF version  : %s", mdf_get_version());
@@ -81,6 +83,10 @@ static struct {
     struct arg_str *tag;
     struct arg_str *level;
     struct arg_str *send;
+    struct arg_str *enable_type;
+    struct arg_str *disable_type;
+    struct arg_lit *output_type;
+    struct arg_lit *read;
     struct arg_end *end;
 } log_args;
 
@@ -90,6 +96,7 @@ static struct {
 static int log_func(int argc, char **argv)
 {
     mdf_err_t ret = MDF_OK;
+    mdebug_log_config_t log_config = {0};
     const char *level_str[6] = {"NONE", "ERR", "WARN", "INFO", "DEBUG", "VER"};
 
     if (arg_parse(argc, argv, (void **) &log_args) != ESP_OK) {
@@ -114,6 +121,59 @@ static int log_func(int argc, char **argv)
         mdebug_log_set_config(&config);
     }
 
+    if (log_args.enable_type->count) {  /**< Enable write to flash memory */
+        mdebug_log_get_config(&log_config);
+
+        if (!strcasecmp(log_args.enable_type->sval[0], "flash")) {
+            log_config.log_flash_enable = true;
+        } else if (!strcasecmp(log_args.enable_type->sval[0], "uart")) {
+            log_config.log_uart_enable = true;
+        } else if (!strcasecmp(log_args.enable_type->sval[0], "espnow")) {
+            log_config.log_espnow_enable = true;
+        }
+
+        mdebug_log_set_config(&log_config);
+    }
+
+    if (log_args.disable_type->count) {  /**< Disable write to flash memory */
+        mdebug_log_get_config(&log_config);
+
+        if (!strcasecmp(log_args.enable_type->sval[0], "flash")) {
+            log_config.log_flash_enable = false;
+        } else if (!strcasecmp(log_args.enable_type->sval[0], "uart")) {
+            log_config.log_uart_enable = false;
+        } else if (!strcasecmp(log_args.enable_type->sval[0], "espnow")) {
+            log_config.log_espnow_enable = false;
+        }
+
+        mdebug_log_set_config(&log_config);
+    }
+
+    if (log_args.output_type->count) { /**< Output enable type */
+        mdebug_log_get_config(&log_config);
+
+        MDF_LOGI("Enable type: %s%s%s", log_config.log_uart_enable ? "uart" : "",
+                 log_config.log_flash_enable ? "/flash" : "", log_config.log_espnow_enable ? "/espuart" : "");
+    }
+
+    if (log_args.read->count) {  /**< read to the flash of log data */
+        int log_size   = mdebug_flash_size();
+        char *log_data = MDF_MALLOC(MDEBUG_LOG_MAX_SIZE - 17);
+
+        MDF_LOGI("The flash partition that stores the log size: %d", log_size);
+        mdebug_log_get_config(&log_config);
+
+        if (log_config.log_flash_enable) {
+            for (size_t size = MIN(MDEBUG_LOG_MAX_SIZE - 17, log_size);
+                    size > 0 && mdebug_flash_read(log_data, &size) == MDF_OK;
+                    log_size -= size, size = MIN(MDEBUG_LOG_MAX_SIZE - 17, log_size)) {
+                MDF_LOGI("mdebug_log_data: %.*s", size, log_data);
+            }
+        }
+
+        MDF_FREE(log_data);
+    }
+
     return MDF_OK;
 }
 
@@ -122,10 +182,14 @@ static int log_func(int argc, char **argv)
  */
 static void register_log()
 {
-    log_args.tag   = arg_str0(NULL, NULL, "<tag>", "Tag of the log entries to enable, '*' resets log level for all tags to the given value");
-    log_args.level = arg_str0(NULL, NULL, "<level>", "Selects log level to enable (NONE, ERR, WARN, INFO, DEBUG, VER)");
-    log_args.send  = arg_str0("s", "send", "<addr (xx:xx:xx:xx:xx:xx)>", "Configure the address of the ESP-NOW log receiver");
-    log_args.end   = arg_end(2);
+    log_args.tag         = arg_str0(NULL, NULL, "<tag>", "Tag of the log entries to enable, '*' resets log level for all tags to the given value");
+    log_args.level       = arg_str0(NULL, NULL, "<level>", "Selects log level to enable (NONE, ERR, WARN, INFO, DEBUG, VER)");
+    log_args.enable_type = arg_str0("e", "enable_type", "<enable_type('uart' or 'flash' or 'espnow')>", "Selects mdebug log to enable (uart,flash,espnow)");
+    log_args.disable_type = arg_str0("d", "disable_type", "<disable_type('uart' or 'flash' or 'espnow')>", "Selects mdebug log to disable (uart,flash,espnow)");
+    log_args.output_type  = arg_lit0("o", "output_type", "Output enable type");
+    log_args.read        = arg_lit0("r", "read", "Read to the flash of mdebug log information");
+    log_args.send        = arg_str0("s", "send", "<addr (xx:xx:xx:xx:xx:xx)>", "Configure the address of the ESP-NOW log receiver");
+    log_args.end         = arg_end(8);
 
     const esp_console_cmd_t cmd = {
         .command = "log",
