@@ -15,4 +15,17 @@ menu "MDF Mdebug"
         help
             Store command history partition label.
 
+    config MDEBUG_FLASH_FILE_MAX_SIZE
+        int "Output the `Save the file size of the log"
+        range 4096 16384
+        default 16384
+        help
+            Output the `Save the file size of the log
+
+    config MDEBUG_PRINTF_ENABLE
+        bool "Output the `printf` information of the mdebug module"
+        default n
+        help
+            Output the `printf` information of the mdebug module
+
 endmenu
