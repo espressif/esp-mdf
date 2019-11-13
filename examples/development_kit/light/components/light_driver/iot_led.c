@@ -223,7 +223,7 @@ static IRAM_ATTR esp_err_t iot_ledc_set_duty(ledc_mode_t speed_mode, ledc_channe
                                 1,               // uint32_t increase,
                                 1,               // uint32_t duty_num,
                                 1,               // uint32_t duty_cycle,
-                                1                // uint32_t duty_scale
+                                0                // uint32_t duty_scale
                                );
 }
 
@@ -303,6 +303,9 @@ static IRAM_ATTR void fade_timercb(void *para)
                     iot_ledc_set_duty(g_light_config->speed_mode, channel, gamma_value_to_duty(fade_data->cur));
                 }
 
+                _iot_update_duty(g_light_config->speed_mode, channel);
+            } else {
+                iot_ledc_set_duty(g_light_config->speed_mode,channel,gamma_value_to_duty(fade_data->cur));
                 _iot_update_duty(g_light_config->speed_mode, channel);
             }
         } else if (fade_data->cycle) {
