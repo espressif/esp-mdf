@@ -101,6 +101,7 @@ void app_main()
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
     MDF_ERROR_ASSERT(mwifi_init(&init_config));
+    MDF_ERROR_ASSERT(mdebug_espnow_init());
 
     /**
      * @brief Add debug function, you can use serial command and wireless debugging.
