@@ -162,13 +162,13 @@ mdf_err_t mdebug_espnow_init()
     ret = mespnow_init();
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mespnow_init");
 
-    esp_wifi_get_channel(&channel, &second);
+    ESP_ERROR_CHECK(esp_wifi_get_channel(&channel, &second));
 
     ret = mdebug_log_init();
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mdebug_log_init");
 
     if (channel == 0) {
-        esp_wifi_set_channel(13, WIFI_SECOND_CHAN_NONE);
+        ESP_ERROR_CHECK(esp_wifi_set_channel(13, WIFI_SECOND_CHAN_NONE));
     }
 
     if (!g_espnow_send_task_handle) {

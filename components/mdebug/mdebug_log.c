@@ -104,7 +104,7 @@ static ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
     log_data->size = log_size;
     log_data->type = 0;
 
-    if (!g_log_config->log_espnow_enable && !MDEBUG_ADDR_IS_EMPTY(g_log_config->dest_addr)) {
+    if (g_log_config->log_espnow_enable && !MDEBUG_ADDR_IS_EMPTY(g_log_config->dest_addr)) {
         log_data->type |= MDEBUG_LOG_TYPE_ESPNOW;
     }
 
