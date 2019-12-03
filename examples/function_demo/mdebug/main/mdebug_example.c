@@ -264,7 +264,7 @@ void app_main()
     mwifi_config_t config   = {
         .router_ssid     = CONFIG_ROUTER_SSID,
         .router_password = CONFIG_ROUTER_PASSWORD,
-        .mesh_id         = "1",
+        .mesh_id         = CONFIG_MESH_ID,
         .mesh_password   = CONFIG_MESH_PASSWORD,
     };
     mdebug_log_config_t log_config = {
