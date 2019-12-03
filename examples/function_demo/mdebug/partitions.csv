@@ -5,5 +5,5 @@ phy_init, data, phy,      0xf000,   4k
 ota_0,    app,  ota_0,    0x10000,  1920k
 ota_1,    app,  ota_1,    ,         1920k
 coredump, data, coredump, ,         64K
-storage,  data, spiffs,   ,         64K
+log_info, data, 0xff,     ,         64K
 reserved, data, 0xfe,     ,         64K
