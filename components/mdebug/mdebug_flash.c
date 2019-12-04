@@ -62,7 +62,7 @@ mdf_err_t mdebug_flash_init()
 
     if (mdf_info_load(MDEBUG_FLASH_STORE_KEY, g_log_info,
                       sizeof(flash_log_info_t) * MDEBUG_FLASH_FILE_MAX_NUM) != MDF_OK) {
-        ret = esp_partition_erase_range(g_log_part, 0, MDEBUG_LOG_FILE_MAX_SIZE);
+        ret = esp_partition_erase_range(g_log_part, CONFIG_MDEBUG_LOG_PARTITION_OFFSET, MDEBUG_LOG_FILE_MAX_SIZE);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_partition_erase_range");
     }
 
@@ -223,7 +223,7 @@ mdf_err_t mdebug_flash_erase()
 
     mdf_info_erase(MDEBUG_FLASH_STORE_KEY);
 
-    ret = esp_partition_erase_range(g_log_part, 0, g_log_part->size);
+    ret = esp_partition_erase_range(g_log_part, CONFIG_MDEBUG_LOG_PARTITION_OFFSET, MDEBUG_LOG_FILE_MAX_SIZE);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_partition_erase_range");
 
     return MDF_OK;
