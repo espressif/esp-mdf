@@ -20,36 +20,8 @@
 #include "esp_mesh_internal.h"
 
 #ifdef __cplusplus
-
-/*
- *@brief Next templates makes gnu builtin: __builtin_types_compatible_p
- *       compatible with C++ compilation
- */
-template<typename T, typename U>
-struct is_same {
-    static const int value = 0;
-};
-
-template<typename T>
-struct is_same<T, T> {
-    static const int value = 1;
-};
-
-template<typename T, typename U>
-int cxx_is_compatible()
-{
-    return is_same<T, U>::value;
-}
-
-/**
- * @brief Macro adaptation for C++ compilation, using previous C++ templates for type checking
- */
-#define builtin_types_compatible_p(data, type)  cxx_is_compatible<decltype(data),type>()
 extern "C" {
-#else
-#define builtin_types_compatible_p(data, type)  __builtin_types_compatible_p(typeof(data), type)
 #endif /**< _cplusplus */
-
 
 #define MWIFI_PAYLOAD_LEN       (1456) /**< Max payload size(in bytes) */
 

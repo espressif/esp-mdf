@@ -72,14 +72,14 @@ esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t typ
 
 #define mdf_info_load(key, value, len) \
     __mdf_info_load(key, value, (size_t)(len), \
-                    + __builtin_types_compatible_p(typeof(len), int8_t) * LENGTH_TYPE_NUMBER \
-                    + __builtin_types_compatible_p(typeof(len), uint8_t) * LENGTH_TYPE_NUMBER \
-                    + __builtin_types_compatible_p(typeof(len), int16_t) * LENGTH_TYPE_NUMBER \
-                    + __builtin_types_compatible_p(typeof(len), uint16_t) * LENGTH_TYPE_NUMBER \
-                    + __builtin_types_compatible_p(typeof(len), int) * LENGTH_TYPE_NUMBER \
-                    + __builtin_types_compatible_p(typeof(len), uint32_t) * LENGTH_TYPE_NUMBER \
-                    + __builtin_types_compatible_p(typeof(len), int *) * LENGTH_TYPE_POINTER \
-                    + __builtin_types_compatible_p(typeof(len), uint32_t *) * LENGTH_TYPE_POINTER)
+                    builtin_types_compatible_p(len, int8_t) * LENGTH_TYPE_NUMBER \
+                    +builtin_types_compatible_p(len, uint8_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, int16_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, uint16_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, int) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, uint32_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, int *) * LENGTH_TYPE_POINTER \
+                    + builtin_types_compatible_p(len, uint32_t *) * LENGTH_TYPE_POINTER)
 
 /*
  * @brief  Erase the information with given key
