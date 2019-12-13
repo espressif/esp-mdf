@@ -1,22 +1,22 @@
-# ESP-MESH 开发框架 [[English]](./README.md)
+# ESP-WIFI-MESH 开发框架 [[English]](./README.md)
 
 [![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
 
-ESP-MDF (Espressif Mesh Development Framework) 是基于 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 芯片的 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 开发框架。ESP-MESH 是一种基于 Wi-Fi 构建的 MESH 网络通信协议。
+ESP-MDF (Espressif Mesh Development Framework) 是基于 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 芯片的 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 开发框架。ESP-WIFI-MESH 是一种基于 Wi-Fi 构建的 MESH 网络通信协议。
 
 ## 概述
 
-ESP-MDF 在 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 协议栈的基础上增加了配网、升级、调试机制及应用示例。使用 ESP-MDF 您可以快速上手 ESP-MESH 开发。其主要特点如下：
+ESP-MDF 在 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 协议栈的基础上增加了配网、升级、调试机制及应用示例。使用 ESP-MDF 您可以快速上手 ESP-WIFI-MESH 开发。其主要特点如下：
 
 * **快速配网**：在 app 配网的基础上增加了设备间链式配网，以实现大范围快速配网；
 * **稳定升级**：通过断点续传、数据压缩、版本回退和固件检查等机制达到高效升级；
 * **高效调试**：支持指令终端、通过无线进行日志传输和调试等多种调试方式；
 * **局域网控制**：支持 app 控制、传感器控制等；
-* **丰富的示例**：提供了基于 ESP-MESH 的照明等综合解决方案。
+* **丰富的示例**：提供了基于 ESP-WIFI-MESH 的照明等综合解决方案。
 
 ## 框架
 
-ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示），他们之间的关系：Utils 是 ESP-IDF APIs 的抽象封装以及第三方库，Components 是基于 Utils APIs 组成的 ESP-MDF 功能模块，Examples 是基于 Components 完成的 ESP-MESH 解决方案。
+ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示），他们之间的关系：Utils 是 ESP-IDF APIs 的抽象封装以及第三方库，Components 是基于 Utils APIs 组成的 ESP-MDF 功能模块，Examples 是基于 Components 完成的 ESP-WIFI-MESH 解决方案。
 
 <img src="docs/_static/mdf_framework.jpg" author="Author by Natasha">
 
@@ -27,7 +27,7 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
         - [Aliyun](https://github.com/espressif/esp-aliyun)：阿里云物联网套件
 
     - Transmission：设备间数据通信方式
-        - [Mwifi](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/mwifi/index.html)：对 ESP-MESH 的封装，在其基础上增加了重包过滤、数据压缩、分包传输和 P2P 组播
+        - [Mwifi](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/mwifi/index.html)：对 ESP-WIFI-MESH 的封装，在其基础上增加了重包过滤、数据压缩、分包传输和 P2P 组播
         - [Mespnow](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-reference/mespnow/index.html)：对 ESP-NOW 的封装，在其基础上增加了重包过滤、CRC 校验、数据分包
 
     - Mcommon：ESP-MDF 各组件之间的共用模块
@@ -50,13 +50,13 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
         - [Mcommon](examples/function_demo/mcommon)：通用模块示例,事件处理 内存管理 信息存储的使用示例
 
     - Debug：性能测试和调试工具
-        - [Console Test](examples/function_demo/mwifi/console_test)：通过串口输入命令的方式，测试 ESP-MESH 吞吐量、网络配置、发包时延。
+        - [Console Test](examples/function_demo/mwifi/console_test)：通过串口输入命令的方式，测试 ESP-WIFI-MESH 吞吐量、网络配置、发包时延。
         - [Wireless Debug](examples/wireless_debug/)：通过无线的方式进行 ESP-MDF 调试
 
-    - [Development Kit](examples/development_kit/)：ESP32-MeshKit 使用示例, 用于调研和了解 ESP-MESH
-        - [ESP32-MeshKit-Light](examples/development_kit/light/)：板载 ESP32 芯片的智能灯，用于 ESP-MESH 作为主干网络进行长供电的场景。支持 BLE + ESP-MESH, 可实现BLE网关, iBeacon 和 BLE 扫描
-        - [ESP32-MeshKit-Sense](examples/development_kit/sense/)：ESP-MESH 在 Deep-sleep + Light-sleep 模式下的低功耗方案，可用于：监测 MeshKit 外设功耗和根据传感器数据控制 MeshKit 外设
-        - [ESP32-MeshKit-Button](examples/development_kit/button/)：ESP-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_now.html) 给 ESP-MESH 设备发包。
+    - [Development Kit](examples/development_kit/)：ESP32-MeshKit 使用示例, 用于调研和了解 ESP-WIFI-MESH
+        - [ESP32-MeshKit-Light](examples/development_kit/light/)：板载 ESP32 芯片的智能灯，用于 ESP-WIFI-MESH 作为主干网络进行长供电的场景。支持 BLE + ESP-WIFI-MESH, 可实现BLE网关, iBeacon 和 BLE 扫描
+        - [ESP32-MeshKit-Sense](examples/development_kit/sense/)：ESP-WIFI-MESH 在 Deep-sleep + Light-sleep 模式下的低功耗方案，可用于：监测 MeshKit 外设功耗和根据传感器数据控制 MeshKit 外设
+        - [ESP32-MeshKit-Button](examples/development_kit/button/)：ESP-WIFI-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_now.html) 给 ESP-WIFI-MESH 设备发包。
 
     - 云平台: ESP-MDF 对接云平台
         - [Aliyun Linkkit](examples/maliyun_linkkit/)：ESP-MDF 接入阿里飞燕平台示例
@@ -64,13 +64,13 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
 
 ## 使用 ESP-MDF 进行开发
 
-您首先需要详细阅读 [ESP-MESH 通信协议](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html)和[ESP-MDF 编译指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)，并通过 ESP32-MeshKit 开发套件调研和了解 ESP-MESH。其次基于 [Function demo](examples/function_demo/)进行您的项目开发，当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
+您首先需要详细阅读 [ESP-WIFI-MESH 通信协议](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html)和[ESP-MDF 编译指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)，并通过 ESP32-MeshKit 开发套件调研和了解 ESP-WIFI-MESH。其次基于 [Function demo](examples/function_demo/)进行您的项目开发，当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
 
 ### 开发板指南
 
 #### ESP32-MeshKit 开发套件
 
-ESP32-MeshKit 包含一整套完整的 [ESP-MESH 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)（如下图所示），可配套 ESP-Mesh App（[iOS 版](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8)和[安卓版](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)）使用，用于调研和了解 ESP-MESH，也可以进行二次开发。
+ESP32-MeshKit 包含一整套完整的 [ESP-WIFI-MESH 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)（如下图所示），可配套 ESP-Mesh App（[iOS 版](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8)和[安卓版](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)）使用，用于调研和了解 ESP-WIFI-MESH，也可以进行二次开发。
 
 <table>
     <tr>
@@ -86,7 +86,7 @@ ESP32-MeshKit 包含一整套完整的 [ESP-MESH 的照明解决方案](https://
 
 #### ESP32-Buddy 开发板
 
-ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，采用 USB 供电，方便做大数量设备的测试及距离测试。
+ESP32-Buddy 是专为 ESP-WIFI-MESH 开发测试而设计的开发板。体积小，采用 USB 供电，方便做大数量设备的测试及距离测试。
 
 * 功能：
     * 16 MB 的 flash：存储运行日志
@@ -111,7 +111,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     export MDF_PATH=~/esp/esp-mdf
     ```
 
-4. **创建一个工程**：此工程为 ESP-MESH 两个设备之间通信的示例
+4. **创建一个工程**：此工程为 ESP-WIFI-MESH 两个设备之间通信的示例
     ```shell
     cp -r $MDF_PATH/examples/get-started/ .
     cd get-started/
@@ -153,7 +153,7 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     export PATH="$MDF_PATH/esp-idf/tools:$PATH"
     ```
 
-4. **创建一个工程**：此工程为 ESP-MESH 两个设备之间通信的示例
+4. **创建一个工程**：此工程为 ESP-WIFI-MESH 两个设备之间通信的示例
     ```shell
     cp -r $MDF_PATH/examples/get-started/ .
     cd get-started/
@@ -177,32 +177,32 @@ ESP32-Buddy 是专为 ESP-MESH 开发测试而设计的开发板。体积小，�
     git submodule update --init --recursive
     ```
 
-## ESP-MESH 的优势
+## ESP-WIFI-MESH 的优势
 
 * **布置方便**：采用 Wi-Fi 组网，无需布线安装等复杂工作，支持自组网、自修复和自管理，用户只需配置路由器的密码即可；
 
-* **无需网关**：ESP-MESH 采用去中心化的结构，其无需网关避免了单点故障造成整个网络瘫痪，仅一个 ESP-MESH 设备也能正常工作；
+* **无需网关**：ESP-WIFI-MESH 采用去中心化的结构，其无需网关避免了单点故障造成整个网络瘫痪，仅一个 ESP-WIFI-MESH 设备也能正常工作；
 * **传输更安全**：数据链路层和应用层均可实施加密；
 * **传输更可靠**：两个设备之间的是可靠传输和流控，支持单播、组播和广播；
-* **网络容量大**：ESP-MESH 采用树状结构，单个设备最多直接连接 10 个设备，单个网络可容纳 1000 个节点；
+* **网络容量大**：ESP-WIFI-MESH 采用树状结构，单个设备最多直接连接 10 个设备，单个网络可容纳 1000 个节点；
 * **传输范围广**：两个设备之间的传输距离隔墙 30 m，空旷环境 200 m（测试基于 ESP32-DevKitC）；
     * **智能家居**：即使仅有三五个设备且隔墙也能够组成网络，可以满足家庭环境中，设备数量少无法相互通信的问题；
     * **路灯方案**：可能满足路灯场景中两个相距较远的设备之间的通信。
 * **传输速率高**：基于 Wi-Fi 传输，高达 10 Mbps 的传输率；
     * **环境控制系统**：可以直接传输传感器采集到的原始数据，对大量数据的分析来校准算法提高传感器准确性；
     * **背景音乐系统**：可以进行音视频传输。
-* **能同时运行 BLE 协议栈**：ESP32 芯片可以同时运行 Wi-Fi 和 BLE 协议栈，利用 ESP-MESH 做为主干网络进行数据的传输，通过 BLE 接收探针、发送广播和连接设备；
+* **能同时运行 BLE 协议栈**：ESP32 芯片可以同时运行 Wi-Fi 和 BLE 协议栈，利用 ESP-WIFI-MESH 做为主干网络进行数据的传输，通过 BLE 接收探针、发送广播和连接设备；
     * **物品跟踪**：通过多个采集点监控同一设备发出的 BLE 或 Wi-Fi 数据包；
     * **人流量检测**：统计 Wi-Fi 设备发出的 Probe Request （探测请求）帧；
     * **室内定位**：每个设备相当于 Beacon 基站不断向四周发送蓝牙信号，手机通过分析与设备之间的信号强度，计算出当前的位置；
     * **产品推广**：通过 iBeacon 实时推送产品信息和优惠活动；
-    * **蓝牙网关**：每个设备可以相当于一个蓝牙网关，使传统的蓝牙设备也能连接 ESP-MESH 网络。
+    * **蓝牙网关**：每个设备可以相当于一个蓝牙网关，使传统的蓝牙设备也能连接 ESP-WIFI-MESH 网络。
 
 ## 相关资源
 
 * [ESP-MDF 编程指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html) 是 ESP-MDF 开发框架的说明文档。
 * [ESP-IDF 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/index.html) 是乐鑫物联网开发框架的说明文档。
-* [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
+* [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 是 ESP-MDF 的无线通信协议基础。
 * 如您发现 bug 或有功能请求，可在 GitHub 上的 [Issues](https://github.com/espressif/esp-mdf/issues) 提交。请在提交问题之前查看已有的 Issues 中是否已经有您的问题。
 * 如果您想在 ESP-MDF 上贡献代码，请点击[贡献代码指南](docs/zh_CN/contribute/index.rst)。
 * 访问 ESP32 官方论坛请点击 [ESP32 BBS](https://esp32.com/) 。

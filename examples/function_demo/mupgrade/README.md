@@ -4,7 +4,7 @@
 
 ## Introduction
 
-It introduces a quick way to use `Mupgrade` to upgrade ESP-MESH devices.
+It introduces a quick way to use `Mupgrade` to upgrade ESP-WIFI-MESH devices.
 
 [Mesh Upgrade Introduction](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html)
 
@@ -12,7 +12,7 @@ It introduces a quick way to use `Mupgrade` to upgrade ESP-MESH devices.
 
 ### Step 1: Connect to the router
 
-Connect PC to the router that is connected to ESP-MESH network.
+Connect PC to the router that is connected to ESP-WIFI-MESH network.
 
 ### Step 2: Run HTTP server
 
@@ -48,7 +48,7 @@ While running the server, you may go to `http：// localhost：8070/` to browse 
 
 Navigate to the OTA example directory, and type `make menuconfig`(Make) or `make menuconfig`(CMake) to configure the OTA example. Under the submenu "Example Configuration", please fill in the following information:
 
-* ESP-MESH network configuration information
+* ESP-WIFI-MESH network configuration information
 * Firmware upgrade URL, which would look like this:
 
 ```

@@ -5,29 +5,29 @@
 ---
 
 ## 概述
-ESP32-MeshKit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案，包含以下硬件：
+ESP32-MeshKit 是基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案，包含以下硬件：
 
-* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：板载 ESP32 芯片的智能灯，用于 ESP-MESH 作为主干网络进行长供电的场景。
+* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf)：板载 ESP32 芯片的智能灯，用于 ESP-WIFI-MESH 作为主干网络进行长供电的场景。
 
-* [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md)：ESP-MESH 在 Deep-sleep + Light-sleep 模式下的低功耗方案，可用于：
+* [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_cn.md)：ESP-WIFI-MESH 在 Deep-sleep + Light-sleep 模式下的低功耗方案，可用于：
 
 	* 监测 MeshKit 外设功耗 
 	* 根据传感器数据控制 MeshKit 外设
 
-* [ESP32-MeshKit-Button](button/README_cn.md)：ESP-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_now.html) 给 ESP-MESH 设备发包。
+* [ESP32-MeshKit-Button](button/README_cn.md)：ESP-WIFI-MESH 在超低功耗的场景下使用，平常处于断电状态，仅在唤醒时工作，并通过 [ESP-NOW](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_now.html) 给 ESP-WIFI-MESH 设备发包。
 
 对以上硬件进行配置和组网，您需要：
 
 * 安装 ESP-Mesh App 的安卓或苹果手机（见 [ESP-Mesh App 章节](#esp-mesh-app)）
-* 2.4 GHz Wi-Fi 网络，连接您的手机和 ESP-MESH 设备
+* 2.4 GHz Wi-Fi 网络，连接您的手机和 ESP-WIFI-MESH 设备
 
 ## 功能
 
-1. 配网：[Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html) (MESH Network Configuration) 是 ESP-MESH 配网的一种方案，首先使用 ESP-Mesh App 通过蓝牙给单个设备配网，然后再由已配网设备给未配网设备传递配网信息。
+1. 配网：[Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html) (MESH Network Configuration) 是 ESP-WIFI-MESH 配网的一种方案，首先使用 ESP-Mesh App 通过蓝牙给单个设备配网，然后再由已配网设备给未配网设备传递配网信息。
 
-2. 通信：[Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html) (MESH LAN Communication) 是 ESP-MESH 局域网控制的一种方案，根节点会建立 HTTP 服务器与 App 之间的通信，并将信息转发给 ESP-MESH 网络内的其它设备。
+2. 通信：[Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html) (MESH LAN Communication) 是 ESP-WIFI-MESH 局域网控制的一种方案，根节点会建立 HTTP 服务器与 App 之间的通信，并将信息转发给 ESP-WIFI-MESH 网络内的其它设备。
 
-3. 升级：[Mupgrade](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mupgrade.html) (MESH Upgrade) 是 ESP-MESH OTA 升级的一种方案，旨在通过以下机制实现 ESP-MESH 设备的高效升级。
+3. 升级：[Mupgrade](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mupgrade.html) (MESH Upgrade) 是 ESP-WIFI-MESH OTA 升级的一种方案，旨在通过以下机制实现 ESP-WIFI-MESH 设备的高效升级。
 
 
 ## ESP-Mesh App 
@@ -39,7 +39,7 @@ ESP32-MeshKit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/e
 
 > 注： 所有版本中优先更新安卓版本
 
-ESP-Mesh App 可帮助您调研和了解 ESP-MESH，并进行二次开发。上述源码可用于开发您自己的应用。
+ESP-Mesh App 可帮助您调研和了解 ESP-WIFI-MESH，并进行二次开发。上述源码可用于开发您自己的应用。
 
 ## 硬件准备
 
@@ -57,7 +57,7 @@ ESP-Mesh App 可帮助您调研和了解 ESP-MESH，并进行二次开发。上�
 
 * 打开 ESP-Mesh App，通过蓝牙扫描并提示周围处于配网模式的设备；
 
-* 点击主界面中`添加设备`按钮，查看获取到的 ESP-MESH 设备列表；
+* 点击主界面中`添加设备`按钮，查看获取到的 ESP-WIFI-MESH 设备列表；
 
 * 点击搜索框前的小箭头，对设备进行筛选；
 	* `RSSI`：根据设备信号强度筛选设备 
@@ -74,16 +74,16 @@ ESP-Mesh App 可帮助您调研和了解 ESP-MESH，并进行二次开发。上�
 
 * 输入配置信息：
     * **Wi-Fi 名称**：手机所连 Wi-Fi 名称。注意仅支持 2.4 G；
-    * **Mesh ID**：ESP-MESH 网络唯一标识符，默认为路由器的 Mac 地址，相同的 `Mesh ID` 将组成一个网络；
+    * **Mesh ID**：ESP-WIFI-MESH 网络唯一标识符，默认为路由器的 Mac 地址，相同的 `Mesh ID` 将组成一个网络；
     * **密码**：Wi-Fi 密码；
-    * **More**：点此即可查看和修改有关 ESP-MESH 网络内部的默认配置。更多配置详情，请参照 [ESP-MESH 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_mesh.html)。
+    * **More**：点此即可查看和修改有关 ESP-WIFI-MESH 网络内部的默认配置。更多配置详情，请参照 [ESP-WIFI-MESH 编程指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/network/esp_mesh.html)。
  
 * 信息输入完成后，点击`下一步`；
 
     <table>
         <tr>
             <td ><img src="docs/_static/zh_CN/router_configuration.png" width="300"><p align=center>输入路由器信息</p></td>
-            <td ><img src="docs/_static/zh_CN/more_configuration.png" width="300"><p align=center>输入 ESP-MESH 配置信息</p></td>
+            <td ><img src="docs/_static/zh_CN/more_configuration.png" width="300"><p align=center>输入 ESP-WIFI-MESH 配置信息</p></td>
         </tr>
     </table>
 
@@ -106,7 +106,7 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
 
 ### 2. 添加设备
 
-如果 App 发现处于配网模式的 ESP-MESH 设备，会自动弹出设备添加框，点击`加入网络`即完成配网。
+如果 App 发现处于配网模式的 ESP-WIFI-MESH 设备，会自动弹出设备添加框，点击`加入网络`即完成配网。
 
 <table>
     <tr>
@@ -159,19 +159,19 @@ ESP-Mesh App 开始传输配置信息，并进行以下操作：
 
 * **设置**：App 的版本信息，App 升级及常见问题解答；
 
-* **拓扑结构**：ESP-MESH 网络结构及组网信息。您可以通过长按节点，获取设备的组网信息。
+* **拓扑结构**：ESP-WIFI-MESH 网络结构及组网信息。您可以通过长按节点，获取设备的组网信息。
 
 <table>
     <tr>
         <td ><img src="docs/_static/zh_CN/version_information.png" width="300"><p align=center>App 版本信息</p></td>
         <td ><img src="docs/_static/zh_CN/topology.png" width="300"><p align=center>拓扑结构</p></td>
-        <td ><img src="docs/_static/zh_CN/network_configuration.png" width="300"><p align=center>ESP-MESH 网络配置信息</p></td>
+        <td ><img src="docs/_static/zh_CN/network_configuration.png" width="300"><p align=center>ESP-WIFI-MESH 网络配置信息</p></td>
     </tr>
 </table>
 
 ### 6. 固件升级
 
-长按已添加设备列表中的 ESP-MESH 设备，在弹出的对话框中选择`固件升级`，选择以下任一方式升级固件：
+长按已添加设备列表中的 ESP-WIFI-MESH 设备，在弹出的对话框中选择`固件升级`，选择以下任一方式升级固件：
 
 * 固件拷贝升级：您可以将固件直接拷贝到手机的 `文件管理/手机存储/Espressif/Esp32/upgrade` 文件夹中。
 * 远程链接升级：您可以将固件存放在云端（如 GitHub 上）或局域网内创建的 HTTP 服务器，在 App 端输入固件链接地址。

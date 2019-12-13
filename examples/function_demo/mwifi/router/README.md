@@ -4,7 +4,7 @@
 
 ## Introduction
 
-It introduces how to connect the devices to a remote external server based on `Mwifi` module APIs. To be specific, the devices transmit all the data to the root node via ESP-MESH, and then the root node connects to a remote server with LWIP.
+It introduces how to connect the devices to a remote external server based on `Mwifi` module APIs. To be specific, the devices transmit all the data to the root node via ESP-WIFI-MESH, and then the root node connects to a remote server with LWIP.
 
 This example implements the functions of sending device data to a TCP server or sending data to a specific node or a specific group of nodes from a TCP server over the mesh network.
 
@@ -27,7 +27,7 @@ This example implements the functions of sending device data to a TCP server or 
 Enter `make menuconfig`, and configure the followings under the submenu "Example Configuration".
 
  * The router information: If you cannot get the router's channel, please set it as 0, which indicates that the channel will be automatically acquired by the devices.
- * ESP-MESH network: The network password length should be between 8 and 64 bits (both exclusive), and the network will not be encrypted if you leave the password blank.
+ * ESP-WIFI-MESH network: The network password length should be between 8 and 64 bits (both exclusive), and the network will not be encrypted if you leave the password blank.
  * TCP server: the information of the TCP server run on the PC
 
 <div align=center>
@@ -49,7 +49,7 @@ idf.py erase_flash flash monitor-b 921600 -p /dev/ttyUSB0
 
 ### Run
 
-1. ESP-MESH devices send the real-time device status to the TCP server at an interval of three seconds.
+1. ESP-WIFI-MESH devices send the real-time device status to the TCP server at an interval of three seconds.
 2. The TCP server sends data (in as format describe in the following section) to a specific address or group address:
 	-  	When the destination address is `ff:ff:ff:ff:ff:ff`, it will send data to all devices.
 	-  When the destination is a group address, it will send data to all the devices in this group.

@@ -2,9 +2,9 @@
 
 # Mwifi
 
-This directory contains examples for two common networking modes of ESP-MESH: with router or without router.
+This directory contains examples for two common networking modes of ESP-WIFI-MESH: with router or without router.
 
-In the ESP-MESH networking, there are two ways to generate root node:
+In the ESP-WIFI-MESH networking, there are two ways to generate root node:
 
 1. Automatically selected root node: automatically elected based on the signal strength of the idle node and the router.
 2. Fixed root node: choose a device as the root node in the code, and the remaining devices are non-root nodes
@@ -21,4 +21,4 @@ When there are routers in the case, we can choose either of the two modes for ne
 
 ## Performance Testing
 
-Test the ESP-MESH throughput, network configuration, and packet delay by inputting commands through the serial port. Refer to [Performance Test Sample Program] (./console_test)
+Test the ESP-WIFI-MESH throughput, network configuration, and packet delay by inputting commands through the serial port. Refer to [Performance Test Sample Program] (./console_test)

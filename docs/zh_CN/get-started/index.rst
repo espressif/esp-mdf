@@ -3,7 +3,7 @@
 ***********
 :link_to_translation:`en:[English]`
 
-本文档旨在指导用户创建 ESP-MDF 的软件环境。ESP-MDF 是基于 ESP-IDF 封装的 ESP-MESH 开发构架，因此 ESP-MDF 的软件环境搭建与 ESP-IDF 基本相同，本文将主要阐述 ESP-MDF 与 ESP-IDF 环境区别和注意事项。在您使用 ESP-MDF 开发前，请先详细阅读 ESP-IDF `快速入指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html>`_。
+本文档旨在指导用户创建 ESP-MDF 的软件环境。ESP-MDF 是基于 ESP-IDF 封装的 ESP-WIFI-MESH 开发构架，因此 ESP-MDF 的软件环境搭建与 ESP-IDF 基本相同，本文将主要阐述 ESP-MDF 与 ESP-IDF 环境区别和注意事项。在您使用 ESP-MDF 开发前，请先详细阅读 ESP-IDF `快速入指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html>`_。
 
 
 准备工作
@@ -12,14 +12,14 @@
 开发 ESP32 应用程序需要准备：
 
 * **路由器**：用于连接外部网络
-* **手机**：安装 ESP-MESH 配网 app
-* **ESP32 开发板**：运行 ESP-MESH 至少需要两块以上的 ESP32 开发板，以构成一个网络
+* **手机**：安装 ESP-WIFI-MESH 配网 app
+* **ESP32 开发板**：运行 ESP-WIFI-MESH 至少需要两块以上的 ESP32 开发板，以构成一个网络
 
 
 开发板指南
 ==========
 
-为了方便 ESP-MESH 的开发和测试，我们专为 ESP-MESH 开发测试而设计的开发板
+为了方便 ESP-WIFI-MESH 的开发和测试，我们专为 ESP-WIFI-MESH 开发测试而设计的开发板
 
 .. toctree::
     :maxdepth: 1

@@ -1,7 +1,7 @@
 Mconfig API
 ============
 
-``Mconfig`` (Mesh Network Configuration) is a network configuration solution for ESP-MESH, which sends network configuration information to ESP-MESH devices in a convenient and efficient manner.
+``Mconfig`` (Mesh Network Configuration) is a network configuration solution for ESP-WIFI-MESH, which sends network configuration information to ESP-WIFI-MESH devices in a convenient and efficient manner.
 
 .. ------------------------- Mconfig App Reference ---------------------------
 

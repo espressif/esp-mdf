@@ -25,7 +25,7 @@ extern "C" {
  * @brief Data request source
  */
 typedef enum {
-    MLINK_HTTPD_FROM_DEVICE = 1, /**< Request from within the ESP-MESH network */
+    MLINK_HTTPD_FROM_DEVICE = 1, /**< Request from within the ESP-WIFI-MESH network */
     MLINK_HTTPD_FROM_SERVER = 2, /**< Request from server */
 } mlink_httpd_from_t;
 

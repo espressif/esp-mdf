@@ -16,11 +16,11 @@ This example shows the following:
 
 This sensor device consumes extremely low power which makes it suitable for setup environments where the usage of cables can be inconvenient and cumbersome, like building corners, industrial fields, etc. In these places, batteries are just what is needed as a long-term power supply.
 
-ESP32-MeshKit-Sense belongs to [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/en/latest/hw-reference/esp32-meshkit.html) - a set of hardware devices specifically designed with the goal to demonstrate the features of the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) network protocol.
+ESP32-MeshKit-Sense belongs to [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/en/latest/hw-reference/esp32-meshkit.html) - a set of hardware devices specifically designed with the goal to demonstrate the features of the [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) network protocol.
 
-In a few words, this protocol is an extension of the Wi-Fi protocol which is designed for the ESP32 chip. ESP-MESH takes the best of both Wi-Fi and Bluetooth technologies, combines their advantages, and provides innovative solutions that make you re-think how wireless networks can be built using the same networking equipment.
+In a few words, this protocol is an extension of the Wi-Fi protocol which is designed for the ESP32 chip. ESP-WIFI-MESH takes the best of both Wi-Fi and Bluetooth technologies, combines their advantages, and provides innovative solutions that make you re-think how wireless networks can be built using the same networking equipment.
 
-[ESP-MDF](https://github.com/espressif/esp-mdf/blob/master/README.md), or Espressif Mesh Development Framework, is a development framework for the ESP-MESH protocol based on the ESP32 chip. It is ESP-MDF that offers a low-power solution for ESP32-MeshKit-Sense.
+[ESP-MDF](https://github.com/espressif/esp-mdf/blob/master/README.md), or Espressif Mesh Development Framework, is a development framework for the ESP-WIFI-MESH protocol based on the ESP32 chip. It is ESP-MDF that offers a low-power solution for ESP32-MeshKit-Sense.
 
 For more details about Espressif's lower-power solution, please refer to [ESP32 Low-Power Management Overview](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_en.md).
 
@@ -146,7 +146,7 @@ CMake:
 
 When the above process is successfully completed, the Sensor indicator on ESP32-MeshKit-Sense turns solid red, indicating that the device is powered on and functions normally. Meanwhile, the WiFi indicator starts slowly flashing green, indicating that the device is in **Network Configuration mode**. 
 
-At this point, use ESP-MESH App to configure the Mesh network. The app is available for [Android](https://www.espressif.com/en/support/download/apps) and [iOS](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8).
+At this point, use ESP-WIFI-MESH App to configure the Mesh network. The app is available for [Android](https://www.espressif.com/en/support/download/apps) and [iOS](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8).
 
 Please refer to the [demo video](https://player.youku.com/embed/XMzc1ODE4MDYwOA==) for details.
 
@@ -166,7 +166,7 @@ ESP32-MeshKit-Sense enters this mode when initially powered on or when the confi
 
 ### 3.2. Mesh Mode
 
-As soon as ESP32-MeshKit-Sense joins an ESP-MESH network, the device goes into Mesh mode and functions as a Mesh device, with all the features provided by ESP-MDF, such as LAN control, and upgrade.
+As soon as ESP32-MeshKit-Sense joins an ESP-WIFI-MESH network, the device goes into Mesh mode and functions as a Mesh device, with all the features provided by ESP-MDF, such as LAN control, and upgrade.
 
 ### 3.3. Deep-sleep Mode
 
@@ -208,15 +208,15 @@ The left part of the figure above demonstrates the general workflow, while the r
 	* Off: ULP is in deep sleep
 7. If the specified conditions are met:
    * ULP wakes up CPU
-   * Device connects to the ESP-MESH network and implements the associated operations 
+   * Device connects to the ESP-WIFI-MESH network and implements the associated operations 
    * Device re-enters Deep-sleep mode
 
 ### 4.2. Control the Associated Devices
 
 Please follow the steps below:
 
-1. Use ESP32-Mesh App to build an ESP-MESH network with ESP32-MeshKit-Sense and ESP32-MeshKit-Light devices.
-> **Note:** ESP32-MeshKit-Sense can only be added to an existing ESP-MESH network. For more information, please refer to [ESP32-MeshKit Guide](../README.md)
+1. Use ESP32-Mesh App to build an ESP-WIFI-MESH network with ESP32-MeshKit-Sense and ESP32-MeshKit-Light devices.
+> **Note:** ESP32-MeshKit-Sense can only be added to an existing ESP-WIFI-MESH network. For more information, please refer to [ESP32-MeshKit Guide](../README.md)
 
 2. Associate ESP32-MeshKit-Sense with ESP32-MeshKit-Light devices in ESP32-Mesh App
 

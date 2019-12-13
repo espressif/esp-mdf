@@ -1,7 +1,7 @@
 ESP32-MeshKit
 ==============
 
-ESP32-MeshKit 包含一整套完整的 [ESP-Mesh 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)，可配套 ESP-Mesh App 使用，用于调研和了解 ESP-MESH，也可以进行二次开发。
+ESP32-MeshKit 包含一整套完整的 [ESP-Mesh 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)，可配套 ESP-Mesh App 使用，用于调研和了解 ESP-WIFI-MESH，也可以进行二次开发。
 
 ![image.png-50.7kB][3]
 

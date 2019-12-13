@@ -2,14 +2,14 @@
 
 # ESP-NOW debug 接收板示例
 
-ESP-NOW debug 接收板需要和 ESP-MESH 设备处于同一个 Wi-Fi 信道上才可以接收 ESP-MESH 设备发送的调试数据。
+ESP-NOW debug 接收板需要和 ESP-WIFI-MESH 设备处于同一个 Wi-Fi 信道上才可以接收 ESP-WIFI-MESH 设备发送的调试数据。
 
 <div align=center>
 <img src="espnow_debug.png" width="800">
 </div>
 
-> ESP-NOW debug 接收板可以不直接与路由器进行连接，只需与 ESP-MESH 网络在同一信道上即可。
-> 若需要与接收其他 ESP-MESH 设备的 log，需要在监听的设备中添加以下代码：
+> ESP-NOW debug 接收板可以不直接与路由器进行连接，只需与 ESP-WIFI-MESH 网络在同一信道上即可。
+> 若需要与接收其他 ESP-WIFI-MESH 设备的 log，需要在监听的设备中添加以下代码：
 > ```
 >    MDF_ERROR_ASSERT(mdebug_console_init());
 >    MDF_ERROR_ASSERT(mdebug_espnow_init());
@@ -21,7 +21,7 @@ ESP-NOW debug 接收板提供的主要功能包括：
  - [sdcard 文件管理](#sd-卡文件操作命令)：列出当前 SD 卡当中所有的文件，删除指定文件，可选择以某种格式打印文件内容 (hex, string, base64)
  - [sniffer 监听环境中的 IEEE 802.11 包](#sniffer-操作命令)：抓取数据包并以 pcap 格式保存在 SD 卡中，可指定文件名称，设置数据包过滤条件，并且可指定在某个信道上监听
  - [Wi-Fi 配置](#wi-fi-配置命令)：设置工作在 STA 模式下的 Wi-Fi 信息（路由器 SSID 、密码和 BSSID，工作信道），保存/擦除配置信息
- - [Wi-Fi 扫描](#扫描命令)：工作在 STA 模式下，扫描环境中的 AP 或 ESP-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
+ - [Wi-Fi 扫描](#扫描命令)：工作在 STA 模式下，扫描环境中的 AP 或 ESP-WIFI-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
  - [log 设置](#日志命令)：监听其他设备的 log 日志，统计各类日志 (I、W、E) 的数量以及重启次数和 coredump 次数并显示在屏幕上，添加/移除监听设备，设置 log 传输级别
  - [coredump 信息管理](#coredump-命令)：向指定设备查询是否有 coredump 信息，接收/擦除 coredump 信息，请求接收指定序号的 coredump 信息
  - [command](#command-命令)：在指定设备上运行命令
@@ -104,7 +104,7 @@ wireless_debug/
 <p> 串口终端 </p>
 </div>
 
-3. 之后可以按照提示输入命令进行 ESP-MESH 调试
+3. 之后可以按照提示输入命令进行 ESP-WIFI-MESH 调试
 
 * 下面以操作流程为序，介绍每条命令的使用。
 
@@ -214,7 +214,7 @@ wireless_debug/
     ||bssid|AP 的 BSSID|
     ||password|AP 的 密码|
     |示例|wifi_config -s "esp-liyin" -p "password"|Wi-Fi 配置，连接 SSID 为 esp-liyin 密码为 password 的 AP|
-    |示例|wifi_config -c 11|配置 ESP-MESH 设备工作信道为 11|
+    |示例|wifi_config -c 11|配置 ESP-WIFI-MESH 设备工作信道为 11|
 
 2. 保存/擦除 Wi-Fi 配置信息
 
@@ -298,10 +298,10 @@ wireless_debug/
 
 ## 性能影响说明
 
-由于 ESP-NOW 和 ESP-MESH 一样，都是通过 Wi-Fi 接口进行数据包收发，因此，当 ESP-MESH 设备数据传输量较大时，会对其控制命令接收或数据传输产生一些延时。
+由于 ESP-NOW 和 ESP-WIFI-MESH 一样，都是通过 Wi-Fi 接口进行数据包收发，因此，当 ESP-WIFI-MESH 设备数据传输量较大时，会对其控制命令接收或数据传输产生一些延时。
 
-经实际测试，在网络环境良好的情况下，以下配置参数导致的 ESP-MESH 设备延时是可以忽略的阈值：
+经实际测试，在网络环境良好的情况下，以下配置参数导致的 ESP-WIFI-MESH 设备延时是可以忽略的阈值：
 
-* 50 个 ESP-MESH 设备（设备数量越多，网络环境越差）
-* ESP-NOW 接收端添加 `10` 个 ESP-MESH 设备（接收端添加数量越多，网络环境越差）
+* 50 个 ESP-WIFI-MESH 设备（设备数量越多，网络环境越差）
+* ESP-NOW 接收端添加 `10` 个 ESP-WIFI-MESH 设备（接收端添加数量越多，网络环境越差）
 * 传输日志级别为 `info` （日志级别越低，网络环境越差）

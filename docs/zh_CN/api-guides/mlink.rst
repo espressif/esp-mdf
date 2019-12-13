@@ -130,7 +130,7 @@ ESP-MDF 设备在配网成功后会自动进入 `组网阶段 <https://esp-idf.r
 
 1. App 请求格式
 
-根节点只解析 http 头部信息, 将 http 的消息体通过 ESP-MESH 透传给目标设备
+根节点只解析 http 头部信息, 将 http 的消息体通过 ESP-WIFI-MESH 透传给目标设备
 
 **Request::**
 
@@ -156,7 +156,7 @@ ESP-MDF 设备在配网成功后会自动进入 `组网阶段 <https://esp-idf.r
 
 2. 设备回复的格式
 
-根节点 ESP-MESH 收到设备回复信息后, 生成 http 的头部信息, 将回复信息放到 http 的消息体.转发给 app
+根节点 ESP-WIFI-MESH 收到设备回复信息后, 生成 http 的头部信息, 将回复信息放到 http 的消息体.转发给 app
 
 **Response:**
 
@@ -553,7 +553,7 @@ ESP-MDF 设备在配网成功后会自动进入 `组网阶段 <https://esp-idf.r
     }
 
 
-12. 获取 ESP-MESH 的配置: get_mesh_config
+12. 获取 ESP-WIFI-MESH 的配置: get_mesh_config
 
 **Request:**
 
@@ -585,7 +585,7 @@ ESP-MDF 设备在配网成功后会自动进入 `组网阶段 <https://esp-idf.r
         "status_code": 0
     }
 
-* ``id`` ESP-MESH 的网络 id
+* ``id`` ESP-WIFI-MESH 的网络 id
 * ``max_layer`` 网络最大层级
 * ``max_connections`` 每一个设备的子节点连接数
 * ``layer`` 当前所处的层级
@@ -599,7 +599,7 @@ ESP-MDF 设备在配网成功后会自动进入 `组网阶段 <https://esp-idf.r
 * ``free_heap`` 当前剩余的可用内存
 * ``running_time`` 运行的时间
 
-13. 修改 ESP-MESH 的配置: set_mesh_config
+13. 修改 ESP-WIFI-MESH 的配置: set_mesh_config
 
 **Request:**
 

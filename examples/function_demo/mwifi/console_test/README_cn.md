@@ -1,15 +1,15 @@
 [[EN]](./README.md)
 
-# ESP-MESH 控制台调试示例
+# ESP-WIFI-MESH 控制台调试示例
 
 ## 概述
 
-本示例将介绍如何使用 `Mdebug` 模块，在 mesh 产品中进行 ESP-MESH 基本调试。有以下功能：
+本示例将介绍如何使用 `Mdebug` 模块，在 mesh 产品中进行 ESP-WIFI-MESH 基本调试。有以下功能：
 
- - [ESP-MESH 吞吐量测试](#esp-mesh-吞吐量测试介绍)：设置工作的模式 (Client/Server)，ping 功能
- - [ESP-MESH 网络配置](#mesh-config-命令)：配置 ESP-MESH 信息（路由器 SSID 、密码和 BSSID，工作信道，MESH ID 和密码，设备类型，最大连接数量，最大层数），打印/保存 ESP-MESH 配置信息
- - [ESP-MESH 状态查询](#mesh_status-命令)：开始/停止 ESP-MESH，打印 ESP-MESH 设备状态
- - [Wi-Fi 扫描](#mesh_scan-命令)：扫描环境中的 AP 或 ESP-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
+ - [ESP-WIFI-MESH 吞吐量测试](#esp-mesh-吞吐量测试介绍)：设置工作的模式 (Client/Server)，ping 功能
+ - [ESP-WIFI-MESH 网络配置](#mesh-config-命令)：配置 ESP-WIFI-MESH 信息（路由器 SSID 、密码和 BSSID，工作信道，MESH ID 和密码，设备类型，最大连接数量，最大层数），打印/保存 ESP-WIFI-MESH 配置信息
+ - [ESP-WIFI-MESH 状态查询](#mesh_status-命令)：开始/停止 ESP-WIFI-MESH，打印 ESP-WIFI-MESH 设备状态
+ - [Wi-Fi 扫描](#mesh_scan-命令)：扫描环境中的 AP 或 ESP-WIFI-MESH 设备，设置过滤条件：RSSI、SSID、BSSID，设置在每个信道被动扫描的时间
  - [coredump 信息管理](#coredump-命令)：打印/擦除 coredump 信息，获取 coredump 数据长度，将 coredump 数据发送到指定设备，重传指定序号的 coredump 数据
  - [log 设置](#日志命令)：添加/移除监听设备，设置 log 传输级别，将 log 发送到指定设备
  - [一般命令](#一般命令)：help（打印当前支持的所有命令）、version（获取 SDK 的版本）、heap（获取当前设备剩余内存）、restart（重启设备）、reset（重置设备并重启）
@@ -31,7 +31,7 @@
 <p> TCP 服务器 </p>
 </div>
 
-3. 之后可以按照提示输入命令进行 ESP-MESH 调试
+3. 之后可以按照提示输入命令进行 ESP-WIFI-MESH 调试
 
 * 下面以操作流程为序，介绍每条命令的使用。
 
@@ -53,13 +53,13 @@
     6. 换行符支持 '\n' 或者 '\r\n'。
     7. 串口以 115200 波特率返回执行结果
 
-### ESP-MESH 吞吐量测试介绍
+### ESP-WIFI-MESH 吞吐量测试介绍
 
 1. 硬件准备
     * 两块 ESP32 开发板
     * 烧录 console_test 工程到两块开发板上
 2. 操作流程
-    1. 在两块开发板上配置 ESP-MESH，将两块开发板配置到同一 ESP-MESH 网络下。
+    1. 在两块开发板上配置 ESP-WIFI-MESH，将两块开发板配置到同一 ESP-WIFI-MESH 网络下。
         例如： 在两块开发板终端中输入相同的命令： `mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif`
     2. 等待网络构建完成，输入以下命令查看查看状态
         `mesh_status -o`
@@ -123,14 +123,14 @@
     |-|-|-|-|
     |命令定义|mesh_config  [-oS] [-s <ssid>] [-p <password>] [-b <bssid (xx:xx:xx:xx:xx:xx)>] [-c <channel (1 ~ 13)>] [-i <mesh_id (6 Bytes)>] [-t <mesh_type ('idle'or 'root' or 'node' or 'leaf')>] [-P <mesh_password>] [-n <max_connection (1 ~ 10)>] [-l <max_layer (1 ~ 32)>]||
     |指令|mesh_config -s <ssid> -p <password> -b <bssid>|配置设备连接的路由器信息|
-    ||mesh_config -c|配置设备 ESP-MESH 工作信道|
-    ||mesh_config -i <mesh_id> -t <mesh_type> -P <mesh_password> -n <max_connection> -l <max_layer>|配置 ESP-MESH(ID、密码、容量)|
-    ||mesh_config -o|打印 ESP-MESH 配置信息|
-    ||mesh_config -S|保存 ESP-MESH 配置信息|
-    |示例|mesh_config -c 11|配置 ESP-MESH 工作信道为 11 信道|
-    ||mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif|配置 ESP-MESH ID 为 14:12:12:12:12:12，连接路由器信息：SSID 为 espressif， 密码为 espressif|
-    ||mesh_config -o|打印 ESP-MESH 配置信息|
-    ||mesh_config -S|保存 ESP-MESH 配置信息|
+    ||mesh_config -c|配置设备 ESP-WIFI-MESH 工作信道|
+    ||mesh_config -i <mesh_id> -t <mesh_type> -P <mesh_password> -n <max_connection> -l <max_layer>|配置 ESP-WIFI-MESH(ID、密码、容量)|
+    ||mesh_config -o|打印 ESP-WIFI-MESH 配置信息|
+    ||mesh_config -S|保存 ESP-WIFI-MESH 配置信息|
+    |示例|mesh_config -c 11|配置 ESP-WIFI-MESH 工作信道为 11 信道|
+    ||mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif|配置 ESP-WIFI-MESH ID 为 14:12:12:12:12:12，连接路由器信息：SSID 为 espressif， 密码为 espressif|
+    ||mesh_config -o|打印 ESP-WIFI-MESH 配置信息|
+    ||mesh_config -S|保存 ESP-WIFI-MESH 配置信息|
 
 ### mesh_status 命令
 
@@ -139,12 +139,12 @@
     |||||
     |-|-|-|-|
     |命令定义|mesh_status [-spo]||
-    |指令|mesh_status -s|开始 ESP-MESH|
-    ||mesh_status -p|停止 ESP-MESH|
-    ||mesh_status -o|打印 ESP-MESH 状态信息|
-    |示例|mesh_status -o|打印 ESP-MESH 状态信息|
-    ||mesh_status -s|开始 ESP-MESH|
-    ||mesh_status -p|停止 ESP-MESH|
+    |指令|mesh_status -s|开始 ESP-WIFI-MESH|
+    ||mesh_status -p|停止 ESP-WIFI-MESH|
+    ||mesh_status -o|打印 ESP-WIFI-MESH 状态信息|
+    |示例|mesh_status -o|打印 ESP-WIFI-MESH 状态信息|
+    ||mesh_status -s|开始 ESP-WIFI-MESH|
+    ||mesh_status -p|停止 ESP-WIFI-MESH|
 
 ### mesh_scan 命令
 

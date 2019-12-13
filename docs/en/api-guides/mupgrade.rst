@@ -3,7 +3,7 @@ Mupgrade
 
 :link_to_translation:`zh_CN:[中文]`
 
-Mupgrade, or MESH Upgrade, is a solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-MESH devices on the same wireless network by efficient routing of data flows.
+Mupgrade, or MESH Upgrade, is a solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-WIFI-MESH devices on the same wireless network by efficient routing of data flows.
 
 Mupgrade downloads a firmware upgrade to a root node, which splits it into fragments and flashes multiple devices with these fragments. When each device receives all the fragments, the mass upgrade is completed.
 
@@ -72,7 +72,7 @@ Partition Table
 
 A partition table defines the flash layout. A single ESP32’s flash can contain multiple apps, as well as many different kinds of data. To find more information, please see `Partition Tables <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/partition-tables.html>`_.
 
-The default partition table in ESP-IDF provides a partition of only 1 MB for apps, which is quite a limited size for ESP-MESH application development.
+The default partition table in ESP-IDF provides a partition of only 1 MB for apps, which is quite a limited size for ESP-WIFI-MESH application development.
 
 In order to help you configure the partition table, please find two types of partitions below for your reference.
 
@@ -112,4 +112,4 @@ Notice
 If you want to customize the upgrade approach, please keep in mind the following:
 
 - **Do not upgrade from device to device**: It may lead to incompatibility between different versions of devices, which will destroy the original network, create standalone nodes, and increase upgrade difficulties.
-- **Do not transmit an entire firmware file**: ESP-MESH is a multi-hop network, which means it can only guarantee a reliable transmission from node to node, and NOT end to end. If an entire firmware is attempted to be transmitted in one go, devices located a few nodes away from the root node are very likely to experience data loss, which will immediately cause upgrade failure.
+- **Do not transmit an entire firmware file**: ESP-WIFI-MESH is a multi-hop network, which means it can only guarantee a reliable transmission from node to node, and NOT end to end. If an entire firmware is attempted to be transmitted in one go, devices located a few nodes away from the root node are very likely to experience data loss, which will immediately cause upgrade failure.

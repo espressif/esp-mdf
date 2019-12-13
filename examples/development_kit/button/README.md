@@ -4,11 +4,11 @@
 
 ## Overview
 
-ESP32-MeshKit-Button is a smart button solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, device association, etc.
+ESP32-MeshKit-Button is a smart button solution based on [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, device association, etc.
 
 ESP32-MeshKit-Button is designed to be used with [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf). Before configuring the device, please refer to [ESP32-MeshKit Guide](../README.md).
 
-ESP32-MeshKit-Button will help you better understand how ESP-MESH can be used in systems with ultra-low power consumption. 
+ESP32-MeshKit-Button will help you better understand how ESP-WIFI-MESH can be used in systems with ultra-low power consumption. 
 
 <div align=center>
 <img src="docs/_static/en/module_diagram.png" width="800">
@@ -31,7 +31,7 @@ ESP32-MeshKit-Button features all the necessary hardware components:
 <img src="docs/_static/en/ESP32-MeshKit-Button_en.png" width="650">
 </div>
 
-To build an ESP-MESH network, you need the hardware given in the table below.
+To build an ESP-WIFI-MESH network, you need the hardware given in the table below.
 
 | Hardware | Quantity |
 | -------- | -------- |
@@ -49,9 +49,9 @@ To build an ESP-MESH network, you need the hardware given in the table below.
 
 ### 1. Preparation
 
-As ESP32-MeshKit-Button cannot serve as a root node and can only work with ESP32-MeshKit-Light devices, it needs to be added to an already existing ESP-MESH network which includes at least one ESP32-MeshKit-Light device.
+As ESP32-MeshKit-Button cannot serve as a root node and can only work with ESP32-MeshKit-Light devices, it needs to be added to an already existing ESP-WIFI-MESH network which includes at least one ESP32-MeshKit-Light device.
 
-For more details on how to establish an ESP-MESH network, please refer to [ESP32-MeshKit Guide](../README.md).
+For more details on how to establish an ESP-WIFI-MESH network, please refer to [ESP32-MeshKit Guide](../README.md).
 
 <div align=center>
 <img src="docs/_static/en/function_flow_chart.png"  width="850">
@@ -90,7 +90,7 @@ After the ESP32-MeshKit-Button is close to the ESP32-MeshKit-Light, press and ho
 
 ### 3. Association
 
-* After the device is networked, go to ESP-MESH App, open the list of added devices, and long press ESP32-MeshKit-Button.
+* After the device is networked, go to ESP-WIFI-MESH App, open the list of added devices, and long press ESP32-MeshKit-Button.
 
 * In the pop-up menu choose `Device association`, then choose the ESP32-MeshKit-Light and tap on `√` at the top right corner.
 
@@ -109,7 +109,7 @@ After the ESP32-MeshKit-Button is close to the ESP32-MeshKit-Light, press and ho
 
 ### 4. USB Connection 
 
-* If you plug a Mini USB into ESP32-MeshKit-Button and press a button, the device enters **ESP-MESH mode**. You can associate, upgrade and control the device, as well as implement its network configuration.
+* If you plug a Mini USB into ESP32-MeshKit-Button and press a button, the device enters **ESP-WIFI-MESH mode**. You can associate, upgrade and control the device, as well as implement its network configuration.
 
 * If ESP32-MeshKit-Button is not plugged-in and uses the battery for power supply, the device enters **ESP-NOW mode**. In this case, the ESP32 chip keeps the power supply cut off and restarts only when a button is pressed. Once the chip finishes sending the control command, it immediately cuts off the power again.
 

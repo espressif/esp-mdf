@@ -52,7 +52,7 @@ mdf_err_t mdebug_espnow_write(const uint8_t *dest_addr, const void *data, size_t
     espnow_data->type = type;
     memcpy(espnow_data->data, data, size);
 
-    /**< Wait for other tasks to be sent before send ESP-MESH data */
+    /**< Wait for other tasks to be sent before send ESP-WIFI-MESH data */
     if (!xSemaphoreTake(s_espnow_write_lock, wait_ticks)) {
         MDF_FREE(espnow_data);
         return MDF_ERR_TIMEOUT;
@@ -63,7 +63,7 @@ mdf_err_t mdebug_espnow_write(const uint8_t *dest_addr, const void *data, size_t
                         size + sizeof(mdebug_espnow_data_t), wait_ticks);
     mespnow_del_peer(dest_addr);
 
-    /**< ESP-MESH send completed, release send lock */
+    /**< ESP-WIFI-MESH send completed, release send lock */
     xSemaphoreGive(s_espnow_write_lock);
 
     MDF_FREE(espnow_data);

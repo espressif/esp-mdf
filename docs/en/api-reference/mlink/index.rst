@@ -1,7 +1,7 @@
 Mlink API
 ============
 
-``Mlink`` (MESH LAN communication protocol)  is a solution for controlling ESP-MESH network devices through APP, including: device discovery, control, upgrade, etc.
+``Mlink`` (MESH LAN communication protocol)  is a solution for controlling ESP-WIFI-MESH network devices through APP, including: device discovery, control, upgrade, etc.
 
 .. ------------------------- Mlink App Reference ---------------------------
 

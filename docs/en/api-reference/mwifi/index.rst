@@ -1,7 +1,7 @@
 Mwifi API
 ==========
 
-``Mwifi`` (Wi-Fi Mesh) is the encapsulation of `ESP-MESH APIs <https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/mesh/index.html>`_, and it adds to ESP-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features.
+``Mwifi`` (Wi-Fi Mesh) is the encapsulation of `ESP-WIFI-MESH APIs <https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/mesh/index.html>`_, and it adds to ESP-WIFI-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features.
 
 .. ---------------------- Mwifi Features --------------------------
 
@@ -10,10 +10,10 @@ Mwifi API
 Features
 ---------
 
-1. **Retransmission filter**: As ESP-MESH won't perform data flow control when transmitting data downstream, there will be redundant fragments in case of unstable network or wireless interference. For this, Mwifi adds a 16-bit ID to each fragment, and the redundant fragments with the same ID will be discarded.
+1. **Retransmission filter**: As ESP-WIFI-MESH won't perform data flow control when transmitting data downstream, there will be redundant fragments in case of unstable network or wireless interference. For this, Mwifi adds a 16-bit ID to each fragment, and the redundant fragments with the same ID will be discarded.
 2. **Fragmented transmission**: When the data packet exceeds the limit of the maximum packet size, Mwifi splits it into fragments before they are transmitted to the target device for reassembly.
 3. **Data compression**: When the packet of data is in Json and other similar formats, this feature can help reduce the packet size and therefore increase the packet transmitting speed. 
-4. **P2P multicast**: As the multicasting in ESP-MESH may cause packet loss, Mwifi uses a P2P (peer-to-peer) multicasting method to ensure a much more reliable delivery of data packets.
+4. **P2P multicast**: As the multicasting in ESP-WIFI-MESH may cause packet loss, Mwifi uses a P2P (peer-to-peer) multicasting method to ensure a much more reliable delivery of data packets.
 
 .. ---------------------- Writing a Mesh Application --------------------------
 
@@ -22,9 +22,9 @@ Features
 Writing Applications
 --------------------
 
-Mwifi supports using ESP-MESH under self-organized mode, where only the root node that serves as a gateway of Mesh network can require the LwIP stack to transmit/receive data to/from an external IP network.
+Mwifi supports using ESP-WIFI-MESH under self-organized mode, where only the root node that serves as a gateway of Mesh network can require the LwIP stack to transmit/receive data to/from an external IP network.
 
-Mwifi also supports the way to fix the root node. In this case, the nodes in the entire ESP-MESH network cannot communicate with the external IP network through wifi. If you need to communicate with the external IP network, you need to use other methods.
+Mwifi also supports the way to fix the root node. In this case, the nodes in the entire ESP-WIFI-MESH network cannot communicate with the external IP network through wifi. If you need to communicate with the external IP network, you need to use other methods.
 
 If you want to call Wi-Fi API to connect/disconnect/scan, please pause Mwifi first. Self organized networking must be disabled before the application calls any Wi-Fi driver APIs.
 

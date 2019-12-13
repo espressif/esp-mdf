@@ -612,14 +612,14 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
     }
 
     /** Fragmenting packets for transmission
-     *  - The maximum length allowed for each ESP-MESH packet is MWIFI_PAYLOAD_LEN
+     *  - The maximum length allowed for each ESP-WIFI-MESH packet is MWIFI_PAYLOAD_LEN
      */
     for (int unwritten_size = data->size; unwritten_size > 0;
             unwritten_size -= MWIFI_PAYLOAD_LEN) {
         data_head->magic = esp_random();
         mesh_data.size   = MIN(unwritten_size, MWIFI_PAYLOAD_LEN);
 
-        /**< Wait for other tasks to be sent before send ESP-MESH data */
+        /**< Wait for other tasks to be sent before send ESP-WIFI-MESH data */
         if (!xSemaphoreTake(s_mwifi_send_lock, wait_ticks)) {
             return MDF_ERR_TIMEOUT;
         }
@@ -636,7 +636,7 @@ static mdf_err_t mwifi_subcontract_write(const mesh_addr_t *dest_addr, const mes
             }
         } while (ret == ESP_ERR_MESH_NO_MEMORY && --retry_count);
 
-        /**< ESP-MESH send completed, release send lock */
+        /**< ESP-WIFI-MESH send completed, release send lock */
         xSemaphoreGive(s_mwifi_send_lock);
         MDF_ERROR_CHECK(ret != ESP_OK && !(flag & MESH_DATA_GROUP && ret == ESP_ERR_MESH_DISCARD), ret,
                         "Node failed to send packets, dest_addr: " MACSTR

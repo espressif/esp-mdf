@@ -17,11 +17,11 @@
 
 作为传感器设备，ESP32-MeshKit-Sense 功耗极低，特别适合建筑物角落、工业现场等安装环境受限的情况。此类环境难以采用线缆供电，所以多采用电池进行长时间供电。
 
-ESP32-MeshKit-Sense 与其它硬件设备共同组成了基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-guides/mesh.html) 网络协议的 [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/hw-reference/esp32-meshkit.html) 智能家居组网方案。
+ESP32-MeshKit-Sense 与其它硬件设备共同组成了基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-guides/mesh.html) 网络协议的 [ESP32-MeshKit](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/hw-reference/esp32-meshkit.html) 智能家居组网方案。
 
-简言之，ESP-MESH 是一种基于 Wi-Fi 协议构建的网络协议，专为 ESP32 芯片研发而成，集 Wi-Fi 和蓝牙两大技术优势，提供了如何运用同一组网设备建立无线网络的创新解决方案。
+简言之，ESP-WIFI-MESH 是一种基于 Wi-Fi 协议构建的网络协议，专为 ESP32 芯片研发而成，集 Wi-Fi 和蓝牙两大技术优势，提供了如何运用同一组网设备建立无线网络的创新解决方案。
 
-[ESP-MDF](https://github.com/espressif/esp-mdf/blob/master/README_cn.md) (Espressif Mesh Development Framework) 是基于 ESP32 芯片的 ESP-MESH 开发框架，为 ESP32-MeshKit-Sense 提供了低功耗传感器的使用例程。
+[ESP-MDF](https://github.com/espressif/esp-mdf/blob/master/README_cn.md) (Espressif Mesh Development Framework) 是基于 ESP32 芯片的 ESP-WIFI-MESH 开发框架，为 ESP32-MeshKit-Sense 提供了低功耗传感器的使用例程。
 
 更多乐鑫低功耗方案详情，可参考 [ESP32 低功耗方案概述](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_lowpower_solution_cn.md)。
 
@@ -156,7 +156,7 @@ ESP32-MeshKit-Sense 开发板上有 5 处跳线，其功能和接法如下：
 
 #### 3.2 Mesh 模式
 
-ESP32-MeshKit-Sense 加入 ESP-MESH 网络后，进入 Mesh 模式，此时即是一个普通的 Mesh 设备，具有 ESP-MDF 提供的各种功能，包括组网、控制、升级等。
+ESP32-MeshKit-Sense 加入 ESP-WIFI-MESH 网络后，进入 Mesh 模式，此时即是一个普通的 Mesh 设备，具有 ESP-MDF 提供的各种功能，包括组网、控制、升级等。
 
 #### 3.3 Deep-sleep 模式
 
@@ -205,15 +205,15 @@ WakeUp 按键定义了如下操作：
 7. 当满足一定唤醒条件时：
 
    * ULP 唤醒 CPU
-   * 设备接入到 ESP-MESH 网络，进行联动操作
+   * 设备接入到 ESP-WIFI-MESH 网络，进行联动操作
    * 操作完成后，设备再次进入 Deep-sleep 模式
    
 ### 4.2 设备联动控制
 
 关于本地联动控制功能的使用，需按照以下步骤进行设置：
 
-1. 通过 ESP32-Mesh App 将 ESP32-MeshKit-Sense 和 ESP32-MeshKit-Light 配置成同一个 ESP-MESH 网络；
-> **注：** ESP32-MeshKit-Sense 只能加入已建立的 ESP-MESH 网络。更多详情，请参照 [ESP32-MeshKit 指南](../README_cn.md)。
+1. 通过 ESP32-Mesh App 将 ESP32-MeshKit-Sense 和 ESP32-MeshKit-Light 配置成同一个 ESP-WIFI-MESH 网络；
+> **注：** ESP32-MeshKit-Sense 只能加入已建立的 ESP-WIFI-MESH 网络。更多详情，请参照 [ESP32-MeshKit 指南](../README_cn.md)。
 
 2. 使用 ESP32-Mesh App 将 ESP32-MeshKit-Sense 和 ESP32-MeshKit-Light 进行关联，此时，
 

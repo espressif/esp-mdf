@@ -1,7 +1,7 @@
 Mupgrade API
 =============
 
-``Mupgrade`` (Mesh Upgrade) is a solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-MESH devices on the same wireless network by efficient routing of data flows. It features automatic retransmission of failed fragments, data compression, reverting to an earlier version, firmware check, etc.
+``Mupgrade`` (Mesh Upgrade) is a solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-WIFI-MESH devices on the same wireless network by efficient routing of data flows. It features automatic retransmission of failed fragments, data compression, reverting to an earlier version, firmware check, etc.
 
 .. ---------------------- Writing a Mupgrade Application --------------------------
 

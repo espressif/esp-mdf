@@ -313,7 +313,7 @@ void register_wifi_config()
     wifi_config_args.ssid     = arg_str0("s", "ssid", "<ssid>", "SSID of router");
     wifi_config_args.password = arg_str0("p", "password", "<password>", "Password of router");
     wifi_config_args.bssid    = arg_str0("b", "bssid", "<bssid (xx:xx:xx:xx:xx:xx)>", "BSSID of router");
-    wifi_config_args.channel  = arg_int0("c", "channel", "<channel (1 ~ 13)>", "Channel of ESP-MESH and router");
+    wifi_config_args.channel  = arg_int0("c", "channel", "<channel (1 ~ 13)>", "Channel of ESP-WIFI-MESH and router");
     wifi_config_args.save     = arg_lit0("S", "save", "Save Wi-Fi configuration information");
     wifi_config_args.erase    = arg_lit0("E", "Erase", "Erase Wi-Fi configuration information");
     wifi_config_args.end      = arg_end(4);
@@ -408,13 +408,13 @@ static esp_err_t wifi_scan_func(int argc, char **argv)
         }
 
         ret = mwifi_set_init_config(&networking_config);
-        MDF_ERROR_CHECK(ret != MDF_OK, ESP_ERR_INVALID_ARG, "ESP-MESH networking parameter error");
+        MDF_ERROR_CHECK(ret != MDF_OK, ESP_ERR_INVALID_ARG, "ESP-WIFI-MESH networking parameter error");
 
         ret = mwifi_set_config(&ap_config);
-        MDF_ERROR_CHECK(ret != MDF_OK, ESP_ERR_INVALID_ARG, "ESP-MESH's AP configuration parameter error");
+        MDF_ERROR_CHECK(ret != MDF_OK, ESP_ERR_INVALID_ARG, "ESP-WIFI-MESH's AP configuration parameter error");
 
         ret = mwifi_restart();
-        MDF_ERROR_CHECK(ret != MDF_OK, ESP_ERR_INVALID_ARG, "restart ESP-MESH");
+        MDF_ERROR_CHECK(ret != MDF_OK, ESP_ERR_INVALID_ARG, "restart ESP-WIFI-MESH");
 
         ESP_ERROR_CHECK(esp_mesh_set_self_organized(false, false));
 
@@ -488,7 +488,7 @@ void register_wifi_scan()
     wifi_scan_args.passive = arg_int0("p", "passive", "<time (ms)>", "Passive scan time per channel");
     wifi_scan_args.mesh    = arg_lit0("m", "mesh", "Scanning mesh device");
     wifi_scan_args.mesh_id        = arg_str0("i", "mesh_id", "<mesh_id (xx:xx:xx:xx:xx:xx)>", "Mesh network ID");
-    wifi_scan_args.mesh_password  = arg_str0("P", "mesh_password", "<mesh_password>", "Password for secure communication between devices in ESP-MESH");
+    wifi_scan_args.mesh_password  = arg_str0("P", "mesh_password", "<mesh_password>", "Password for secure communication between devices in ESP-WIFI-MESH");
     wifi_scan_args.end     = arg_end(5);
 
     const esp_console_cmd_t cmd = {

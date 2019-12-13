@@ -4,9 +4,9 @@
 
 ## Overview
 
-[ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf) is a smart lighting solution based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, local control, device association, etc.
+[ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf) is a smart lighting solution based on [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, local control, device association, etc.
 
-ESP32-MeshKit-Light consists of light bulbs with integrated ESP32 chips. The kit will help you better understand ESP-MESH features and how to further develop ESP-Meshkit-Light. Before reading this document, please refer to [ESP32-MeshKit Guide](../README.md).
+ESP32-MeshKit-Light consists of light bulbs with integrated ESP32 chips. The kit will help you better understand ESP-WIFI-MESH features and how to further develop ESP-Meshkit-Light. Before reading this document, please refer to [ESP32-MeshKit Guide](../README.md).
 
 > **Note**: This demo is not limited to ESP32-MeshKit-Light. It can also be used for an ESP32 module connected to an external LED.
 
@@ -65,14 +65,14 @@ To bring ESP32-MeshKit-Light into network configuration mode, turn it off and on
 
 ### Introduction
 
-ESP-MESH is a networking protocol built atop the Wi-Fi protocol. ESP-MESH allows numerous devices (henceforth referred to as nodes) spread over a large physical area (both indoors and outdoors) to be interconnected under a single WLAN (Wireless Local-Area Network). ESP-MESH is self-organizing and self-healing meaning the network can be built and maintained autonomously.
+ESP-WIFI-MESH is a networking protocol built atop the Wi-Fi protocol. ESP-WIFI-MESH allows numerous devices (henceforth referred to as nodes) spread over a large physical area (both indoors and outdoors) to be interconnected under a single WLAN (Wireless Local-Area Network). ESP-WIFI-MESH is self-organizing and self-healing meaning the network can be built and maintained autonomously.
 
 Light project realizes the following features:
 
- - [Building an ESP-MESH Network](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#building-a-network): involves selecting a root node, then forming downstream connections layer by layer until all nodes have joined the network. 
- - [Mesh Network Configuration](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html): sends network configuration information to ESP-MESH devices in a convenient and efficient manner.
- - [Mesh Upgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html): implements efficient upgrading of ESP-MESH devices via automatic retransmission of failed fragments, data compression, reverting to an earlier version and firmware check.
- - [Communicating via LAN](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mlink.html): controls ESP-MESH network devices through App, including: device discovery, control, upgrade, etc. Prerequisite: the mobile phone and mesh network are on the same LAN.
+ - [Building an ESP-WIFI-MESH Network](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#building-a-network): involves selecting a root node, then forming downstream connections layer by layer until all nodes have joined the network. 
+ - [Mesh Network Configuration](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html): sends network configuration information to ESP-WIFI-MESH devices in a convenient and efficient manner.
+ - [Mesh Upgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html): implements efficient upgrading of ESP-WIFI-MESH devices via automatic retransmission of failed fragments, data compression, reverting to an earlier version and firmware check.
+ - [Communicating via LAN](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mlink.html): controls ESP-WIFI-MESH network devices through App, including: device discovery, control, upgrade, etc. Prerequisite: the mobile phone and mesh network are on the same LAN.
 
 ### Code Analysis
 
@@ -99,9 +99,9 @@ examples/development_kit/light/
 └── sdkconfig.old /* Previously saved parameters of `make menuconfig` */
 ```
 
- - `light.c` contains the following main application code, which is necessary to implement ESP-MESH.
+ - `light.c` contains the following main application code, which is necessary to implement ESP-WIFI-MESH.
     - Code to initialize Wi-Fi stack
-    - Code to initialize ESP-MESH stack
+    - Code to initialize ESP-WIFI-MESH stack
     - Code to initialize ESP-NOW
     - Code to initialize LED driver
     - Code to configure LAN communication
@@ -219,9 +219,9 @@ Including the following code:
  - `get_network_config(&init_config, &ap_config)`: gets network configuration information.
  - `mlink_add_device(LIGHT_TID, name, CONFIG_LIGHT_VERSION)`: adds a device to LAN communication module.
  - `mlink_trigger_init()`: initializes trigger handler module.
- - `mwifi_init(&init_config)`: initializes ESP-MESH stack.
- - `mwifi_set_config(&ap_config)`: sets parameters for ESP-MESH.
- - `mwifi_start()`: enables ESP-MESH.
+ - `mwifi_init(&init_config)`: initializes ESP-WIFI-MESH stack.
+ - `mwifi_set_config(&ap_config)`: sets parameters for ESP-WIFI-MESH.
+ - `mwifi_start()`: enables ESP-WIFI-MESH.
  - `xTimerCreate("show_system_info", 10000 / portTICK_RATE_MS, true, NULL, show_system_info_timercb)`: creates a Timer to print system information periodically.
 
 ##### 1. Initialize Wi-Fi Stack
@@ -306,7 +306,7 @@ Including the following code:
 
  - `esp_wifi_set_vendor_ie(true, WIFI_VND_IE_TYPE_BEACON, WIFI_VND_IE_ID_1, &ie_data)`: sets IEEE802.11 vendor information element into beacon frames to identify this device as the master in mesh network configuration chain.
  - `mespnow_read(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, espnow_data, &espnow_size, MCONFIG_CHAIN_EXIT_DELAY / portTICK_RATE_MS)`: receives network configuration request from a slave.
- - `mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)`: checks whether this slave is whitelisted, if not, the device cannot connect to this ESP-MESH network.
+ - `mconfig_device_verify(mconfig_data->whitelist_data, mconfig_data->whitelist_size, src_addr, pubkey_pem)`: checks whether this slave is whitelisted, if not, the device cannot connect to this ESP-WIFI-MESH network.
  - `mespnow_write(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, espnow_data, (MCONFIG_RSA_CIPHERTEXT_SIZE - MCONFIG_RSA_PLAINTEXT_MAX_SIZE) + sizeof(mconfig_chain_data_t), portMAX_DELAY)`: sends encrypted network configuration information to the slave device.
  - `mespnow_write(MESPNOW_TRANS_PIPE_MCONFIG, src_addr, whitelist_compress_data, whitelist_compress_size, portMAX_DELAY);`: sends compressed and encrypted whitelist to the slave device.
 
@@ -326,13 +326,13 @@ Including the following code:
  - `xTaskCreate(trigger_handle_task, "trigger_handle", 1024 * 3,  NULL, 1, NULL)`: creates trigger handler task.
  - `mlink_trigger_handle(MLINK_COMMUNICATE_MESH)`: conducts corresponding operation according to the trigger which is configured by App or by calling `mlink_trigger_add()`.
 
-##### 5. Initialize ESP-MESH Protocol
+##### 5. Initialize ESP-WIFI-MESH Protocol
 
 Including the following code:
 
- - `mwifi_init(&init_config)`: initializes ESP-MESH.
- - `mwifi_set_config(&ap_config)`: sets ESP-MESH configuration information.
- - `mwifi_start()`: launches ESP-MESH.
+ - `mwifi_init(&init_config)`: initializes ESP-WIFI-MESH.
+ - `mwifi_set_config(&ap_config)`: sets ESP-WIFI-MESH configuration information.
+ - `mwifi_start()`: launches ESP-WIFI-MESH.
 
 ##### 6. Event Handler
 
@@ -419,10 +419,10 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 ##### 7. Node Task
 
  - `xTaskCreate(request_handle_task, "request_handle", 8 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);`: creates node data processing task.
- - `xTaskCreate(root_write_task, "root_write", 4 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_write_task_handle);`: newly created root node transmits ESP-MESH data packets to external IP network, and to various target addresses according to the data types.
- - `xTaskCreate(root_read_task, "root_read", 8 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_read_task_handle)`: newly created root node transmits data packets from external IP network to ESP-MESH.
+ - `xTaskCreate(root_write_task, "root_write", 4 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_write_task_handle);`: newly created root node transmits ESP-WIFI-MESH data packets to external IP network, and to various target addresses according to the data types.
+ - `xTaskCreate(root_read_task, "root_read", 8 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, &g_root_read_task_handle)`: newly created root node transmits data packets from external IP network to ESP-WIFI-MESH.
 
-1. Root node transmits data packets from external IP network to ESP-MESH: 
+1. Root node transmits data packets from external IP network to ESP-WIFI-MESH: 
 
  - first identify whether this node is the root;
  - read data from external IP network;
@@ -472,9 +472,9 @@ static void root_read_task(void *arg)
 }
 ```
 
-2. Node processes ESP-MESH data:
+2. Node processes ESP-WIFI-MESH data:
 
- - first identify whether this node has been connected to ESP-MESH network;
+ - first identify whether this node has been connected to ESP-WIFI-MESH network;
  - read the target address into its own data packet;
  - check whether this data packet is a firmware upgrade packet, if so, the device will conduct firmware upgrade;
  - check whether this packet belongs to LAN communication module, if so, the node will conduct corresponding operation;

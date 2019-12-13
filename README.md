@@ -1,13 +1,13 @@
-# ESP-MESH Development Framework [[中文]](./README_cn.md)
+# ESP-WIFI-MESH Development Framework [[中文]](./README_cn.md)
 
 [![Documentation Status](https://readthedocs.com/projects/espressif-esp-mdf/badge/?version=latest)](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest)
 
-ESP-MDF, or Espressif Mesh Development Framework, is a development framework for [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html), a networking protocol built on top of the Wi-Fi protocol. ESP-MDF is based on the [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview) chip.
+ESP-MDF, or Espressif Mesh Development Framework, is a development framework for [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html), a networking protocol built on top of the Wi-Fi protocol. ESP-MDF is based on the [ESP32](https://www.espressif.com/en/products/hardware/esp32/overview) chip.
 
 ## Overview
-ESP-MDF is based on the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) protocol stack to facilitate your development of ESP-MESH. ESP-MDF provides the following features:
+ESP-MDF is based on the [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) protocol stack to facilitate your development of ESP-WIFI-MESH. ESP-MDF provides the following features:
 
-* **Fast network configuration**: In addition to manual configuration with the network configuration apps, such as ESP-MESH App or similar third-party apps, ESP-MDF offers a chained way of network configuration, during which devices autonomously and quickly establish a network, and form a greater coverage area.
+* **Fast network configuration**: In addition to manual configuration with the network configuration apps, such as ESP-WIFI-MESH App or similar third-party apps, ESP-MDF offers a chained way of network configuration, during which devices autonomously and quickly establish a network, and form a greater coverage area.
 
 * **Stable upgrade**: The upgrading process has become more efficient with such features as automatic retransmission of failed fragments, data compression, reverting to an earlier version, firmware check, etc.
 
@@ -15,11 +15,11 @@ ESP-MDF is based on the [ESP-MESH](https://docs.espressif.com/projects/esp-idf/e
 
 * **LAN control**: Network can be controlled by an app, sensor, etc.
 
-* **Various application demos**: It offers comprehensive solutions based on ESP-MESH in the areas of lighting, etc.
+* **Various application demos**: It offers comprehensive solutions based on ESP-WIFI-MESH in the areas of lighting, etc.
 
 ## Framework
 
-ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils is the encapsulation and third-party library of ESP-IDF APIs. Components are the ESP-MDF functional modules that use Utils APIs. Examples are the ESP-MESH solutions based on the Components.
+ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils is the encapsulation and third-party library of ESP-IDF APIs. Components are the ESP-MDF functional modules that use Utils APIs. Examples are the ESP-WIFI-MESH solutions based on the Components.
 
 <img src="docs/_static/mdf_framework.jpg">
 
@@ -30,7 +30,7 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
         - [Aliyun](https://github.com/espressif/esp-aliyun): Aliyun IoT kit
 
     - Transmission: the way of data transmission between devices
-        - [Mwifi](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/mwifi/index.html): adds to ESP-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features
+        - [Mwifi](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/mwifi/index.html): adds to ESP-WIFI-MESH the retransmission filter, data compression, fragmented transmission, and P2P multicast features
         - [Mespnow](https://docs.espressif.com/projects/esp-mdf/en/latest/api-reference/mespnow/index.html): adds to ESP-NOW the retransmission filter, Cyclic Redundancy Check (CRC), and data fragmentation features
 
     - Mcommon: modules shared by all ESP-MDF components
@@ -53,14 +53,14 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
         - [Mcommon Examples](examples/function_demo/mcommon): Common Module Example, Event Processing Memory Management Example of Using Information Store
 
     - Debug: Performance Testing and Debugging Tools
-        - [Console Test](examples/function_demo/mwifi/console_test): Test the ESP-MESH throughput, network configuration, and packet delay by entering commands through the serial port.
+        - [Console Test](examples/function_demo/mwifi/console_test): Test the ESP-WIFI-MESH throughput, network configuration, and packet delay by entering commands through the serial port.
         - [Wireless Debug](examples/wireless_debug/): ESP-MDF debugging via wireless
-     - [Development Kit](examples/development_kit/): ESP32-MeshKit usage example for research and understanding of ESP-MESH
-        - [ESP32-MeshKit-Light](examples/development_kit/light/): Smart lighting solution with ESP-MESH functioning as the master network. The kit consists of light bulbs with integrated ESP32 chips. Support BLE + ESP-MDF for BLE gateway, ibeacon and BLE scanning
-        - [ESP32-MeshKit-Sense](examples/development_kit/sense/): Development board, specifically designed for applications where ESP-MESH is in Light-sleep or Deep-sleep mode. The board provides solutions for:
+     - [Development Kit](examples/development_kit/): ESP32-MeshKit usage example for research and understanding of ESP-WIFI-MESH
+        - [ESP32-MeshKit-Light](examples/development_kit/light/): Smart lighting solution with ESP-WIFI-MESH functioning as the master network. The kit consists of light bulbs with integrated ESP32 chips. Support BLE + ESP-MDF for BLE gateway, ibeacon and BLE scanning
+        - [ESP32-MeshKit-Sense](examples/development_kit/sense/): Development board, specifically designed for applications where ESP-WIFI-MESH is in Light-sleep or Deep-sleep mode. The board provides solutions for:
            - Monitoring the power consumption of MeshKit peripherals
            - Controlling MeshKit peripherals based on the data from multiple onboard sensors. 
-        - [ESP32-MeshKit-Button](examples/development_kit/button/): Smart button solution, tailored for ESP-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_now.html).
+        - [ESP32-MeshKit-Button](examples/development_kit/button/): Smart button solution, tailored for ESP-WIFI-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-WIFI-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_now.html).
 
 
      - Cloud Platform: ESP-MDF docking cloud platform
@@ -68,13 +68,13 @@ ESP-MDF consists of Utils, Components and Examples (see the below figure). Utils
         - AWS: ESP-MDF Access AWS Platform Example
 ## Develop with ESP-MDF
 
-You first need to read [ESP-MESH Communication Protocol](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) and [ESP-MDF Programming Guide](Https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest) and research and learn about ESP-MESH through the ESP32-MeshKit development kit. Secondly, based on [Function demo](examples/function_demo/) for your project development, when you can encounter problems in development, you can first go to [BBS](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e) and [Issues](https://github.com/espressif/esp-mdf/issues) to find out if a similar problem already exists. If there is no similar problem, you can also ask directly on the website.
+You first need to read [ESP-WIFI-MESH Communication Protocol](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) and [ESP-MDF Programming Guide](Https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest) and research and learn about ESP-WIFI-MESH through the ESP32-MeshKit development kit. Secondly, based on [Function demo](examples/function_demo/) for your project development, when you can encounter problems in development, you can first go to [BBS](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e) and [Issues](https://github.com/espressif/esp-mdf/issues) to find out if a similar problem already exists. If there is no similar problem, you can also ask directly on the website.
 
 ### Development Boards
 
 #### ESP32-MeshKit Development board
 
-ESP32-MeshKit offers a complete [ESP-MESH Lighting Solution](https://www.espressif.com/en/products/software/esp-mesh/overview) (see the below figure), complemented by ESP-Mesh App ([iOS version](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8) and [Android](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)) for research, development and better understanding of ESP-MESH.
+ESP32-MeshKit offers a complete [ESP-WIFI-MESH Lighting Solution](https://www.espressif.com/en/products/software/esp-mesh/overview) (see the below figure), complemented by ESP-Mesh App ([iOS version](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8) and [Android](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)) for research, development and better understanding of ESP-WIFI-MESH.
 
 <table>
     <tr>
@@ -92,7 +92,7 @@ ESP32-MeshKit offers a complete [ESP-MESH Lighting Solution](https://www.espress
 
 #### ESP32-Buddy Development board
 
-ESP32-Buddy is a development board specifically designed to test the development of ESP-MESH. With its small size and USB power input, the board can be conveniently used for testing a large number of devices and measure distances between them.
+ESP32-Buddy is a development board specifically designed to test the development of ESP-WIFI-MESH. With its small size and USB power input, the board can be conveniently used for testing a large number of devices and measure distances between them.
 
 * Functions:
     * 16 MB flash: stores logs
@@ -119,7 +119,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     export MDF_PATH=~/esp/esp-mdf
     ```
 
-4. **Start a Project**: The word *project* refers to the communication example between two ESP-MESH devices.
+4. **Start a Project**: The word *project* refers to the communication example between two ESP-WIFI-MESH devices.
     ```shell
     cp -r $MDF_PATH/examples/get-started/ .
     cd  get-started/
@@ -163,7 +163,7 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     export PATH="$MDF_PATH/esp-idf/tools:$PATH"
     ```
 
-4. **Start a Project**: The word *project* refers to the communication example between two ESP-MESH devices.
+4. **Start a Project**: The word *project* refers to the communication example between two ESP-WIFI-MESH devices.
     ```shell
     cp -r $MDF_PATH/examples/get-started/ .
     cd  get-started/
@@ -187,37 +187,37 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
     git submodule update --init --recursive
     ```
 
-## ESP-MESH Highlights
+## ESP-WIFI-MESH Highlights
 
-* **Easy setup**: ESP-MESH expands the original Wi-Fi hotspot range to the reach of the most distant node in the mesh cloud. Such a network is automatically formed, self-healing and self-organizing. It saves the efforts of laying cables. All you need to do is configure the router password.
+* **Easy setup**: ESP-WIFI-MESH expands the original Wi-Fi hotspot range to the reach of the most distant node in the mesh cloud. Such a network is automatically formed, self-healing and self-organizing. It saves the efforts of laying cables. All you need to do is configure the router password.
 
-* **Gateway free**: The decentralized structure of ESP-MESH with the absence of a gateway precludes the overall network breakdown if one single node fails. Even if there is a single ESP-MESH device, the network still works as usual.
+* **Gateway free**: The decentralized structure of ESP-WIFI-MESH with the absence of a gateway precludes the overall network breakdown if one single node fails. Even if there is a single ESP-WIFI-MESH device, the network still works as usual.
 
 * **Safer transmission**: Both the data link layer and the application layer can be encrypted.
 
 * **More reliable transmission**: The transmission and data flow control between two devices are more reliable. Also, unicast, multicast and broadcast transmissions are supported.
 
-* **Large network capacity**: ESP-MESH takes the form of a tree topology, so one single device can connect to 10 devices at maximum, and an entire network can have over 1,000 nodes.
+* **Large network capacity**: ESP-WIFI-MESH takes the form of a tree topology, so one single device can connect to 10 devices at maximum, and an entire network can have over 1,000 nodes.
 
 * **Wider transmission coverage**: The transmission distance between two devices is 30 m through walls, and 200 m without any obstacles in between (relevant to ESP32-DevKitC).
     * **Smart Home**: Even if there are only three to five devices in your home, they can form a network and communicate with one another through walls.
-    * **Street light**: If ESP-MESH is used for the street lighting scenario, two long-distance devices can communicate with each other.
+    * **Street light**: If ESP-WIFI-MESH is used for the street lighting scenario, two long-distance devices can communicate with each other.
 
 * **High transmission speed**: For Wi-Fi transmission, the speed can reach up to 10 Mbps.
     * **Environment Control System**: Directly transfers the raw data collected by sensors and analyzes mass data for calibration of algorithms, thereby improving sensors' accuracy.
     * **Background Music System**: Both audio and video transmissions are supported.
     
-* **Simultaneously run Wi-Fi and BLE protocol stacks**: ESP32 chips can run both Wi-Fi and BLE protocol stacks side by side and use ESP-MESH as the main network to transmit data, receive BLE probe beacon, send BLE broadcasts and connect BLE devices.
+* **Simultaneously run Wi-Fi and BLE protocol stacks**: ESP32 chips can run both Wi-Fi and BLE protocol stacks side by side and use ESP-WIFI-MESH as the main network to transmit data, receive BLE probe beacon, send BLE broadcasts and connect BLE devices.
     * **Items tracing**: Monitors the BLE or Wi-Fi data packets from a device at multiple selected spots.
     * **Pedestrian counting**: Through monitoring Wi-Fi probe request frames.
     * **Indoor positioning**: Each device functions as a Beacon AP, continuously sending Bluetooth signal to the surroundings. The network can analyze a device's signal intensity and calculate its current position.
     * **Product promotion**: Sends real-time product information and promotions through iBeacon.
-    * **Bluetooth gateway**: With each device serving as a Bluetooth gateway, traditional Bluetooth devices can also be connected to an ESP-MESH network.
+    * **Bluetooth gateway**: With each device serving as a Bluetooth gateway, traditional Bluetooth devices can also be connected to an ESP-WIFI-MESH network.
 
 ## Related Documentation
 
 * For ESP-MDF related documents, please go to [ESP-MDF Programming Guide](https://docs.espressif.com/projects/esp-mdf/en/latest/?badge=latest).
-* [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
+* [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) is the basic wireless communication protocol for ESP-MDF.
 * [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/) describes Espressif's IoT development framework.
 * To report a bug or request a function, please go to [Issues](https://github.com/espressif/esp-mdf/issues) on GitHub to submit them. Before submitting an issue, please check if it has already been covered.
 * If you want to contribute ESP-MDF related codes, please refer to [Code Contribution Guide](docs/en/contribute/index.rst).
