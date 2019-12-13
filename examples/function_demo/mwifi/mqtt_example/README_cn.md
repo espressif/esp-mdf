@@ -4,7 +4,7 @@
 
 ## 介绍
 
-本示例将介绍如何基于 `Mwifi` 模块 APIs，实现设备连接远程外部服务器。设备首先通过 ESP-MESH 将所有数据传输到根节点，根节点使用 LWIP 连接 MQTT 远程服务器(示例使用：`mqtt://iot.eclipse.org`)。
+本示例将介绍如何基于 `Mwifi` 模块 APIs，实现设备连接远程外部服务器。设备首先通过 ESP-WIFI-MESH 将所有数据传输到根节点，根节点使用 LWIP 连接 MQTT 远程服务器(示例使用：`mqtt://iot.eclipse.org`)。
 
 ## 硬件准备
 
@@ -31,7 +31,7 @@ make erase_flash flash -j5 monitor ESPBAUD=921600 ESPPORT=/dev/ttyUSB0
 
 ### 运行
 
-1. ESP-MESH 设备每隔三秒会向 Topic:"/topic/subdev/MAC/send"（MAC：节点的 MAC 地址）推送设备信息
+1. ESP-WIFI-MESH 设备每隔三秒会向 Topic:"/topic/subdev/MAC/send"（MAC：节点的 MAC 地址）推送设备信息
 2. 当 MESH 网络中路由表发生变化时，会向 Topic:"/topic/gateway/MAC/update"（MAC：为根节点的 MAC 地址）推送变化的节点相关信息
 3. 可以从 Topic:"/topic/subdev/MAC/recv" 接收来自服务器的数据
 

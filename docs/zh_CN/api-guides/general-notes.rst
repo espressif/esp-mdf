@@ -1,14 +1,14 @@
-ESP-MESH 基本概念困惑解答
-===========================
+ESP-WIFI-MESH 基本概念困惑解答
+===============================
 
-本文用于回答初次接触 ESP-MESH 时产生的疑惑。
+本文用于回答初次接触 ESP-WIFI-MESH 时产生的疑惑。
 
 准备工作
 ---------
 
-ESP-MESH 是特为 ESP32 芯片研发的自组网技术。ESP32 使用基于双核的修定版本的 FreeRTOS，并使用 ESP-IDF 作为其官方开发框架。
+ESP-WIFI-MESH 是特为 ESP32 芯片研发的自组网技术。ESP32 使用基于双核的修定版本的 FreeRTOS，并使用 ESP-IDF 作为其官方开发框架。
 
-1. 了解 `ESP-MESH 网络协议 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html>`_
+1. 了解 `ESP-WIFI-MESH 网络协议 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html>`_
 2. 了解 ESP32 芯片:
     * `ESP32 技术参考手册 <https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_
     * `ESP32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_
@@ -18,13 +18,13 @@ ESP-MESH 是特为 ESP32 芯片研发的自组网技术。ESP32 使用基于双�
 常见问题
 --------
 
-ESP-MESH 根节点相关
-^^^^^^^^^^^^^^^^^^^^
+ESP-WIFI-MESH 根节点相关
+^^^^^^^^^^^^^^^^^^^^^^^^^
 1. 根节点是什么意思？如何生成？
 
-    根节点是一个 ESP-MESH 网络内唯一与外界（路由器或服务器）连接的节点，其产生方式可以有多种：
+    根节点是一个 ESP-WIFI-MESH 网络内唯一与外界（路由器或服务器）连接的节点，其产生方式可以有多种：
 
-    - **通过底层协议自行选举产生**，具体流程请参考 ESP-MESH `组网流程说明 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-building-a-network>`_。此方式下，需要手机或服务器告诉设备路由器的信息，作为选举的依据；
+    - **通过底层协议自行选举产生**，具体流程请参考 ESP-WIFI-MESH `组网流程说明 <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-building-a-network>`_。此方式下，需要手机或服务器告诉设备路由器的信息，作为选举的依据；
     - **通过应用层设计固定某一个或某一类设备作为根节点**，此时周围的设备可以自动连上该类设备，此种情况即不需要路由或手机参与。但需注意，若多个设备都固定为根节点，则相互之间无法组网
 
 2. 根节点挂了，网络是不是就崩了？
@@ -34,12 +34,12 @@ ESP-MESH 根节点相关
     - **若网络为非固定根节点方案**，则网络内设备会在确认根节点无法链接的情况下，重新选出新的根节点，具体流程请参考 `Root Node Failure <https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html#mesh-managing-a-network>`_。
     - **若网络为固定根节点方案**，在用户重新指派出新的根节点之前，网络无法正常工作。
 
-ESP-MESH 组网相关
-^^^^^^^^^^^^^^^^^^
+ESP-WIFI-MESH 组网相关
+^^^^^^^^^^^^^^^^^^^^^^^
 
 1. 组网是否可以不需要路由器？
 
-    ESP-MESH 组网不依赖于路由器，只要确认了根节点即可。
+    ESP-WIFI-MESH 组网不依赖于路由器，只要确认了根节点即可。
 
 2. 设备组网需要多久？
 
@@ -66,12 +66,12 @@ ESP-MESH 组网相关
 
     若不指定连接的父节点，则根据信号强度跟信号更强的节点产生关联。
 
-ESP-MESH 性能相关
-^^^^^^^^^^^^^^^^^^
+ESP-WIFI-MESH 性能相关
+^^^^^^^^^^^^^^^^^^^^^^^
 
-1. 网络环境会不会影响 ESP-MESH 性能？
+1. 网络环境会不会影响 ESP-WIFI-MESH 性能？
 
-    ESP-MESH 是基于 Wi-Fi 通讯协议的方案，因此任何会影响 Wi-Fi 信号强弱的因素都会影响 ESP-MESH 的性能。使用时建议选择较为空闲的信道，使用性能更好的天线等来提高 Wi-Fi 信号强度。
+    ESP-WIFI-MESH 是基于 Wi-Fi 通讯协议的方案，因此任何会影响 Wi-Fi 信号强弱的因素都会影响 ESP-WIFI-MESH 的性能。使用时建议选择较为空闲的信道，使用性能更好的天线等来提高 Wi-Fi 信号强度。
 
 2. 设备支持多远距离的通讯？
 
@@ -80,11 +80,11 @@ ESP-MESH 性能相关
 其余
 ^^^^^^
 
-1. ESP-MDF 是什么，和 ESP-MESH 有什么关系或区别？
+1. ESP-MDF 是什么，和 ESP-WIFI-MESH 有什么关系或区别？
 
-    MDF，Mesh Development Framework，是基于 ESP-MESH 的开发框架。ESP-MESH 是 ESP-IDF 中的 MESH 网络通信协议模块。在 ESP-MESH 组网、数据传输的基本功能上，添加了配网模块、OTA 模块、连云功能、本地控制、设备驱动等模块和应用示例，方便用户进行开发。用户可以根据需求选择基于 IDF 或 MDF 进行开发。
+    MDF，Mesh Development Framework，是基于 ESP-WIFI-MESH 的开发框架。ESP-WIFI-MESH 是 ESP-IDF 中的 MESH 网络通信协议模块。在 ESP-WIFI-MESH 组网、数据传输的基本功能上，添加了配网模块、OTA 模块、连云功能、本地控制、设备驱动等模块和应用示例，方便用户进行开发。用户可以根据需求选择基于 IDF 或 MDF 进行开发。
 
-2. ESP32 芯片能读出来多个 Mac 地址，请问 ESP-MESH 通讯是以哪个 Mac 地址
+2. ESP32 芯片能读出来多个 Mac 地址，请问 ESP-WIFI-MESH 通讯是以哪个 Mac 地址
 
     ESP32 芯片有 STA、AP、BLE、Ethernet 4 个 Mac 地址，其依次 +1，即 Ethernet Mac= BLE Mac+1 = AP Mac+2 = STA Mac+3，例如假设：
     `xx:xx:xx:xx:xx:00` 为 STA Mac，则
@@ -92,11 +92,11 @@ ESP-MESH 性能相关
     `xx:xx:xx:xx:xx:02` 为 BLE
     `xx:xx:xx:xx:xx:03` 为 Ethernet。
     
-    在 ESP-MESH 通讯时，以设备的 STA 地址为目标通讯。
+    在 ESP-WIFI-MESH 通讯时，以设备的 STA 地址为目标通讯。
 
-3. 没有路由器，ESP-MESH 能不能正常工作？
+3. 没有路由器，ESP-WIFI-MESH 能不能正常工作？
 
-    ESP-MESH 网络形成后，网络内部的通讯不依赖路由器，可以正常工作。
+    ESP-WIFI-MESH 网络形成后，网络内部的通讯不依赖路由器，可以正常工作。
 
 问题反馈
 ---------

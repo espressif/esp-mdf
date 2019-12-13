@@ -678,7 +678,7 @@ static mdf_err_t mlink_handle_set_config(mlink_handle_data_t *handle_data)
     if (mlink_json_parse(handle_data->req_data, "beacon_interval", &data) == ESP_OK) {
         ret = esp_mesh_set_beacon_interval(data);
         MDF_ERROR_CHECK(ret < 0, ESP_FAIL, "esp_mesh_set_beacon_interval, ret: %d", ret);
-        MDF_LOGI("ESP-MESH beacon interval: %d ms", data);
+        MDF_LOGI("ESP-WIFI-MESH beacon interval: %d ms", data);
     }
 
     if (mlink_json_parse(handle_data->req_data, "log_level", &data) == ESP_OK) {

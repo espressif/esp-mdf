@@ -57,7 +57,7 @@ char *mlink_mac_hex2str(const uint8_t *mac_hex, char *mac_str);
  *      - MAC for BT : `xx:xx:xx:xx:xx:02`
  *      - MAC for LAN: `xx:xx:xx:xx:xx:03`
  *
- *    The device's STA address is used For ESP-MESH communication.
+ *    The device's STA address is used For ESP-WIFI-MESH communication.
  **/
 
 /**

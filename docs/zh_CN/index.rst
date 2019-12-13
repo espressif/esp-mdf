@@ -2,7 +2,7 @@ ESP-MDF 编程指南
 =========================
 :link_to_translation:`en:[English]`
 
-这里是乐鑫 ESP-MESH 开发框架 (`esp-mdf <https://github.com/espressif/esp-mdf>`_) 的文档。
+这里是乐鑫 ESP-WIFI-MESH 开发框架 (`esp-mdf <https://github.com/espressif/esp-mdf>`_) 的文档。
 
 本文档提供不同语言的翻译版本 (:link_to_translation:`en:English`, :link_to_translation:`zh_CN:中文版`, :doc:`如何切换语言？ <languages>`), 如有出入请以英文版本为准。
 

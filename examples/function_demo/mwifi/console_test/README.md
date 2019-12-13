@@ -1,15 +1,15 @@
 [[中文]](./README_cn.md)
 
-# ESP-MESH Console Debugging Demo
+# ESP-WIFI-MESH Console Debugging Demo
 
 ## Overview
 
-This demo will show how to use `Mdebug` module to perform basic ESP-MESH debugging in mesh products, including the following features:
+This demo will show how to use `Mdebug` module to perform basic ESP-WIFI-MESH debugging in mesh products, including the following features:
 
- - [ESP-MESH throughput test](#ESP-MESH-Throughput-Test): sets work mode (client/server) and ping.
- - [ESP-MESH network configuration](#mesh_config-Command): sets ESP-MESH configuration information, including router SSID, password and BSSID, work channel, MESH ID and its password, device type, maximum number of connected devices and maximum layers; prints/saves ESP-MESH configuration information.
- - [ESP-MESH status query](#mesh_status-Command): starts/stops ESP-MESH, and prints the status of ESP-MESH devices.
- - [Wi-Fi scan](#mesh_scan-Command): scans AP or ESP-MESH devices nearby, and sets scan filters, such as filtered out by RSSI, SSID or BSSID, and sets passive scan time in each channel.
+ - [ESP-WIFI-MESH throughput test](#ESP-WIFI-MESH-Throughput-Test): sets work mode (client/server) and ping.
+ - [ESP-WIFI-MESH network configuration](#mesh_config-Command): sets ESP-WIFI-MESH configuration information, including router SSID, password and BSSID, work channel, MESH ID and its password, device type, maximum number of connected devices and maximum layers; prints/saves ESP-WIFI-MESH configuration information.
+ - [ESP-WIFI-MESH status query](#mesh_status-Command): starts/stops ESP-WIFI-MESH, and prints the status of ESP-WIFI-MESH devices.
+ - [Wi-Fi scan](#mesh_scan-Command): scans AP or ESP-WIFI-MESH devices nearby, and sets scan filters, such as filtered out by RSSI, SSID or BSSID, and sets passive scan time in each channel.
  - [Coredump information management](#Coredump-Command): prints/erases coredump data, gets coredump data length, sends coredump data to a specific device, retransmit coredump data with a specific sequence number.
  - [Log configuration](#Log-Command): adds/removes monitors, sets logging level, and sends logs to a specific device.
  - [General commands](#General-Command): include help command to print all currently supported commands, heap command to get the remaining memory of the current device, restart command to restart devices, and reset command to reset and restart devices.
@@ -31,7 +31,7 @@ This demo will show how to use `Mdebug` module to perform basic ESP-MESH debuggi
 
 > Please use serial port terminals such as `minicom` to avoid some unexpected problems when using `make monitor`.
 
-3. Debug ESP-MESH by entering the following commands according to the prompts.
+3. Debug ESP-WIFI-MESH by entering the following commands according to the prompts.
 
 * The following describes the use of each command in sequence.
 
@@ -53,13 +53,13 @@ This demo will show how to use `Mdebug` module to perform basic ESP-MESH debuggi
     6. Serial port commands support line breaks: '\n' and '\r\n'.
     7. Serial port returns execution results at a baud rate of 115200.
 
-### ESP-MESH Throughput Test
+### ESP-WIFI-MESH Throughput Test
 
 1. Hardware
     * Two ESP32 development boards
     * Flash console_test project to the two boards
 2. Workflow
-    1. Configure ESP-MESH on the two boards and set the boards to the same ESP-MESH network. For example, enter the same command `mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif` on the terminals of the two boards;
+    1. Configure ESP-WIFI-MESH on the two boards and set the boards to the same ESP-WIFI-MESH network. For example, enter the same command `mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif` on the terminals of the two boards;
     2. After the network is established, enter the command `mesh_status -o` to check the status;
     3. Run the command `mesh_status -s` to set one of the board into iperf server mode;
     4. Run the command `mesh_iperf -c 30:ae:a4:80:16:3c` to set the other board into iperf client mode.
@@ -114,14 +114,14 @@ This demo will show how to use `Mdebug` module to perform basic ESP-MESH debuggi
     |-|-|-|-|
     |Command definition|mesh_config  [-oS] [-s <ssid>] [-p <password>] [-b <bssid (xx:xx:xx:xx:xx:xx)>] [-c <channel (1 ~ 13)>] [-i <mesh_id (6 Bytes)>] [-t <mesh_type ('idle'or 'root' or 'node' or 'leaf')>] [-P <mesh_password>] [-n <max_connection (1 ~ 10)>] [-l <max_layer (1 ~ 32)>]||
     |Command|mesh_config -s <ssid> -p <password> -b <bssid>|Set router information|
-    ||mesh_config -c|Set work channel for ESP-MESH devices|
-    ||mesh_config -i <mesh_id> -t <mesh_type> -P <mesh_password> -n <max_connection> -l <max_layer>|Configure ESP-MESH, including ID, password and capacity|
-    ||mesh_config -o|Print ESP-MESH configuration information|
-    ||mesh_config -S|Save ESP-MESH configuration information|
-    |Example|mesh_config -c 11|Set the work channel of ESP-MESH to channel 11|
-    ||mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif|Set ESP-MESH ID to 14:12:12:12:12:12; router information: set SSID to expressif, set password to espressif|
-    ||mesh_config -o|Print ESP-MESH configuration information|
-    ||mesh_config -S|Save ESP-MESH configuration information|
+    ||mesh_config -c|Set work channel for ESP-WIFI-MESH devices|
+    ||mesh_config -i <mesh_id> -t <mesh_type> -P <mesh_password> -n <max_connection> -l <max_layer>|Configure ESP-WIFI-MESH, including ID, password and capacity|
+    ||mesh_config -o|Print ESP-WIFI-MESH configuration information|
+    ||mesh_config -S|Save ESP-WIFI-MESH configuration information|
+    |Example|mesh_config -c 11|Set the work channel of ESP-WIFI-MESH to channel 11|
+    ||mesh_config -i 14:12:12:12:12:12 -s espressif -p espressif|Set ESP-WIFI-MESH ID to 14:12:12:12:12:12; router information: set SSID to expressif, set password to espressif|
+    ||mesh_config -o|Print ESP-WIFI-MESH configuration information|
+    ||mesh_config -S|Save ESP-WIFI-MESH configuration information|
 
 ### mesh_status Command
 
@@ -130,12 +130,12 @@ This demo will show how to use `Mdebug` module to perform basic ESP-MESH debuggi
     |||||
     |-|-|-|-|
     |Command definition|mesh_status [-spo]||
-    |Command|mesh_status -s|Start ESP-MESH|
-    ||mesh_status -p|Stop ESP-MESH|
-    ||mesh_status -o|Print ESP-MESH status information|
-    |Example|mesh_status -o|Print ESP-MESH status information|
-    ||mesh_status -s|Start ESP-MESH|
-    ||mesh_status -p|Stop ESP-MESH|
+    |Command|mesh_status -s|Start ESP-WIFI-MESH|
+    ||mesh_status -p|Stop ESP-WIFI-MESH|
+    ||mesh_status -o|Print ESP-WIFI-MESH status information|
+    |Example|mesh_status -o|Print ESP-WIFI-MESH status information|
+    ||mesh_status -s|Start ESP-WIFI-MESH|
+    ||mesh_status -p|Stop ESP-WIFI-MESH|
 
 ### mesh_scan Command
 

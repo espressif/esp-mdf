@@ -136,7 +136,7 @@ static mdf_err_t lcd_initialize()
     lcd_obj->drawRoundRect(0, 0, 240, 320, 3, COLOR_WHITE);
     lcd_obj->drawFastHLine(0, 25, 320, COLOR_WHITE);
     lcd_obj->setTextColor(COLOR_WHITE, COLOR_BLACK);
-    lcd_obj->drawString("ESP-MESH", 180, 10);
+    lcd_obj->drawString("ESP-WIFI-MESH", 180, 10);
 
     return MDF_OK;
 }

@@ -10,7 +10,7 @@
 5.example 中未添加解绑的接口,用户可以自助调用解绑,解绑接口只有网关节点有效.
 
 ## 概述
-MAliyun Linkkit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案,可配套 阿里公版APP“云智能”使用，用于调研和了解 ESP-MESH，也可以进行二次开发。
+MAliyun Linkkit 是基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案,可配套 阿里公版APP“云智能”使用，用于调研和了解 ESP-WIFI-MESH，也可以进行二次开发。
 
 
 ### 1.阿里云平台部署

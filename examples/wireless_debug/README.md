@@ -2,15 +2,15 @@
 
 # ESP-NOW Debug Receiver Board Demo
 
-ESP-NOW debug receiver board can receive debugging data from ESP-MESH devices only when the board is on the same Wi-Fi channel with the devices.
+ESP-NOW debug receiver board can receive debugging data from ESP-WIFI-MESH devices only when the board is on the same Wi-Fi channel with the devices.
 
 <div align=center>
 <img src="espnow_debug.png" width="800">
 </div>
 
 > Note:
-> 1. If the ESP-NOW debug receiver board is on the same channel with ESP-MESH network, you don't need to connect the borad with the router.
-> 2. The following code needs to be added to the monitored ESP-MESH device:
+> 1. If the ESP-NOW debug receiver board is on the same channel with ESP-WIFI-MESH network, you don't need to connect the borad with the router.
+> 2. The following code needs to be added to the monitored ESP-WIFI-MESH device:
 >    ```c
 >    MDF_ERROR_ASSERT(mdebug_console_init());
 >    MDF_ERROR_ASSERT(mdebug_espnow_init());
@@ -25,7 +25,7 @@ ESP-NOW debug receiver board provides the following features:
  
  - [Wi-Fi configuration](#Wi-Fi-Command): sets Wi-Fi information needed in STA mode, including router SSID, password, BSSID and work channel, and saves/erases the configuration information.
  
- - [Wi-Fi scan](#Scan-Command): works in STA mode, and scans AP or ESP-MESH devices nearby, sets filters such as filtered by RSSI, SSID or BSSID, and sets passive scan time in each channel. 
+ - [Wi-Fi scan](#Scan-Command): works in STA mode, and scans AP or ESP-WIFI-MESH devices nearby, sets filters such as filtered by RSSI, SSID or BSSID, and sets passive scan time in each channel. 
 
  - [Log configuration](#Log-Command): monitors logs from other devices, counts the numbers of various logs (I, W, E), restart times and coredump times and displays them on the screen, adds/removes monitors, and sets logging level.
   
@@ -39,7 +39,7 @@ ESP-NOW debug receiver board provides the following features:
 
 ### Overview
 
-ESP-NOW debug receiver board receives running log and coredump data from ESP-MESH devices via [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html) wireless transmission technology. ESP-NOW is a connectionless Wi-Fi protocol defined by Espressif, widely used in smart lighting, remote control, sensors and other fields. In ESP-NOW, data is encapsulated in Wi-Fi Action frame for data transmission, transferring data from one Wi-Fi device to another without connection.
+ESP-NOW debug receiver board receives running log and coredump data from ESP-WIFI-MESH devices via [ESP-NOW](https://esp-idf.readthedocs.io/en/latest/api-reference/wifi/esp_now.html) wireless transmission technology. ESP-NOW is a connectionless Wi-Fi protocol defined by Espressif, widely used in smart lighting, remote control, sensors and other fields. In ESP-NOW, data is encapsulated in Wi-Fi Action frame for data transmission, transferring data from one Wi-Fi device to another without connection.
 
 ### ESP-NOW Features
 
@@ -112,7 +112,7 @@ wireless_debug/
 
 > Please use serial port terminals such as `minicom` to avoid some unexpected problems when using `make monitor`.
 
-3. Debug ESP-MESH by entering the following commands according to the prompts.
+3. Debug ESP-WIFI-MESH by entering the following commands according to the prompts.
 
 * The following describes the use of each command in sequence.
 
@@ -222,7 +222,7 @@ wireless_debug/
     ||bssid|AP BSSID|
     ||password|AP password|
     |Example|wifi_config -s "esp-liyin" -p "password"|Wi-Fi sets and connects to the AP with SSID as esp-liyin and password as "password".|
-    |Example|wifi_config -c 11|Configure the working channel of the ESP-MESH device to be 11|
+    |Example|wifi_config -c 11|Configure the working channel of the ESP-WIFI-MESH device to be 11|
 
 2. Save/erase Wi-Fi configuration information
 
@@ -304,10 +304,10 @@ wireless_debug/
 
 ## Impact on Performance
 
-Since ESP-NOW, like ESP-MESH, uses a Wi-Fi interface to send and receive data packages, delay may occur in receiving commands or in data transmission if there is a large amount of data to be transmitted among ESP-MESH devices.
+Since ESP-NOW, like ESP-WIFI-MESH, uses a Wi-Fi interface to send and receive data packages, delay may occur in receiving commands or in data transmission if there is a large amount of data to be transmitted among ESP-WIFI-MESH devices.
 
-By testing in a good network, we provide the following thresholds, and with such configuration parameters, the delay caused to ESP-MESH devices is negligible.
+By testing in a good network, we provide the following thresholds, and with such configuration parameters, the delay caused to ESP-WIFI-MESH devices is negligible.
 
-* Fifty ESP-MESH devices (The more the devices, the worse the network.)
-* Add `10` ESP-MESH devices to ESP-NOW receiver (The more the devices added to the receiver, the worse the network may be.)
+* Fifty ESP-WIFI-MESH devices (The more the devices, the worse the network.)
+* Add `10` ESP-WIFI-MESH devices to ESP-NOW receiver (The more the devices added to the receiver, the worse the network may be.)
 * Set logging level to `info` (The lower the level, the worse the network may be.)

@@ -3,7 +3,7 @@ Mconfig
 
 :link_to_translation:`en:[English]`
 
-Mconfig (Mesh Network Configuration) 是 ESP-MESH 配网的一种方案，目的是将配置信息便捷、高效地传递给 ESP-MESH 设备。
+Mconfig (Mesh Network Configuration) 是 ESP-WIFI-MESH 配网的一种方案，目的是将配置信息便捷、高效地传递给 ESP-WIFI-MESH 设备。
 
 Mconfig 使用的 App 为 `ESP-Mesh App <https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk>`_，配网过程中使用 RSA 算法进行密钥协商，使用 128-AES 算法进行数据加密，使用 CRC 算法进行校验和验证。
 
@@ -13,9 +13,9 @@ Mconfig 使用的 App 为 `ESP-Mesh App <https://github.com/EspressifApp/Esp32Me
 =========== =================================================================================================
 术语         描述
 =========== =================================================================================================
-设备         任何属于或可以属于 ESP-MESH 网络的设备
+设备         任何属于或可以属于 ESP-WIFI-MESH 网络的设备
 白名单       包含设备的 MAC 地址列表和设备公钥的 MD5 值。可通过蓝牙扫描生成或扫描设备二维码导入，用于链式配网时设备校验
-配置信息      路由器和 ESP-MESH 相关配置
+配置信息      路由器和 ESP-WIFI-MESH 相关配置
 AES         高级加密标准（英语：Advanced Encryption Standard，缩写：AES），在密码学中又称 Rijndael 加密法，是美国联邦政府采用的一种区块加密标准
 RSA         RSA 加密算法是一种非对称加密算法。在公开密钥加密和电子商业中 RSA 被广泛使用
 CRC         循环冗余校验 (Cyclic Redundancy Check, CRC) 是一种根据网络数据包或电脑文件等数据产生简短固定位数校验码的一种散列函数，主要用来检测或校验数据传输或者保存后可能出现的错误
@@ -78,7 +78,7 @@ CRC         循环冗余校验 (Cyclic Redundancy Check, CRC) 是一种根据网
 
 若要自定义配网方式，请注意：
 
-- 密码校验：ESP-MESH 非根节点不检查路由器的信息，只检查 ESP-MESH 网络内部的配置是否正确；如果 ESP-MESH 网络内部的配置正确，但是路由器密码错误，当非根节点成为根节点时就连不上路由器。因此，在对非根节点进行配网时需要校验路由器的密码；
+- 密码校验：ESP-WIFI-MESH 非根节点不检查路由器的信息，只检查 ESP-WIFI-MESH 网络内部的配置是否正确；如果 ESP-WIFI-MESH 网络内部的配置正确，但是路由器密码错误，当非根节点成为根节点时就连不上路由器。因此，在对非根节点进行配网时需要校验路由器的密码；
 
 .. ---------------------- Mconfig-BluFi --------------------------
 
@@ -256,7 +256,7 @@ Mconfig-Chain
 
 Mconfig-Chain 是基于 `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/wifi/esp_now.html?highlight=espnow>`_ （一种由 Espressif 定义的无连接 Wi-Fi 通信协议）的设备间配网协议。
 
-当前 Wi-Fi 网络配置主要有三种方式：BLE 配网、智能配网（sniffer）和 softAP 配网，均是为单个设备配网设计的，其并不适合 ESP-MESH 网络这种多设备同时配网的场景。Mconfig-Chain 是专为设计 ESP-MESH 网络的配网方式，其配网过程是链式的、可传递的，所有已配网的设备均可以为其他设备配网，实现大范围高效配网。
+当前 Wi-Fi 网络配置主要有三种方式：BLE 配网、智能配网（sniffer）和 softAP 配网，均是为单个设备配网设计的，其并不适合 ESP-WIFI-MESH 网络这种多设备同时配网的场景。Mconfig-Chain 是专为设计 ESP-WIFI-MESH 网络的配网方式，其配网过程是链式的、可传递的，所有已配网的设备均可以为其他设备配网，实现大范围高效配网。
 
 Mconfig-Chain 将设备分为 Master（已配网的设备）和 Slave （等待配网的设备）两种类型，配网过程分为设备发现、密钥协商和数据通信。
 
@@ -285,7 +285,7 @@ Type        0X0F
     - 通过 Wi-Fi beacon 发送链式配网的标识，如果设备仅处于 STA 模式将无法启用 Master；
 
 2. Slave 开启 Wi-Fi 的 sniffe 功能，不断切换信道监听 Wi-Fi 广播包，查找链式配网的标识，如若发现 Master 则停止信道切换, 选取信号强度最好的 Master 发送配网请求。
-    - Slave 工作时会切换信道，在使用之前应停用 ESP-MESH 的自组网。
+    - Slave 工作时会切换信道，在使用之前应停用 ESP-WIFI-MESH 的自组网。
 
 密钥协商
 ^^^^^^^^^

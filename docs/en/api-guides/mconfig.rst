@@ -2,7 +2,7 @@ Mconfig
 =========
 :link_to_translation:`zh_CN:[中文]`
 
-Mconfig (Mesh Network Configuration) is a network configuration solution for ESP-MESH, which sends network configuration information to ESP-MESH devices in a convenient and efficient manner.
+Mconfig (Mesh Network Configuration) is a network configuration solution for ESP-WIFI-MESH, which sends network configuration information to ESP-WIFI-MESH devices in a convenient and efficient manner.
 
 Mconfig uses `ESP-Mesh App <https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk>`_ for network configuration. The App employs RSA algorithms for key exchange, 128-AES for data encryption, and CRC for verification and monitoring of transmission errors.
 
@@ -12,9 +12,9 @@ Terminology
 ========================= ==========================================================
 Terminology               Description
 ========================= ==========================================================
-Device                    Any device that is either connected, or can be connected to an ESP-MESH network.
+Device                    Any device that is either connected, or can be connected to an ESP-WIFI-MESH network.
 Whitelist                 List of devices approved for verifying newly-added devices during the chained way of network configuration. A whitelist can be formed by scanning devices’ QR codes as well as by approving devices found via Bluetooth scanning. A whitelist includes each device’s MAC address and an MD5 (Message-Digest Algorithm 5) hash of its public key.
-Configuration Information The configuration information related to Router and ESP-MESH.
+Configuration Information The configuration information related to Router and ESP-WIFI-MESH.
 AES                       Advanced Encryption Standard, also known as Rijndael in the field of cryptography, is a block encryption standard adopted by the U.S. government and is now used worldwide.
 RSA                       An asymmetric encryption algorithm that is widely used in the areas of public-key encryption and e-commerce.
 CRC                       Cyclic Redundancy Check is a hash function that generates a short verification code of fixed length for any network data packet or a file. It is mainly used for detection of any possible errors during data transmission or after data has been saved.
@@ -52,10 +52,10 @@ The detailed description of the process given in the figure can be found below.
 
 4. Add a new device
     a. App listens for incoming Bluetooth advertising packets from added devices. At some point a prompt pops up, asking the user whether Devices *E* and *F* should be added. If Device *F* is chosen to be added, App sends the command to the root node to add Device *F*.
-    b. Device *A*, the root node, receives the command and forwards it to other devices in the ESP-MESH network. When Devices *B*, *C*, and *D* receive this command to add Device *F*, Mconfig-Chain gets activated.
+    b. Device *A*, the root node, receives the command and forwards it to other devices in the ESP-WIFI-MESH network. When Devices *B*, *C*, and *D* receive this command to add Device *F*, Mconfig-Chain gets activated.
     c. Device *F* sends a request for network configuration to Device *C*, the one with the strongest signal.
     d. Device *C* sends the network configuration information to Device *F* through Wi-Fi.
-    e. Device *F* connects to the ESP-MESH network as soon as it receives the network configuration information.
+    e. Device *F* connects to the ESP-WIFI-MESH network as soon as it receives the network configuration information.
 
 Security
 ---------
@@ -77,7 +77,7 @@ Notice
 
 If you want to customize network configuration, please be sure to:
 
-- **Verify password**: The nodes in ESP-MESH, except for the root node, do not check the router information. They only check if the configuration within their ESP-MESH network is correct. For this reason, if you accidentally provide a wrong router password to a non-root node, it will not be able to connect to the router after becoming a root node, even if their configuration within the network is correct. To avoid this potential problem, please verify the router password for non-root nodes.
+- **Verify password**: The nodes in ESP-WIFI-MESH, except for the root node, do not check the router information. They only check if the configuration within their ESP-WIFI-MESH network is correct. For this reason, if you accidentally provide a wrong router password to a non-root node, it will not be able to connect to the router after becoming a root node, even if their configuration within the network is correct. To avoid this potential problem, please verify the router password for non-root nodes.
 
 .. ---------------------- Mconfig-BluFi --------------------------
 
@@ -262,9 +262,9 @@ Mconfig-Chain
 
 Mconfig-Chain is a network configuration protocol for devices based on `ESP-NOW <https://docs.espressif.com/projects/esp-idf/zh_CN/stable/api-reference/wifi/esp_now.html?highlight=espnow>`_, a connectionless Wi-Fi communication protocol defined by Espressif.
 
-Currently, there are three methods to configure a Wi-Fi network: BLE, sniffer, and softAP, all of which are designed for network configuration of a single device. For this reason, these methods are not applicable for an ESP-MESH network, which usually involves network configuration of multiple devices.
+Currently, there are three methods to configure a Wi-Fi network: BLE, sniffer, and softAP, all of which are designed for network configuration of a single device. For this reason, these methods are not applicable for an ESP-WIFI-MESH network, which usually involves network configuration of multiple devices.
 
-Mconfig-Chain is specifically designed for ESP-MESH network configuration. It features a chained, transferable configuration process, which means that each device connected to the network can implement network configuration for other devices. Mconfig-Chain turns configuratoin process of a wide-range network into a simple and efficient process.
+Mconfig-Chain is specifically designed for ESP-WIFI-MESH network configuration. It features a chained, transferable configuration process, which means that each device connected to the network can implement network configuration for other devices. Mconfig-Chain turns configuratoin process of a wide-range network into a simple and efficient process.
 
 Mconfig-Chain splits devices into two types:
 
@@ -299,7 +299,7 @@ Type        0X0F
    - The identification of chained network configuration is sent through Wi-Fi beacon frames. So if a device has STA mode only, then it cannot become a master.
 
 2. A slave enables a Wi-Fi sniffer in order to find the identification of chained network configuration. A sniffer keeps switching channels, sniffing Wi-Fi advertising packets. As soon as the sniffer finds masters, it stops switching channels and sends the request for network configuration to the master with the strongest signal.
-    - Slaves need to switch channels when they sniffer Wi-Fi adverting packets, but the ESP-MESH function of network self-forming does not allow channel switching. Whenever a slave switches to another channel, the function automatically switches back to its original channel. Therefore, before using slave sniffer, the function of network self-forming in ESP-MESH should be disabled.
+    - Slaves need to switch channels when they sniffer Wi-Fi adverting packets, but the ESP-WIFI-MESH function of network self-forming does not allow channel switching. Whenever a slave switches to another channel, the function automatically switches back to its original channel. Therefore, before using slave sniffer, the function of network self-forming in ESP-WIFI-MESH should be disabled.
 
 Key Exchange
 ^^^^^^^^^^^^

@@ -4,14 +4,14 @@
 
 ## 介绍
 
-本示例将介绍如何基于 `Mconfig` 模块 APIs 配置 ESP-MESH 网络。在 ESP-MESH 网络中，需要配置的网络信息包含路由信息、ESP-MESH 网络配置信息、设备白名单。配网过程中使用 RSA 算法（非对称加密）进行密钥协商，使用 128-AES 算法（对称加密）进行数据加密，使用 CRC 算法（循环冗余校验）进行校验和验证。了解更多有关信息，请参考 [Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html)。
+本示例将介绍如何基于 `Mconfig` 模块 APIs 配置 ESP-WIFI-MESH 网络。在 ESP-WIFI-MESH 网络中，需要配置的网络信息包含路由信息、ESP-WIFI-MESH 网络配置信息、设备白名单。配网过程中使用 RSA 算法（非对称加密）进行密钥协商，使用 128-AES 算法（对称加密）进行数据加密，使用 CRC 算法（循环冗余校验）进行校验和验证。了解更多有关信息，请参考 [Mconfig](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html)。
 
 ## 配网流程
 
 完整配网流程可参考：[整体流程](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/api-guides/mconfig.html#id2)。
 
 1. 手机连接到路由器上，并确保路由器是 2.4 GHz
-2. 打开微信，搜索 `ESPMesh` 或扫描如下二维码：（也可使用 ESP-MESH APP）
+2. 打开微信，搜索 `ESPMesh` 或扫描如下二维码：（也可使用 ESP-WIFI-MESH APP）
 
 	<div align=center>
 	<img src="ESPMesh_program.png" width="800">

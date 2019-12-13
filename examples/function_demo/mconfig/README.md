@@ -4,11 +4,11 @@
 
 ## Introduction
 
-It introduces how to configure ESP-MESH network based on `Mconfig` module APIs.
+It introduces how to configure ESP-WIFI-MESH network based on `Mconfig` module APIs.
 
 ## Network Configuration Process
 
-1. Connect your mobile phone to the router that ESP-MESH will connect to, and make sure the router's frequency band is 2.4 GHz.
+1. Connect your mobile phone to the router that ESP-WIFI-MESH will connect to, and make sure the router's frequency band is 2.4 GHz.
 2. Install the WeChat mini program for network configuration, and use WeChat to scan the below QR code:
 
 	<div align=center>

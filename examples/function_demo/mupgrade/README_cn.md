@@ -4,7 +4,7 @@
 
 ## 介绍
 
-本示例将介绍如何快速使用 `Mupgrade` 进行 ESP-MESH 设备的升级。
+本示例将介绍如何快速使用 `Mupgrade` 进行 ESP-WIFI-MESH 设备的升级。
 
 [Mesh Upgrade 介绍](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html)
 
@@ -12,7 +12,7 @@
 
 ### 步骤 1：连接到路由器
 
-将主机 PC 连接到 ESP-MESH 网络所在的路由器。
+将主机 PC 连接到 ESP-WIFI-MESH 网络所在的路由器。
 
 ### 步骤 2：运行 HTTP 服务器
 
@@ -48,7 +48,7 @@ python -m SimpleHTTPServer 8070
 
 切换回 OTA 示例目录，然后键入 `make menuconfig`(Make) 或者 `make menuconfig`(CMake) 以配置 OTA 示例。在 “Example Configuration” 子菜单下，填写以下详细信息：
 
-* ESP-MESH 网络的配置信息
+* ESP-WIFI-MESH 网络的配置信息
 * 固件升级 URL。URL 将如下所示：
 
 ```

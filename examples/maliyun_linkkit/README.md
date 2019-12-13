@@ -11,9 +11,9 @@
 5. example 中未添加解绑的接口,用户可以自助调用解绑,解绑接口只有网关节点有效.
 
 ## 概述
-Aliyun Linkkit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案，可配套 阿里公版APP“云智能”使用，可以帮助用户更快捷的使用 ESP-MESH 应用于产品开发。
+Aliyun Linkkit 是基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案，可配套 阿里公版APP“云智能”使用，可以帮助用户更快捷的使用 ESP-WIFI-MESH 应用于产品开发。
 
-* ESP-MESH 作为主干网络用于长供电的场景中，设备可作为根节点（相当于网关）、中间根点和叶子节点,所有设备通过根节点登录到阿里服务器,进而完成间接通讯。
+* ESP-WIFI-MESH 作为主干网络用于长供电的场景中，设备可作为根节点（相当于网关）、中间根点和叶子节点,所有设备通过根节点登录到阿里服务器,进而完成间接通讯。
 	- 支持 MESH 组网,并完成登录,用户操作无感知
 	- 支持阿里 <云智能> APP 一键配网
 	- 支持阿里 <云智能> APP 控制设备

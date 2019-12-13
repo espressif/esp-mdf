@@ -1,7 +1,7 @@
 ESP32-MeshKit
 ==============
 
-ESP32-MeshKit offers a complete [ESP-Mesh Lighting Solution](https://www.espressif.com/en/products/software/esp-mesh/overview), complemented by ESP-Mesh App for research, development and better understanding of ESP-MESH.
+ESP32-MeshKit offers a complete [ESP-Mesh Lighting Solution](https://www.espressif.com/en/products/software/esp-mesh/overview), complemented by ESP-Mesh App for research, development and better understanding of ESP-WIFI-MESH.
 
 * Purchase link: [taobao](https://item.taobao.com/item.htm?spm=a230r.1.14.1.55a83647K8jlrh&id=573310711489&ns=1&abbucket=3#detail)
 * Products:

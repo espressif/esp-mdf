@@ -166,11 +166,11 @@ void app_main()
 
     uint8_t sta_mac[6] = {0};
     MDF_ERROR_ASSERT(esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac));
-    sprintf(name, "ESP-MESH_%02x%02x", sta_mac[4], sta_mac[5]);
+    sprintf(name, "ESP-WIFI-MESH_%02x%02x", sta_mac[4], sta_mac[5]);
 
     /**
      * @note `custom_data` is used for specific application custom data, non-essential fields.
-     *       can be passed through the APP distribution network (ESP-MESH Config (The bottom
+     *       can be passed through the APP distribution network (ESP-WIFI-MESH Config (The bottom
      *       right corner of the configured page) > Custom Data)
      */
     MDF_ERROR_ASSERT(get_network_config(name, &mwifi_config, custom_data));

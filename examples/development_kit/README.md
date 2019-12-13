@@ -6,36 +6,36 @@
 
 ## Overview
 
-ESP32-MeshKit is a network configuration solution for smart homes based on [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html).
+ESP32-MeshKit is a network configuration solution for smart homes based on [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html).
 
 ESP32-MeshKit currently allows you to integrate the following hardware components:
 
-* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): Smart lighting solution with ESP-MESH functioning as the master network. The kit consists of light bulbs with integrated ESP32 chips.
+* [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf): Smart lighting solution with ESP-WIFI-MESH functioning as the master network. The kit consists of light bulbs with integrated ESP32 chips.
 
-* [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md): Development board, specifically designed for applications where ESP-MESH is in Light-sleep or Deep-sleep mode. The board provides solutions for:
+* [ESP32-MeshKit-Sense](https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md): Development board, specifically designed for applications where ESP-WIFI-MESH is in Light-sleep or Deep-sleep mode. The board provides solutions for:
    * Monitoring the power consumption of MeshKit peripherals
    * Controlling MeshKit peripherals based on the data from multiple onboard sensors. 
   
-* [ESP32-MeshKit-Button](button/README.md): Smart button solution, tailored for ESP-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_now.html).
+* [ESP32-MeshKit-Button](button/README.md): Smart button solution, tailored for ESP-WIFI-MESH applications with ultra-low power consumption. The device wakes up only for a short time when the buttons are pressed and transmits packets to ESP-WIFI-MESH devices via [ESP-NOW](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_now.html).
 
 To configure and network these hardware components you need:
 
 * Android or iOS phone with installed ESP-Mesh App (See [section ESP-Mesh App](#esp-mesh-app)).
-* 2.4 GHz Wi-Fi network to which you connect your phone and one of the ESP-MESH devices.
+* 2.4 GHz Wi-Fi network to which you connect your phone and one of the ESP-WIFI-MESH devices.
 
 ## Functions
 
 1. [Mconfig](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mconfig.html) (MESH Network Configuration)
 
-	A network configuration solution, which uses ESP-Mesh App to add the first device to ESP-MESH network via Bluetooth. After that, the added device transfers network configuration information to other devices waiting to be added.
+	A network configuration solution, which uses ESP-Mesh App to add the first device to ESP-WIFI-MESH network via Bluetooth. After that, the added device transfers network configuration information to other devices waiting to be added.
 
 2. [Mlink](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mlink.html) (MESH LAN Communication)
 
-	A LAN control solution for ESP-MESH, where the root node initiates communication between the network configuration app and the HTTP server, and transfers the communication information to other devices.
+	A LAN control solution for ESP-WIFI-MESH, where the root node initiates communication between the network configuration app and the HTTP server, and transfers the communication information to other devices.
 
 3. [Mupgrade](https://docs.espressif.com/projects/esp-mdf/en/latest/api-guides/mupgrade.html) (MESH Upgrade)
 
-	A solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-MESH devices on the same wireless network. This solution provides the following functions:
+	A solution for simultaneous over-the-air (OTA) upgrading of multiple ESP-WIFI-MESH devices on the same wireless network. This solution provides the following functions:
 
 ## ESP-Mesh App
 
@@ -45,7 +45,7 @@ To configure and network these hardware components you need:
 
 > **Note**: The Android version updates are given a higher priority.
 
-ESP-Mesh App is a useful tool for researching the ESP-MESH protocol and will help better understand the protocol's potential.
+ESP-Mesh App is a useful tool for researching the ESP-WIFI-MESH protocol and will help better understand the protocol's potential.
 
 The shared ESP-Mesh App's source code will be helpful in development of your own applications.
 
@@ -64,7 +64,7 @@ The shared ESP-Mesh App's source code will be helpful in development of your own
 
 * Launch ESP-Mesh App, and it performs scanning via Bluetooth and notifies you about nearby devices in Network Configuration mode.
 
-* Tap on the `Add device` button to see the list of the found ESP-MESH devices.
+* Tap on the `Add device` button to see the list of the found ESP-WIFI-MESH devices.
 
 * Tap on the down arrow to the left of the search bar to reveal two filtering options:
     * `RSSI` to filter devices based on their signal strength
@@ -84,17 +84,17 @@ The shared ESP-Mesh App's source code will be helpful in development of your own
 
     * **Wi-Fi name**: Shows the name of the Wi-Fi network to which the smartphone is connected. Note that only 2.4 GHz Wi-Fi networks are supported.
     
-    * **MESH ID**: Suggests the name for the ESP-MESH network, which equals to the router's MAC address. If you want to have several ESP-MESH networks on the same router, please give them unique names by modifying the initial `MESH ID`. Multiple networks with an identical MESH ID are merged into one network.
+    * **MESH ID**: Suggests the name for the ESP-WIFI-MESH network, which equals to the router's MAC address. If you want to have several ESP-WIFI-MESH networks on the same router, please give them unique names by modifying the initial `MESH ID`. Multiple networks with an identical MESH ID are merged into one network.
    
     * **Password**: Input the password of the current Wi-Fi network.
    
-    * **More**: Tap to modify the default configuration parameters of the ESP-MESH network. For more information on the parameters, please check the [ESP-MESH Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_mesh.html).
+    * **More**: Tap to modify the default configuration parameters of the ESP-WIFI-MESH network. For more information on the parameters, please check the [ESP-WIFI-MESH Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/network/esp_mesh.html).
 * After you fill out the required fields, tap `Next`
 
     <table>
         <tr>
             <td ><img src="docs/_static/en/router_configuration.png" width="300"><p align=center>Enter the router information</p></td>
-            <td ><img src="docs/_static/en/more_configuration.png" width="300"><p align=center>Enter ESP-MESH network configuration information</p></td>
+            <td ><img src="docs/_static/en/more_configuration.png" width="300"><p align=center>Enter ESP-WIFI-MESH network configuration information</p></td>
         </tr>
     </table>
 
@@ -117,7 +117,7 @@ ESP-Mesh App starts uploading the network configuration information and performs
 
 ### 2. Adding Devices to an Existing Network
 
-If App finds a new ESP-MESH device in Network configuration mode, it shows a prompt. You can add the device by tapping on `Add the device to the mesh network`.
+If App finds a new ESP-WIFI-MESH device in Network configuration mode, it shows a prompt. You can add the device by tapping on `Add the device to the mesh network`.
 
 <table>
     <tr>
@@ -140,7 +140,7 @@ Go to the list of added devices and do the following:
    </table>
 
 * Long press on a device to edit its configuration settings:
-    * **Device association**: Any ESP-MESH device can be associated with other devices. 
+    * **Device association**: Any ESP-WIFI-MESH device can be associated with other devices. 
 
     > Note: an association works in one direction only.
     >
@@ -179,19 +179,19 @@ Go to the list of added devices and do the following:
     * Update App
     * Help provides the FAQ section
     
-* **Topology**: Layout of the current ESP-MESH network structure. You can long press on a certain node to open the device's network configuration information.
+* **Topology**: Layout of the current ESP-WIFI-MESH network structure. You can long press on a certain node to open the device's network configuration information.
 
 <table>
     <tr>
         <td ><img src="docs/_static/en/version_information.png" width="300"><p align=center>App version</p></td>
         <td ><img src="docs/_static/en/topology.png" width="300"><p  align=center>Topology</p></td>
-        <td ><img src="docs/_static/en/network_configuration.png" width="300"><p align=center>Network configuration information for an ESP-MESH device</p></td>
+        <td ><img src="docs/_static/en/network_configuration.png" width="300"><p align=center>Network configuration information for an ESP-WIFI-MESH device</p></td>
     </tr>
 </table>
 
 ### 6. Firmware Update
 
-Long press on a certain ESP-MESH device on the list of added devices and in the pop-up menu choose *Firmware update*. Choose one of the two ways to update the firmware:
+Long press on a certain ESP-WIFI-MESH device on the list of added devices and in the pop-up menu choose *Firmware update*. Choose one of the two ways to update the firmware:
 
 * **Download the bin**: Directly copy the firmware update to your smartphone's folder `File Management/Phone Storage/Espressif/Esp32/upgrade`.
 

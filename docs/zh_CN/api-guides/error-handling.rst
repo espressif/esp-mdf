@@ -223,8 +223,8 @@ python 与 pyserial 版本不兼容::
         sudo pip install --ignore-installed pyserial
 
 
-ESP-MESH 错误
-^^^^^^^^^^^^^^
+ESP-WIFI-MESH 错误
+^^^^^^^^^^^^^^^^^^^^^
 
 1. **设备无法连接路由器**
 
@@ -247,8 +247,8 @@ ESP-MESH 错误
 
 
 - 原因：
-    1. 未配置信道：ESP-MESH 为了更快速的进行组网，因此只在固定的一个信道上进行扫描，因此必须配置 ESP-MESH 的工作信道；
-    2. 连接隐藏路由器：当 ESP-MESH 连接隐藏路由器时，必须配置路由器的 BSSID；
+    1. 未配置信道：ESP-WIFI-MESH 为了更快速的进行组网，因此只在固定的一个信道上进行扫描，因此必须配置 ESP-WIFI-MESH 的工作信道；
+    2. 连接隐藏路由器：当 ESP-WIFI-MESH 连接隐藏路由器时，必须配置路由器的 BSSID；
     3. 路由器信道通常是非固定的，路由器会根据网络情况进行信道迁移。
 
 - 解决方式：

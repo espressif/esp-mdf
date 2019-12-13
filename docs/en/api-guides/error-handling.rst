@@ -227,8 +227,8 @@ Incompatibility between python and pyserial::
         sudo pip install --ignore-installed pyserial
 
 
-ESP-MESH Errors
-^^^^^^^^^^^^^^^^^
+ESP-WIFI-MESH Errors
+^^^^^^^^^^^^^^^^^^^^^
 
 1. **The device cannot connect to the router**
 
@@ -251,8 +251,8 @@ The router name and password have been configured correctly, but the device stil
 
 
 - Possible Reasons:
-    1. The ESP-MESH channel is not configured: For a quick network configuration, ESP-MESH scans only a fixed channel, and this channel must be configured.
-    2. Connect to a hidden router: The router's BSSID must be configured when ESP-MESH connects to the hidden router.
+    1. The ESP-WIFI-MESH channel is not configured: For a quick network configuration, ESP-WIFI-MESH scans only a fixed channel, and this channel must be configured.
+    2. Connect to a hidden router: The router's BSSID must be configured when ESP-WIFI-MESH connects to the hidden router.
     3. The router's channel is usually not fixed, so it switches channels in accordance with the changes in the network condition.
 
 - Solution:
