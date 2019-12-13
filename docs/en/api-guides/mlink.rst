@@ -1,7 +1,7 @@
 Mlink
 =======
 
-:link_to_translation:``zh_CN:[中文]``
+:link_to_translation:`zh_CN:[中文]`
 
 1. Preparation
 ---------------
