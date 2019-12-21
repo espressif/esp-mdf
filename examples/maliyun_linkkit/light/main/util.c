@@ -127,6 +127,7 @@ void show_system_info_timercb(void *timer)
 
     mdf_mem_print_heap();
     mdf_mem_print_record();
+    mdf_mem_print_task();
 #endif /**< CONFIG_MALIYUN_MEMORY_DEBUG */
 }
 

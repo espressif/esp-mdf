@@ -271,6 +271,7 @@ static int heap_func(int argc, char **argv)
 {
     mdf_mem_print_record();
     mdf_mem_print_heap();
+    mdf_mem_print_task();
 
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
