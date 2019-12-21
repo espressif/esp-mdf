@@ -232,6 +232,7 @@ EXIT:
 mdf_err_t mlink_trigger_add(const char *trigger_raw_data)
 {
     MDF_PARAM_CHECK(trigger_raw_data);
+    MDF_ERROR_CHECK(!g_trigger_list, MDF_ERR_NOT_INIT, "mlink_trigger is not initialized");
 
     mdf_err_t ret = MDF_OK;
     mlink_trigger_t *trigger_list = g_trigger_list;
@@ -404,7 +405,7 @@ mdf_err_t mlink_trigger_handle(mlink_communicate_t communicate)
             MDF_FREE(trigger_idex->execute_content);
         }
 
-        MDF_ERROR_CHECK(ret != ESP_OK, ret, "<%s> mlink_espnow_write", mdf_err_to_name(ret));
+        MDF_ERROR_CHECK(ret != ESP_OK, ret, "mlink_espnow_write");
     }
 
     return MDF_OK;
