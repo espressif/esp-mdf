@@ -449,23 +449,8 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
     int cid         = 0;
     mdf_err_t ret   = MDF_OK;
     size_t cids_num = 0;
-    char tsf_time_str[16] = {0x0};
     characteristic_value_t value = {0};
     char *characteristics_list[CHARACTERISTICS_MAX_NUM] = {NULL};
-
-    /**
-     * @brief If `tsf_time_us` is included, the device will delay running set commands
-     */
-    if (mlink_json_parse(handle_data->req_data, "tsf_time_us", tsf_time_str) == MDF_OK) {
-        uint64_t tsf_time_us = 0;
-        scanf(tsf_time_str, "%llu", &tsf_time_us);
-
-        int64_t delay_running = (tsf_time_us - esp_mesh_get_tsf_time()) / 1000;
-
-        if (delay_running > 0 && delay_running < 3 * 1000) {
-            vTaskDelay(pdMS_TO_TICKS(delay_running));
-        }
-    }
 
     ret = mlink_json_parse(handle_data->req_data, "characteristics", &cids_num);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "Parse the json formatted string");
@@ -487,14 +472,14 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
                 ret = mlink_json_parse(characteristics_list[i], "value", &value.value_int);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 ret = mlink_device_set_value(cid, &value.value_int);
-                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_device_set_value, cid: %d, value: %d", mdf_err_to_name(ret), cid, value.value_int);
                 break;
 
             case CHARACTERISTIC_FORMAT_DOUBLE:
                 ret = mlink_json_parse(characteristics_list[i], "value", &value.value_double);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 ret = mlink_device_set_value(cid, &value.value_double);
-                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_device_set_value, cid: %d, value: %f", mdf_err_to_name(ret), cid, value.value_double);
                 break;
 
             case CHARACTERISTIC_FORMAT_STRING:
@@ -502,7 +487,7 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
                 ret = mlink_device_set_value(cid, value.value_string);
                 MDF_FREE(value.value_string);
-                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> Parse the json formatted string", mdf_err_to_name(ret));
+                MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_device_set_value,", mdf_err_to_name(ret));
                 break;
 
             default:

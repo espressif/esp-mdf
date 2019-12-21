@@ -66,7 +66,8 @@ esp_err_t __mlink_json_parse(const char *json_str,  const char *key, void *value
                        + __builtin_types_compatible_p(typeof(value), double *) * MLINK_JSON_TYPE_DOUBLE \
                        + __builtin_types_compatible_p(typeof(value), char *) * MLINK_JSON_TYPE_STRING \
                        + __builtin_types_compatible_p(typeof(value), char []) * MLINK_JSON_TYPE_STRING \
-                       + __builtin_types_compatible_p(typeof(value), char **) * MLINK_JSON_TYPE_POINTER)
+                       + __builtin_types_compatible_p(typeof(value), char **) * MLINK_JSON_TYPE_POINTER \
+                       + __builtin_types_compatible_p(typeof(value), uint8_t **) * MLINK_JSON_TYPE_POINTER)
 
 /**
  * @brief  mlink_json_pack(char *json_str, const char *key, int/double/char value);
