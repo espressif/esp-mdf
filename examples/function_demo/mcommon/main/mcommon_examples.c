@@ -101,6 +101,11 @@ static void memory_test()
     mdf_mem_print_record();
 
     /**
+     * @brief Print the state of tasks in the system
+     */
+    mdf_mem_print_task();
+
+    /**
      * @brief Heap use analysis: show all functions that are allocating/freeing
      *        memory while the trace is running.
      *        CONFIG_HEAP_POISONING_COMPREHENSIVE=y

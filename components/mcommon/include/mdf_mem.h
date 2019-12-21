@@ -64,6 +64,11 @@ void mdf_mem_print_record(void);
 void mdf_mem_print_heap(void);
 
 /**
+ * @brief Print the state of tasks in the system
+ */
+void mdf_mem_print_task(void);
+
+/**
  * @brief  Malloc memory
  *
  * @param  size  Memory size

@@ -116,7 +116,7 @@ ESP-IDF 集成了用于请求堆信息，检测堆损坏和跟踪内存泄漏的
 任务调度
 ^^^^^^^^^
 
-使用 :cpp:func:`mdf_mem_print_heap` 可以获取所有任务的运行状态、优先级和栈的剩余空间::
+使用 :cpp:func:`mdf_mem_print_task` 可以获取所有任务的运行状态、优先级和栈的剩余空间::
 
     Task Name       Status  Prio    HWM     Task
     main            R       1       1800    3
@@ -142,7 +142,7 @@ ESP-IDF 集成了用于请求堆信息，检测堆损坏和跟踪内存泄漏的
 
 .. Note::
 
-    1. 调用 :cpp:func:`mdf_mem_print_heap` 会挂起所有任务，这一过程可能持续较长时间，因此建议本函数仅在调试时使用；
+    1. 调用 :cpp:func:`mdf_mem_print_task` 会挂起所有任务，这一过程可能持续较长时间，因此建议本函数仅在调试时使用；
     2. 配置：通过 ``make menuconfig`` 开启 :envvar:`CONFIG_FREERTOS_USE_TRACE_FACILITY` 和 :envvar:`CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS`；
     3. 状态：R（Ready）代表准备态，B（blocked）代表阻塞态；
     4. 剩余空间：HWM（High Water Mark）应不小于 512 byte，防止栈溢出。

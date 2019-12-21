@@ -281,6 +281,7 @@ static void print_system_info_timercb(void *timer)
 
     mdf_mem_print_heap();
     mdf_mem_print_record();
+    mdf_mem_print_task();
 #endif /**< MEMORY_DEBUG */
 }
 

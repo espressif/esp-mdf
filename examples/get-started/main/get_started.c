@@ -139,12 +139,14 @@ static void print_system_info_timercb(void *timer)
     }
 
 #ifdef MEMORY_DEBUG
+
     if (!heap_caps_check_integrity_all(true)) {
         MDF_LOGE("At least one heap is corrupt");
     }
 
     mdf_mem_print_heap();
     mdf_mem_print_record();
+    mdf_mem_print_task();
 #endif /**< MEMORY_DEBUG */
 }
 

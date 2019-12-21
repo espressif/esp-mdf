@@ -26,6 +26,7 @@ typedef struct {
 static const char *TAG            = "mdf_mem";
 static uint32_t g_mem_count       = 0;
 static mdf_mem_info_t *g_mem_info = NULL;
+static SemaphoreHandle_t g_mem_info_lock = NULL;
 
 void mdf_mem_add_record(void *ptr, int size, const char *tag, int line)
 {
@@ -46,6 +47,12 @@ void mdf_mem_add_record(void *ptr, int size, const char *tag, int line)
         return ;
     }
 
+    if (!g_mem_info_lock) {
+        g_mem_info_lock = xSemaphoreCreateMutex();
+    }
+
+    xSemaphoreTake(g_mem_info_lock, portMAX_DELAY);
+
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
         if (!g_mem_info[i].size) {
             g_mem_info[i].ptr  = ptr;
@@ -57,6 +64,8 @@ void mdf_mem_add_record(void *ptr, int size, const char *tag, int line)
             break;
         }
     }
+
+    xSemaphoreGive(g_mem_info_lock);
 }
 
 void mdf_mem_remove_record(void *ptr, const char *tag, int line)
@@ -71,6 +80,12 @@ void mdf_mem_remove_record(void *ptr, const char *tag, int line)
         g_mem_info = calloc(MDF_MEM_DBG_INFO_MAX, sizeof(mdf_mem_info_t));
     }
 
+    if (!g_mem_info_lock) {
+        g_mem_info_lock = xSemaphoreCreateMutex();
+    }
+
+    xSemaphoreTake(g_mem_info_lock, portMAX_DELAY);
+
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].size && g_mem_info[i].ptr == ptr) {
             g_mem_info[i].size = 0;
@@ -78,6 +93,8 @@ void mdf_mem_remove_record(void *ptr, const char *tag, int line)
             break;
         }
     }
+
+    xSemaphoreGive(g_mem_info_lock);
 }
 
 void mdf_mem_print_record(void)
@@ -93,6 +110,12 @@ void mdf_mem_print_record(void)
         return ;
     }
 
+    if (!g_mem_info_lock) {
+        g_mem_info_lock = xSemaphoreCreateMutex();
+    }
+
+    xSemaphoreTake(g_mem_info_lock, portMAX_DELAY);
+
     for (int i = 0; i < MDF_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].size) {
             MDF_LOGI("(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
@@ -101,27 +124,70 @@ void mdf_mem_print_record(void)
         }
     }
 
+    xSemaphoreGive(g_mem_info_lock);
+
     MDF_LOGI("Memory record, num: %d, size: %d", g_mem_count, total_size);
 }
 
-void mdf_mem_print_heap(void)
-{
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )
-    char *task_list_buffer = MDF_MALLOC(uxTaskGetNumberOfTasks() * 64);
 
-    if (!task_list_buffer) {
+void mdf_mem_print_task()
+{
+    TaskStatus_t *pxTaskStatusArray = NULL;
+    volatile UBaseType_t uxArraySize = 0;
+    uint32_t ulTotalRunTime = 0, ulStatsAsPercentage = 0;
+    const char task_status_char[] = {'r', 'R', 'B', 'S', 'D'};
+
+    /* Take a snapshot of the number of tasks in case it changes while this
+    function is executing. */
+    uxArraySize = uxTaskGetNumberOfTasks();
+    pxTaskStatusArray = MDF_MALLOC(uxTaskGetNumberOfTasks() * sizeof(TaskStatus_t));
+
+    if (!pxTaskStatusArray) {
         return ;
     }
 
-    vTaskList(task_list_buffer);
+    /* Generate the (binary) data. */
+    uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, &ulTotalRunTime);
+    ulTotalRunTime /= 100UL;
 
-    MDF_LOGI("Task Lists:\nTask Name\tStatus\tPrio\tHWM\tTask\n%s\nCurrent task, Name: %s, HWM: %d\n",
-             task_list_buffer, pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+    MDF_LOGI("---------------- The State Of Tasks ----------------");
+    MDF_LOGI("- HWM   : usage high water mark (Byte)");
+    MDF_LOGI("- Status: blocked ('B'), ready ('R'), deleted ('D') or suspended ('S')\n");
+    MDF_LOGI("TaskName\t\tStatus\tPrio\tHWM\tTaskNum\tCoreID\tRunTimeCounter\tPercentage");
 
-    MDF_FREE(task_list_buffer);
+    for (int i = 0; i < uxArraySize; i++) {
+#if( configUSE_TRACE_FACILITY == 1 )
+        ulStatsAsPercentage = pxTaskStatusArray[i].ulRunTimeCounter / ulTotalRunTime;
+#else
+#warning configUSE_TRACE_FACILITY must also be set to 1 in FreeRTOSConfig.h to use vTaskGetRunTimeStats().
+#endif
+
+        int core_id = -1;
+        char precentage_char[4] = {0};
+
+#if( configUSE_TRACE_FACILITY == 1 )
+        core_id = (int) pxTaskStatusArray[ i ].xCoreID;
+#else
+#warning configTASKLIST_INCLUDE_COREID must also be set to 1 in FreeRTOSConfig.h to use xCoreID.
+#endif
+
+        /* Write the rest of the string. */
+        MDF_LOGI("%-16s\t%c\t%u\t%u\t%u\t%hd\t%-16u%-s%%",
+                 pxTaskStatusArray[i].pcTaskName, task_status_char[pxTaskStatusArray[i].eCurrentState],
+                 (uint32_t) pxTaskStatusArray[i].uxCurrentPriority,
+                 (uint32_t) pxTaskStatusArray[i].usStackHighWaterMark,
+                 (uint32_t) pxTaskStatusArray[i].xTaskNumber, core_id,
+                 pxTaskStatusArray[i].ulRunTimeCounter, (ulStatsAsPercentage <= 0) ? "<1" : itoa(ulStatsAsPercentage, precentage_char, 10));
+    }
+
+    MDF_FREE(pxTaskStatusArray);
+}
+
 #endif /**< ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 */
 
-
+void mdf_mem_print_heap(void)
+{
 #ifndef CONFIG_SPIRAM_SUPPORT
     MDF_LOGI("Free heap, current: %d, minimum: %d",
              esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
