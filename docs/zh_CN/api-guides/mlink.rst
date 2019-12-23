@@ -1,7 +1,4 @@
-<<<<<<< Updated upstream
-.. include:: ../../en/api-guides/mlink.rst
-=======
-Mupgrade
+Mlink
 =========
 
 :link_to_translation:`en:[English]`
@@ -18,7 +15,7 @@ ESP-MDF 设备在配网成功后会自动进入 `组网阶段 <https://esp-idf.r
     :alt: ESP-Mesh LAN Discovery Protocol
     :figclass: align-center
 
-1. 通信流程
+2. 通信流程
 --------------------------
 
 根节点是一个 Mesh 网络与外部通信的唯一出口，app 想要控制 Mesh 网络内设备，首先需要在该网络中找到根节点，之后通过根节点获取该 Mesh 网络内的设备列表，最后才能与该 Mesh 网络中任意设备进行通信。整个过程主要分为以下三步：

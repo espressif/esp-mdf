@@ -11,6 +11,7 @@ API Reference
    Mlink <mlink/index>
    Mupgrade <mupgrade/index>
    Mwifi <mwifi/index>
+   Mdebug <mdebug/index>
    Third Party <third_party/index>
    Configuration Options <kconfig>
    Error Codes Reference <error-codes>

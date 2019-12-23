@@ -89,7 +89,7 @@ mdf_err_t mdebug_espnow_write(const uint8_t *dest_addr, const void *data, size_t
 /**
  * @brief  receive debug data with ESP-NOW
  *
- * @param  dest_addr  Destination address
+ * @param  src_addr  Destination address
  * @param  data       Point to send data buffer
  * @param  size       send data len
  * @param  type       Type of data
@@ -105,4 +105,5 @@ mdf_err_t mdebug_espnow_read(uint8_t *src_addr, void *data, size_t *size,
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */
+
 #endif /**< __MDF_ESPNOW_DEBUG_H__ */

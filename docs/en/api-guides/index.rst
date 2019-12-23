@@ -12,3 +12,4 @@ The ESP32 is a powerful chip well positioned as a MCU of the audio projects. Thi
     Mesh LAN communication protocol <mlink>
     Mesh Upgrade <mupgrade>
     Mesh Wi-Fi <mwifi>
+    Mesh Debug <mdebug>
