@@ -40,8 +40,13 @@ INPUT = \
     ../../components/mlink/include/mlink_httpd.h \
     ../../components/mlink/include/mlink_trigger.h \
     ../../components/mlink/include/mlink_espnow.h \
-    ../../components/mlink/include/mlink_handle.h
-
+    ../../components/mlink/include/mlink_handle.h \
+    ../../components/mdebug/include/mdebug_console.h \
+    ../../components/mdebug/include/mdebug_espnow.h \
+    ../../components/mdebug/include/mdebug_flash.h \
+    ../../components/mdebug/include/mdebug_log.h \
+    ../../components/mdebug/include/mdebug.h
+    
 
 ## Get warnings for functions that have no documentation for their parameters or return value
 ##

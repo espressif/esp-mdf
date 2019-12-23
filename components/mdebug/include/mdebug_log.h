@@ -44,10 +44,13 @@ typedef enum {
     MDEBUG_LOG_TYPE_FLASH  = 1 << 2,
 } mdebug_log_type_t;
 
+/**
+ * @brief Type of log storage queue
+ */
 typedef struct {
-    uint16_t size;
-    mdebug_log_type_t type;
-    char data[0];
+    uint16_t size;          /**< The length of the log data */
+    mdebug_log_type_t type; /**< Ways to send logs */
+    char data[0];           /**< Log data */
 } mdebug_log_queue_t;
 
 /**
