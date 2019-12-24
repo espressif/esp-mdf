@@ -135,7 +135,7 @@ void mdf_mem_print_task()
 {
     TaskStatus_t *pxTaskStatusArray = NULL;
     volatile UBaseType_t uxArraySize = 0;
-    uint32_t ulTotalRunTime = 0, ulStatsAsPercentage = 0;
+    uint32_t ulTotalRunTime = 0, ulStatsAsPercentage = 0, ulRunTimeCounte = 0;
     const char task_status_char[] = {'r', 'R', 'B', 'S', 'D'};
 
     /* Take a snapshot of the number of tasks in case it changes while this
@@ -157,16 +157,17 @@ void mdf_mem_print_task()
     MDF_LOGI("TaskName\t\tStatus\tPrio\tHWM\tTaskNum\tCoreID\tRunTimeCounter\tPercentage");
 
     for (int i = 0; i < uxArraySize; i++) {
-#if( configUSE_TRACE_FACILITY == 1 )
-        ulStatsAsPercentage = pxTaskStatusArray[i].ulRunTimeCounter / ulTotalRunTime;
+#if( configGENERATE_RUN_TIME_STATS == 1 )
+        ulRunTimeCounte = pxTaskStatusArray[i].ulRunTimeCounter;
+        ulStatsAsPercentage = ulRunTimeCounte / ulTotalRunTime;
 #else
-#warning configUSE_TRACE_FACILITY must also be set to 1 in FreeRTOSConfig.h to use vTaskGetRunTimeStats().
+#warning configGENERATE_RUN_TIME_STATS must also be set to 1 in FreeRTOSConfig.h to use vTaskGetRunTimeStats().
 #endif
 
         int core_id = -1;
         char precentage_char[4] = {0};
 
-#if( configUSE_TRACE_FACILITY == 1 )
+#if ( configTASKLIST_INCLUDE_COREID == 1 )
         core_id = (int) pxTaskStatusArray[ i ].xCoreID;
 #else
 #warning configTASKLIST_INCLUDE_COREID must also be set to 1 in FreeRTOSConfig.h to use xCoreID.
@@ -178,7 +179,7 @@ void mdf_mem_print_task()
                  (uint32_t) pxTaskStatusArray[i].uxCurrentPriority,
                  (uint32_t) pxTaskStatusArray[i].usStackHighWaterMark,
                  (uint32_t) pxTaskStatusArray[i].xTaskNumber, core_id,
-                 pxTaskStatusArray[i].ulRunTimeCounter, (ulStatsAsPercentage <= 0) ? "<1" : itoa(ulStatsAsPercentage, precentage_char, 10));
+                 ulRunTimeCounte, (ulStatsAsPercentage <= 0) ? "<1" : itoa(ulStatsAsPercentage, precentage_char, 10));
     }
 
     MDF_FREE(pxTaskStatusArray);
