@@ -94,8 +94,8 @@ bool restart_is_exception()
     }
 
     /**< erase all coredump partition */
-    // ret = esp_partition_erase_range(coredump_part, 0, coredump_part->size);
-    // MDF_ERROR_CHECK(ret, false, "<%s> esp_partition_erase_range fail", mdf_err_to_name(ret));
+    ret = esp_partition_erase_range(coredump_part, 0, coredump_part->size);
+    MDF_ERROR_CHECK(ret, false, "<%s> esp_partition_erase_range fail", mdf_err_to_name(ret));
 
     return true;
 }
