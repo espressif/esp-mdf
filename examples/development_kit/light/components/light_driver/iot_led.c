@@ -437,6 +437,10 @@ esp_err_t iot_led_set_channel(ledc_channel_t channel, uint8_t value, uint32_t fa
         fade_data->step *= -1;
     }
 
+    if (fade_data->cycle != 0){
+        fade_data->cycle = 0;
+    }
+
     if (g_hw_timer_started != true) {
         iot_timer_start(&g_light_config->timer_id);
     }
