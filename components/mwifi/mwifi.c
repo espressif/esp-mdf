@@ -519,6 +519,7 @@ mdf_err_t mwifi_restart()
 mdf_err_t mwifi_deinit()
 {
     MDF_ERROR_CHECK(!g_mwifi_inited_flag, MDF_ERR_MWIFI_NOT_INIT, "Mwifi isn't initialized");
+    g_mwifi_inited_flag = false;
 
     MDF_FREE(g_init_config);
     MDF_FREE(g_ap_config);
