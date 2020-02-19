@@ -545,6 +545,9 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             break;
 
         case ESP_BLUFI_EVENT_BLE_CONNECT:
+            ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_CONN_HDL0, ESP_PWR_LVL_P7);
+            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Set BLE connection TX power", mdf_err_to_name(ret));
+
             MDF_LOGD("BLUFI ble connect, server_if: %d, conn_id: %d",
                      param->connect.server_if, param->connect.conn_id);
             s_server_if = param->connect.server_if;
@@ -936,9 +939,6 @@ mdf_err_t mconfig_blufi_init(const mconfig_blufi_config_t *cfg)
 
     ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Set BLE advertising TX power");
-
-    ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_CONN_HDL0, ESP_PWR_LVL_P7);
-    MDF_ERROR_CHECK(ret != ESP_OK, ret, "Set BLE connection TX power");
 
     return MDF_OK;
 }
