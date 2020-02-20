@@ -58,6 +58,7 @@ static mdf_err_t initialize_filesystem()
 
 static void initialize_console()
 {
+#if !CONFIG_CONSOLE_UART_NONE
     /**< Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
 
@@ -82,6 +83,8 @@ static void initialize_console()
 
     /**< Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+
+#endif /*!< CONFIG_CONSOLE_UART_NONE */
 
     /**< Initialize the console */
     esp_console_config_t console_config = {
@@ -111,6 +114,7 @@ static void initialize_console()
 #endif /**< CONFIG_MDEBUG_STORE_HISTORY */
 }
 
+#if !CONFIG_CONSOLE_UART_NONE
 static void console_handle_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
@@ -156,6 +160,7 @@ static void console_handle_task(void *arg)
     MDF_LOGI("console handle exit");
     vTaskDelete(NULL);
 }
+#endif /*!< CONFIG_CONSOLE_UART_NONE */
 
 mdf_err_t mdebug_console_init()
 {
@@ -196,7 +201,9 @@ mdf_err_t mdebug_console_init()
         linenoiseSetDumbMode(1);
     }
 
+#if !CONFIG_CONSOLE_UART_NONE
     xTaskCreate(console_handle_task, "console_handle", 1024 * 4, NULL, 1, NULL);
+#endif /*!< CONFIG_CONSOLE_UART_NONE */
 
     return MDF_OK;
 }
