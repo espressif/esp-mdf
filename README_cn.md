@@ -1,6 +1,6 @@
 # ESP-WIFI-MESH 开发框架 [[English]](./README.md)
 
-[![alt text](https://readthedocs.org/projects/docs/badge/?version=latest "Documentation Status")](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.com/projects/espressif-esp-mdf-zh-cn/badge/?version=latest)](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
 
 ESP-MDF (Espressif Mesh Development Framework) 是基于 [ESP32](https://www.espressif.com/zh-hans/products/hardware/esp32/overview) 芯片的 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 开发框架。ESP-WIFI-MESH 是一种基于 Wi-Fi 构建的 MESH 网络通信协议。
 
