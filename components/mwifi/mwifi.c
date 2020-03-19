@@ -15,7 +15,7 @@
 #include "mwifi.h"
 #include "miniz.h"
 
-#define MWIFI_WAIVE_ROOT_TIMEOUT_MS 60000
+#define MWIFI_WAIVE_ROOT_INTERVAL  3 /**< When the root rssi is weak, MWIFI_WAIVE_ROOT_INTERVAL minutes will initiate a re root node selection */
 
 typedef struct {
     uint32_t magic;                   /**< Filter duplicate packets */
@@ -40,6 +40,7 @@ static mwifi_init_config_t *g_init_config = NULL;
 static bool g_rootless_flag                       = false;
 static mesh_event_toDS_state_t g_toDs_status_flag = false;
 static esp_timer_handle_t g_waive_root_timer      = NULL;
+static int g_waive_root_interval                  = MWIFI_WAIVE_ROOT_INTERVAL; /**< Avoid frequent triggers waive root*/
 
 bool mwifi_is_started()
 {
@@ -88,23 +89,25 @@ static void mwifi_waive_root_timercb(void *timer)
         return ;
     }
 
-    static int s_waive_root_count = 1; /**< Avoid frequent triggers waive root*/
     static int s_waive_rssi_count = 0; /**< Avoid the effects of sudden changes in signal strength */
 
     if (esp_mesh_is_root() && esp_mesh_get_total_node_num() > 1
-            && mwifi_get_parent_rssi() < CONFIG_MWIFI_WAIVE_ROOT_RSSI) {
+            && mwifi_get_parent_rssi() < -30) {
         s_waive_rssi_count++;
+    } else {
+        s_waive_rssi_count = 0;
     }
 
-    if (s_waive_rssi_count > 3) {
+    if (s_waive_rssi_count >= g_waive_root_interval) {
         s_waive_rssi_count = 0;
         esp_mesh_waive_root(NULL, MESH_VOTE_REASON_ROOT_INITIATED);
-        s_waive_root_count = (s_waive_root_count < 5) ? s_waive_root_count * 2 : 5;
-        MDF_LOGI("Reselect root, current_rssi: %d, waive_rssi: %d", mwifi_get_parent_rssi(), CONFIG_MWIFI_WAIVE_ROOT_RSSI);
-
-        ESP_ERROR_CHECK(esp_timer_stop(g_waive_root_timer));
-        ESP_ERROR_CHECK(esp_timer_start_periodic(g_waive_root_timer, s_waive_root_count * MWIFI_WAIVE_ROOT_TIMEOUT_MS * 1000U));
+        g_waive_root_interval = (g_waive_root_interval < 60) ? g_waive_root_interval * 3 : 60;
+        MDF_LOGI("Reselect root, waive_interval: %d, current_rssi: %d, waive_rssi: %d",
+                 g_waive_root_interval, mwifi_get_parent_rssi(), CONFIG_MWIFI_WAIVE_ROOT_RSSI);
     }
+
+    MDF_LOGD("Reselect root, waive_interval: %d, current_rssi: %d, waive_rssi: %d， count: %d",
+            g_waive_root_interval, mwifi_get_parent_rssi(), CONFIG_MWIFI_WAIVE_ROOT_RSSI, s_waive_rssi_count);
 }
 
 static mdf_err_t mwifi_waive_root_timer_create(void)
@@ -118,7 +121,7 @@ static mdf_err_t mwifi_waive_root_timer_create(void)
     ret = esp_timer_create(&timer_conf, &g_waive_root_timer);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "Create an esp_timer instance");
 
-    ret = esp_timer_start_periodic(g_waive_root_timer, MWIFI_WAIVE_ROOT_TIMEOUT_MS * 1000U);
+    ret = esp_timer_start_periodic(g_waive_root_timer, 60000 * 1000U);
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "Start one-shot timer");
 
     return MDF_OK;
@@ -218,6 +221,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
             MDF_LOGI("Routing table is changed by adding newly joined children add_num: %d, total_num: %d",
                      event.info.routing_table.rt_size_change,
                      event.info.routing_table.rt_size_new);
+            g_waive_root_interval = MWIFI_WAIVE_ROOT_INTERVAL;
             break;
 
         case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE:
@@ -289,7 +293,7 @@ void mwifi_print_config()
     int beacon_interval                = 0;
     mesh_switch_parent_t switch_parent = {0};
     const char *bool_str[]             = {"false", "true"};
-    const char *mesh_type_str[]        = {"idle", "root", "node", "leaf"};
+    const char *mesh_type_str[]        = {"idle", "root", "node", "leaf", "root_sta"};
 
     ESP_ERROR_CHECK(esp_mesh_get_config(&cfg));
     ESP_ERROR_CHECK(esp_mesh_get_attempts(&attempts));
@@ -360,14 +364,6 @@ mdf_err_t mwifi_start()
     ESP_ERROR_CHECK(esp_mesh_init());
 
     switch (ap_config->mesh_type) {
-        case MESH_ROOT:
-            /** Designate device type over the mesh network
-             *  - MESH_ROOT: designates the root node for a mesh network
-             *  - MESH_LEAF: designates a device as a standalone Wi-Fi station
-             */
-            ESP_ERROR_CHECK(esp_mesh_set_type(MESH_ROOT));
-            break;
-
         case MESH_NODE:
             /** Enable network Fixed Root Setting
              *  - Enabling fixed root disables automatic election of the root node via voting.
@@ -377,14 +373,15 @@ mdf_err_t mwifi_start()
             ESP_ERROR_CHECK(esp_mesh_fix_root(true));
             break;
 
-        case MESH_LEAF:
-            ESP_ERROR_CHECK(esp_mesh_set_type(MESH_LEAF));
-            break;
-
         case MESH_IDLE:
             break;
 
         default:
+            /** Designate device type over the mesh network
+             *  - MESH_ROOT: designates the root node for a mesh network
+             *  - MESH_LEAF: designates a device as a standalone Wi-Fi station
+             */
+            ESP_ERROR_CHECK(esp_mesh_set_type(ap_config->mesh_type));
             break;
     }
 
@@ -670,11 +667,8 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
         data_head->transmit_all = true;
     }
 
-    if (g_ap_config->mesh_type == MESH_LEAF) {
+    if (g_ap_config->mesh_type == MESH_LEAF || !esp_wifi_ap_get_sta_list(&sta)) {
         sta.num = 0;
-    } else {
-        /**< Get STAs associated with soft-AP */
-        ESP_ERROR_CHECK(esp_wifi_ap_get_sta_list(&sta));
     }
 
     /**
@@ -1285,7 +1279,7 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             continue;
         }
 
-        MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> Node failed to receive packets", mdf_err_to_name(ret));
+        MDF_ERROR_GOTO(ret != ESP_OK || mesh_data.size <= 0, EXIT, "<%s> Node failed to receive packets", mdf_err_to_name(ret));
 
         /**
          * @brief Discard this packet if there is a packet loss in the middle
@@ -1361,11 +1355,6 @@ EXIT:
 
 int8_t mwifi_get_parent_rssi()
 {
-    mdf_err_t ret           = MDF_FAIL;
-    mesh_assoc_t mesh_assoc = {0x0};
-
-    ret = esp_wifi_vnd_mesh_get(&mesh_assoc);
-    MDF_ERROR_CHECK(ret != MDF_OK, -120, "Get mesh networking IE");
-
-    return esp_mesh_is_root() ? mesh_assoc.router_rssi : mesh_assoc.rssi;
+    wifi_ap_record_t ap_info = {0};
+    return !esp_wifi_sta_get_ap_info(&ap_info) && ap_info.rssi != 0 ? ap_info.rssi : -120;
 }
