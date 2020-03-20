@@ -16,22 +16,22 @@ The documentation has different language versions (:link_to_translation:`en:Engl
 `API Guides`_       `Contribute`_       `Resources`_
 ==================  ==================  ==================
 
-.. |Get Started| image:: ../_static/get-started.gif
+.. |Get Started| image:: ../_static/get-started.png
 .. _Get Started: get-started/index.html
 
-.. |API Reference| image:: ../_static/api-reference.gif
+.. |API Reference| image:: ../_static/api-reference.png
 .. _API Reference: api-reference/index.html
 
-.. |H/W Reference| image:: ../_static/hw-reference.gif
+.. |H/W Reference| image:: ../_static/hw-reference.png
 .. _H/W Reference: hw-reference/index.html
 
-.. |API Guides| image:: ../_static/api-guides.gif
+.. |API Guides| image:: ../_static/api-guides.png
 .. _API Guides: api-guides/index.html
 
-.. |Contribute| image:: ../_static/contribute.gif
+.. |Contribute| image:: ../_static/contribute.png
 .. _Contribute: contribute/index.html
 
-.. |Resources| image:: ../_static/resources.gif
+.. |Resources| image:: ../_static/resources.png
 .. _Resources: resources.html
 
 
@@ -48,6 +48,6 @@ The documentation has different language versions (:link_to_translation:`en:Engl
    Copyrights <COPYRIGHT>
    About <about>
    语言/Languages <languages>
-   Guide Downloads <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
+   Guide Downloads <https://docs.espressif.com/_/downloads/esp-mdf/en/latest/pdf/>
 
 * :ref:`genindex`
