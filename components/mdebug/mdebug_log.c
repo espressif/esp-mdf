@@ -19,15 +19,17 @@
 #include "mespnow.h"
 #include "mdebug.h"
 
-#define MDEBUG_LOG_MAX_SIZE   (MESPNOW_PAYLOAD_LEN * 2 - 2)  /**< Set log length size */
+#define MDEBUG_LOG_MAX_SIZE   CONFIG_MDEBUG_LOG_PACKET_MAX_SIZE  /**< Set log length size */
 #define MDEBUG_LOG_STORE_KEY  "mdebug_log"
-#define MDEBUG_LOG_QUEUE_SIZE (10)
+#define MDEBUG_LOG_QUEUE_SIZE (30)
 #define MDEBUG_LOG_TIMEOUT_MS (30 * 1000)
+#define MDEBUG_LOG_QUEUE_BUFFER_MAX_SIZE   (10 * 1024)
 
 static xQueueHandle g_log_queue            = NULL;
 static mdebug_log_config_t *g_log_config   = NULL;
 static TaskHandle_t g_log_send_task_handle = NULL;
 static const char *TAG  = "mdebug_log";
+static uint32_t g_log_queue_buffer_size    = 0;
 
 mdf_err_t mdebug_log_get_config(mdebug_log_config_t *config)
 {
@@ -59,7 +61,6 @@ mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
         } else {
             mdebug_log_deinit();
         }
-
     } else {
         ret = mdf_info_erase(MDEBUG_LOG_STORE_KEY);
     }
@@ -97,8 +98,12 @@ static ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
         log_size = MDEBUG_LOG_MAX_SIZE;
     }
 
+    if (g_log_queue_buffer_size > MDEBUG_LOG_QUEUE_BUFFER_MAX_SIZE) {
+        goto EXIT;
+    }
+
     log_data_size = sizeof(mdebug_log_queue_t) + log_size + 1;
-    log_data = MDF_MALLOC(log_data_size);
+    log_data = malloc(log_data_size);
     MDF_ERROR_GOTO(!log_data, EXIT, "");
 
     log_data->size = log_size;
@@ -116,13 +121,15 @@ static ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
 
     if (xQueueSend(g_log_queue, &log_data, 0) == pdFALSE) {
         goto EXIT;
+    } else {
+        g_log_queue_buffer_size += log_data->size;
     }
 
     log_data = NULL;
 
 EXIT:
 
-    MDF_FREE(log_data);
+    free(log_data);
     return log_size;
 }
 
@@ -132,7 +139,6 @@ static void mdebug_log_send_task(void *arg)
 
     for (; g_log_config;) {
         if (xQueueReceive(g_log_queue, &log_data, pdMS_TO_TICKS(MDEBUG_LOG_TIMEOUT_MS)) == pdPASS) {
-
             /**
              * @brief Control log data type and use param MDEBUG_LOG_TYPE_ESPNOW and param MDEBUG_LOG_TYPE_FLASH.
              */
@@ -162,6 +168,7 @@ static void mdebug_log_send_task(void *arg)
                 mdebug_flash_write(data, size);  /**< Write log data to flash */
             }
 
+            g_log_queue_buffer_size -= log_data->size;
             MDF_FREE(log_data);
         }
     }
@@ -179,9 +186,9 @@ mdf_err_t mdebug_log_init()
     g_log_config = MDF_CALLOC(1, sizeof(mdebug_log_config_t));
     MDF_ERROR_CHECK(!g_log_config, MDF_ERR_NO_MEM, "");
 
-    g_log_config->log_uart_enable   = true;
-    g_log_config->log_espnow_enable = false;
-    g_log_config->log_flash_enable  = false;
+    if (mdebug_log_get_config(g_log_config) != MDF_OK) {
+        g_log_config->log_uart_enable = true;
+    }
 
     mdebug_log_set_config(g_log_config);
 
@@ -211,6 +218,8 @@ mdf_err_t mdebug_log_deinit()
         while (xQueueReceive(g_log_queue, &log_data, 0) == pdPASS) {
             MDF_FREE(log_data);
         }
+
+        g_log_queue_buffer_size = 0;
 
         MDF_FREE(g_log_config);
         g_log_config = NULL;

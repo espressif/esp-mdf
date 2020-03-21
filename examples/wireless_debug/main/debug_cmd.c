@@ -131,9 +131,7 @@ static int log_receiver_func(int argc, char **argv)
     if (log_receiver_args.add->count) {
         ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, self_mac));
         asprintf(&command_str, "log -s " MACSTR, MAC2STR(self_mac));
-    }
-
-    if (log_receiver_args.remove->count) {
+    } else if (log_receiver_args.remove->count) {
         asprintf(&command_str, "log -s 00:00:00:00:00:00");
     }
 
@@ -289,7 +287,7 @@ static int wifi_config_func(int argc, char **argv)
     if (strlen((char *)wifi_config.sta.ssid)) {
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
         ESP_ERROR_CHECK(esp_wifi_connect());
-    } else if(wifi_config.sta.channel > 0 && wifi_config.sta.channel <= 14){
+    } else if (wifi_config.sta.channel > 0 && wifi_config.sta.channel <= 14) {
         ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
         MDF_LOGI("Set primary/secondary channel of ESP32, channel: %d", wifi_config.sta.channel);
     }
@@ -363,6 +361,7 @@ static esp_err_t wifi_scan_func(int argc, char **argv)
         .scan_type   = WIFI_SCAN_TYPE_ACTIVE,
     };
 
+    esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_config);
     ESP_ERROR_CHECK(esp_wifi_disconnect());
 
     if (wifi_scan_args.passive->count) {
@@ -449,10 +448,11 @@ static esp_err_t wifi_scan_func(int argc, char **argv)
         if (ie_len == sizeof(mesh_assoc_t)) {
             MDF_LOGI("Mesh, ssid: %s, bssid: " MACSTR ", channel: %d, rssi: %d, "
                      "parent_rssi: %d, router_rssi: %d, id: " MACSTR ", type: %d, "
-                     "layer: %d/%d, capacity: %d/%d",
+                     "layer: %d/%d, capacity: %d/%d/%d/%d, root_mac: " MACSTR,
                      ap_record.ssid, MAC2STR(ap_record.bssid), ap_record.primary, ap_record.rssi,
                      assoc.rssi, assoc.router_rssi, MAC2STR(assoc.mesh_id), assoc.mesh_type,
-                     assoc.layer, assoc.layer_cap, assoc.assoc, assoc.assoc_cap);
+                     assoc.layer, assoc.layer_cap, assoc.assoc, assoc.assoc_cap,
+                     assoc.root_cap, assoc.self_cap, MAC2STR(assoc.rc_addr));
         } else if (!filter_router) {
             MDF_LOGI("Router, ssid: %s, bssid: " MACSTR ", channel: %u, rssi: %d",
                      ap_record.ssid, MAC2STR(ap_record.bssid),
@@ -465,13 +465,11 @@ static esp_err_t wifi_scan_func(int argc, char **argv)
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     }
 
-    if (mdf_info_load("wifi_config", &wifi_config, sizeof(wifi_config_t)) == MDF_OK) {
-        if (strlen((char *)wifi_config.sta.ssid)) {
-            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-            ESP_ERROR_CHECK(esp_wifi_connect());
-        } else {
-            ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
-        }
+    if (strlen((char *)wifi_config.sta.ssid)) {
+        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+        ESP_ERROR_CHECK(esp_wifi_connect());
+    } else if (wifi_config.sta.channel) {
+        ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
     }
 
     return ESP_OK;
