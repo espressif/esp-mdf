@@ -105,9 +105,6 @@ static void mwifi_waive_root_timercb(void *timer)
         MDF_LOGI("Reselect root, waive_interval: %d, current_rssi: %d, waive_rssi: %d",
                  g_waive_root_interval, mwifi_get_parent_rssi(), CONFIG_MWIFI_WAIVE_ROOT_RSSI);
     }
-
-    MDF_LOGD("Reselect root, waive_interval: %d, current_rssi: %d, waive_rssi: %d， count: %d",
-            g_waive_root_interval, mwifi_get_parent_rssi(), CONFIG_MWIFI_WAIVE_ROOT_RSSI, s_waive_rssi_count);
 }
 
 static mdf_err_t mwifi_waive_root_timer_create(void)
@@ -1277,6 +1274,9 @@ mdf_err_t __mwifi_root_read(uint8_t *src_addr, mwifi_data_type_t *data_type,
             MDF_LOGW("<ESP_ERR_MESH_NOT_START> Node failed to receive packets");
             vTaskDelay(100 / portTICK_RATE_MS);
             continue;
+        } else if (ret == ESP_ERR_MESH_TIMEOUT) {
+            MDF_LOGD("<MDF_ERR_MWIFI_TIMEOUT> Node failed to receive packets");
+            goto EXIT;
         }
 
         MDF_ERROR_GOTO(ret != ESP_OK || mesh_data.size <= 0, EXIT, "<%s> Node failed to receive packets", mdf_err_to_name(ret));
