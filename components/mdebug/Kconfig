@@ -28,6 +28,13 @@ menu "MDF Mdebug"
         help
             Offset of the log information partition
 
+    config MDEBUG_LOG_PACKET_MAX_SIZE
+        int "Maximum length of a single packet of data when wirelessly transmitting logs"
+        range 236 2378
+        default 1188
+        help
+            Maximum length of a single packet of data when wirelessly transmitting logs
+
     config MDEBUG_LOG_FILE_MAX_SIZE
         int "Output the save the file size of the log"
         range 8196 131072

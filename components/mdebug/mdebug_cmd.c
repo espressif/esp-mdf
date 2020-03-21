@@ -99,31 +99,27 @@ static int log_func(int argc, char **argv)
     mdebug_log_config_t log_config = {0};
     const char *level_str[6] = {"NONE", "ERR", "WARN", "INFO", "DEBUG", "VER"};
 
+    mdebug_log_get_config(&log_config);
+
     if (arg_parse(argc, argv, (void **) &log_args) != ESP_OK) {
         arg_print_errors(stderr, log_args.end, argv[0]);
         return MDF_FAIL;
     }
 
-    for (int i = 0; i < sizeof(level_str) / sizeof(char *); ++i) {
+    for (int i = 0; log_args.level->count && i < sizeof(level_str) / sizeof(char *); ++i) {
         if (!strcasecmp(level_str[i], log_args.level->sval[0])) {
-            esp_log_level_set(log_args.tag->sval[0], i);
+            const char *tag = log_args.tag->count ? log_args.tag->sval[0] : "*";
+            esp_log_level_set(tag, i);
         }
     }
 
     if (log_args.send->count) {
-        mdebug_log_config_t config = {0};
-        mdebug_log_get_config(&config);
-
-        ret = mac_str2hex(log_args.send->sval[0], config.dest_addr);
+        ret = mac_str2hex(log_args.send->sval[0], log_config.dest_addr);
         MDF_ERROR_CHECK(ret == false, ESP_ERR_INVALID_ARG,
                         "The format of the address is incorrect. Please enter the format as xx:xx:xx:xx:xx:xx");
-
-        mdebug_log_set_config(&config);
     }
 
     if (log_args.enable_type->count) {  /**< Enable write to flash memory */
-        mdebug_log_get_config(&log_config);
-
         if (!strcasecmp(log_args.enable_type->sval[0], "flash")) {
             log_config.log_flash_enable = true;
         } else if (!strcasecmp(log_args.enable_type->sval[0], "uart")) {
@@ -131,13 +127,9 @@ static int log_func(int argc, char **argv)
         } else if (!strcasecmp(log_args.enable_type->sval[0], "espnow")) {
             log_config.log_espnow_enable = true;
         }
-
-        mdebug_log_set_config(&log_config);
     }
 
     if (log_args.disable_type->count) {  /**< Disable write to flash memory */
-        mdebug_log_get_config(&log_config);
-
         if (!strcasecmp(log_args.enable_type->sval[0], "flash")) {
             log_config.log_flash_enable = false;
         } else if (!strcasecmp(log_args.enable_type->sval[0], "uart")) {
@@ -145,13 +137,9 @@ static int log_func(int argc, char **argv)
         } else if (!strcasecmp(log_args.enable_type->sval[0], "espnow")) {
             log_config.log_espnow_enable = false;
         }
-
-        mdebug_log_set_config(&log_config);
     }
 
     if (log_args.output_type->count) { /**< Output enable type */
-        mdebug_log_get_config(&log_config);
-
         MDF_LOGI("Enable type: %s%s%s", log_config.log_uart_enable ? "uart" : "",
                  log_config.log_flash_enable ? "/flash" : "", log_config.log_espnow_enable ? "/espuart" : "");
     }
@@ -161,7 +149,6 @@ static int log_func(int argc, char **argv)
         char *log_data = MDF_MALLOC(MDEBUG_LOG_MAX_SIZE - 17);
 
         MDF_LOGI("The flash partition that stores the log size: %d", log_size);
-        mdebug_log_get_config(&log_config);
 
         if (log_config.log_flash_enable) {
             for (size_t size = MIN(MDEBUG_LOG_MAX_SIZE - 17, log_size);
@@ -174,6 +161,8 @@ static int log_func(int argc, char **argv)
         MDF_FREE(log_data);
     }
 
+    mdebug_log_set_config(&log_config);
+
     return MDF_OK;
 }
 
@@ -182,8 +171,8 @@ static int log_func(int argc, char **argv)
  */
 static void register_log()
 {
-    log_args.tag         = arg_str0(NULL, NULL, "<tag>", "Tag of the log entries to enable, '*' resets log level for all tags to the given value");
-    log_args.level       = arg_str0(NULL, NULL, "<level>", "Selects log level to enable (NONE, ERR, WARN, INFO, DEBUG, VER)");
+    log_args.tag         = arg_str0("t", "tag", "<tag>", "Tag of the log entries to enable, '*' resets log level for all tags to the given value");
+    log_args.level       = arg_str0("l", "level", "<level>", "Selects log level to enable (NONE, ERR, WARN, INFO, DEBUG, VER)");
     log_args.enable_type = arg_str0("e", "enable_type", "<enable_type('uart' or 'flash' or 'espnow')>", "Selects mdebug log to enable (uart,flash,espnow)");
     log_args.disable_type = arg_str0("d", "disable_type", "<disable_type('uart' or 'flash' or 'espnow')>", "Selects mdebug log to disable (uart,flash,espnow)");
     log_args.output_type  = arg_lit0("o", "output_type", "Output enable type");
