@@ -42,6 +42,7 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     if (!memcmp(g_upgrade_config->status.name, status->name,
                 sizeof(g_upgrade_config->status.name))
             && g_upgrade_config->status.total_size == status->total_size) {
+        ret = MDF_OK;
         goto EXIT;
     }
 
@@ -50,7 +51,7 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
     memset(&g_upgrade_config->status.progress_array, 0, MUPGRADE_PACKET_MAX_NUM / 8);
     g_upgrade_config->status.written_size = 0;
 
-    if (esp_mesh_get_type() == MESH_ROOT) {
+    if (esp_mesh_get_type() == MESH_ROOT || esp_mesh_get_type() == 4) {
         /**< Configure OTA data for a new boot partition */
         const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
         ret = esp_ota_set_boot_partition(update_partition);

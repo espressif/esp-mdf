@@ -664,7 +664,7 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
         data_head->transmit_all = true;
     }
 
-    if (g_ap_config->mesh_type == MESH_LEAF || !esp_wifi_ap_get_sta_list(&sta)) {
+    if (g_ap_config->mesh_type == MESH_LEAF || esp_wifi_ap_get_sta_list(&sta) != MDF_OK) {
         sta.num = 0;
     }
 
