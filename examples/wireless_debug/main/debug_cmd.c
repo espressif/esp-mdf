@@ -259,6 +259,7 @@ static struct {
  */
 static int wifi_config_func(int argc, char **argv)
 {
+    int valid = 0; /* avoid save a empty config */
     if (arg_parse(argc, argv, (void **) &wifi_config_args) != ESP_OK) {
         arg_print_errors(stderr, wifi_config_args.end, argv[0]);
         return ESP_FAIL;
@@ -287,13 +288,20 @@ static int wifi_config_func(int argc, char **argv)
     if (strlen((char *)wifi_config.sta.ssid)) {
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
         ESP_ERROR_CHECK(esp_wifi_connect());
+        valid = 1;
     } else if (wifi_config.sta.channel > 0 && wifi_config.sta.channel <= 14) {
         ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
         MDF_LOGI("Set primary/secondary channel of ESP32, channel: %d", wifi_config.sta.channel);
+        valid = 1;
     }
 
     if (wifi_config_args.save->count) {
-        mdf_info_save("wifi_config", &wifi_config, sizeof(wifi_config_t));
+        if(valid){
+            mdf_info_save("wifi_config", &wifi_config, sizeof(wifi_config_t));
+        } else {
+            MDF_LOGE("Configuration is empty");
+            return MDF_ERR_INVALID_ARG;
+        }
     }
 
     if (wifi_config_args.erase->count) {

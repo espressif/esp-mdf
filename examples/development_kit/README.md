@@ -41,7 +41,7 @@ To configure and network these hardware components you need:
 
 * **Android**: [source code](https://github.com/EspressifApp/EspMeshForAndroid), [apk](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18) (installation package)
 * **iOS**: Go to *App Store* and search for `ESP-Mesh`.
-* **WeChat mini program**: Open *WeChat* and search for `ESPMesh`. The mini program currently supports only network configuration.
+* **WeChat mini program**: Open *WeChat* and search for `ESPMesh`.
 
 > **Note**: The Android version updates are given a higher priority.
 

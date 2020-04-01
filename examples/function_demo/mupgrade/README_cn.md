@@ -46,7 +46,7 @@ python -m SimpleHTTPServer 8070
 
 ### 步骤 3：构建 OTA 示例
 
-切换回 OTA 示例目录，然后键入 `make menuconfig`(Make) 或者 `make menuconfig`(CMake) 以配置 OTA 示例。在 “Example Configuration” 子菜单下，填写以下详细信息：
+切换回 OTA 示例目录，然后键入 `make menuconfig`(Make) 或者 `idf.py  menuconfig`(CMake) 以配置 OTA 示例。在 “Example Configuration” 子菜单下，填写以下详细信息：
 
 * ESP-WIFI-MESH 网络的配置信息
 * 固件升级 URL。URL 将如下所示：
@@ -57,7 +57,7 @@ https://<host-ip-address>:<host-port>/<firmware-image-filename>
 for e.g,
 https://192.168.0.3:8070/hello-world.bin
 ```
-保存更改，然后键入 `make`(Make) 或者 `idf.py`(CMake) 来构建示例。
+保存更改，然后键入 `make`(Make) 或者 `idf.py build`(CMake) 来构建示例。
 
 ### 步骤 4：Flash OTA 示例
 
@@ -86,7 +86,7 @@ idf.py erase_flash flash
 
 * 检查您的 PC 是否能够 ping 通 ESP32，同时检查 IP，路由器及 menuconfig 中的其他配置是否正确
 * 检查是否有防火墙软件阻止 PC 上的连接操作
-* 通过查看以下命令日志，检查是否能够看到配置文件 (default hello-world.bin)
+* 通过查看以下命令日志，检查是否能获取固件 (default hello-world.bin)
 
  ```
  curl -v https：// <host-ip-address>：<host-port> / <firmware-image-filename>
@@ -100,4 +100,4 @@ idf.py erase_flash flash
 
 ## 注意
 
-为了让更多的节点加入到mesh网络中进行固件升级，在示例中我们将在 10 秒后开始进行固件升级。
+为了让更多的节点加入到mesh网络中进行固件升级，示例程序将在开始运行的 10 秒后进行固件升级。

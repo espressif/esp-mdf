@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This example shows how to connect a device to a remote external server based on the `http_client` module APIs. The device acts as the root node to transfer all data to the remote server by using LWIP.
+This example shows how to connect a device to a remote external server based on the `http_client` module APIs. The device acts as the root node to transfer all data to the remote server.
 
 This example implements the function of transferring log data to the TCP server in the device on the http network. The data is packaged into a file and transmitted to server, and uploaded according to the size of the data `MWIFI_PAYLOAD_LEN`. In addition, a `console` control command is added, and the basic information of the device can be obtained through the serial port command.
 
@@ -90,13 +90,12 @@ log -d flash   // diable log
 
 ### Test result
 
-1. Set the file size to `MDEBUG_FLASH_FILE_MAX_SIZE = 16384`. When the folder is full, the speed of writing the 'spiffs' file in the flash is about 172ms.
-3. When `MWIFI_PAYLOAD_LEN = 1456` is set, the maximum data size of a packet is sent to MWIFI_PAYLOAD_LEN bytes.
+1. When `MWIFI_PAYLOAD_LEN = 1456` is set, the maximum data size of a packet is MWIFI_PAYLOAD_LEN bytes.
 
 ### Note
 
 1. The network that requires the phone link here is the same as the esp32 chip, so that data information can be collected on the network assistant tool. 
-2. It should also be noted that when using a new chip for burning, the chip needs to be erased and then burned.
-3. because the allocation memory of the `partition` adds the storage `spiffs` file, which can be modified according to the customer's requirements. After the creation, the flash needs to erase the chip and re-burn it. Otherwise, the file creation will not be successful.
-4. The head of the data is a timestamp. It is just an experiment and there is no real-time calibration. It can be modified according to the user's own needs.
-5. Get the `uart`, `flash`, `espnow` status in the Console command, you can't use the `console` command to disable it, because the main program has been forced to be enabled. If the user wants to use such a function, the main program can be disable.
+1. It should also be noted that when using a new chip for burning, the chip needs to be erased and then burned.
+1. The log_info area is added to the partition table in this example as a space to save logs. The chip needs to be erased before programming.
+1. The head of the data is a timestamp. It is just an experiment and there is no real-time calibration. It can be modified according to the user's own needs.
+1. Get the `uart`, `flash`, `espnow` status in the Console command, you can't use the `console` command to disable it, because the main program has been forced to be enabled. If the user wants to use such a function, the main program can be disable.

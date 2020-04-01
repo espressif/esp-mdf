@@ -4,9 +4,9 @@
 
 ## 介绍
 
-本示例将介绍如何基于 `http_client` 模块 APIs，实现设备连接远程外部服务器。设备作为根节点将所有数据传输通过使用 LWIP 连接远程服务器。
+本示例将介绍如何基于 `http_client` 模块 APIs，实现设备连接远程外部服务器。设备作为根节点将所有数据传输至远程服务器。
 
-本示例实现了 http 网络中设备中日志数据传输到 TCP 服务器功能，将会数据打包成一个文件传输到服务器上，根据数据 `MWIFI_PAYLOAD_LEN` 的大小进行上传。另外加了一个 `console` 控制的命令，可以通过串口命令得到设备基本信息。
+本示例实现了 http 网络中设备中日志数据传输到 TCP 服务器功能，设备会将数据打包成一个文件传输到服务器上，根据宏 `MWIFI_PAYLOAD_LEN` 的大小进行上传。另外还有一个 `console` 控制的命令，可以通过串口命令得到设备基本信息。
 
 ## 硬件准备
 
@@ -27,8 +27,8 @@
 输入 `make menuconfig`，在 “Example Configuration” 子菜单下，进行配置：
 
  * 设置 `Router SSID` 和 `Router password`
- * 设置 `flash log url`，将你的 TCP 服务器中的IP地址和设备在同一网段下，才能传输。
- * 例如如下：
+ * 设置 `flash log url`，当您的 TCP 服务器的 IP 地址和设备在同一网段下，才能传输。
+ * 例如：
 
     <div align=center>
     <img src="docs/_static/enter_config.png" width="800">
@@ -52,7 +52,7 @@ idf.py erase_flash flash monitor -b 921600 -p /dev/ttyUSB0
 
 1. 用户需要打开网络助手工具，连接好网络。
 2. 用户通过 console 命令行进行信息控制，通过 help 可以查看输入的格式。
-* 主要串口命令行如下操作：
+* 主要的串口命令如下所示：
     ```
     console -i     // 这里会输出设备的基本信息
     log -S         // 查看的日志状态，是 flash、espnow、uart 模式
@@ -60,7 +60,7 @@ idf.py erase_flash flash monitor -b 921600 -p /dev/ttyUSB0
     log -r         // 读取日志   
     log -d flash   // 禁止日志写入flash
     ```
-> 注意：在 `components/mdebug/include/mdebug.h` 里可以根据客户需求是否开启 log 部分的调试输出，来确定输出信息是否正确。
+> 注意：在 `components/mdebug/include/mdebug.h` 里可以根据实际需求来确定是否开启 log 程序本身的调试输出，以此来确定 log 信息本身是否正确。
 
 <div align=center>
 <img src="docs/_static/mdebug_print.png" width="800">
@@ -90,14 +90,12 @@ idf.py erase_flash flash monitor -b 921600 -p /dev/ttyUSB0
 
 ### 实验结果
 
-1. 设置了文件的大小为 `MDEBUG_FLASH_FILE_MAX_SIZE = 16384`，则文件夹写满时，写入 flash 中的 'spiffs' 文件的速度大约是172ms左右。
-3. 设置了 `MWIFI_PAYLOAD_LEN = 1456` ，则发送一个数据包最大数据容纳以 MWIFI_PAYLOAD_LEN 字节。
+1. 设置了 `MWIFI_PAYLOAD_LEN = 1456` ，则一个数据包最大容纳 MWIFI_PAYLOAD_LEN 字节。
 
 ### 注意
 
-1. 这里需要手机链接的网络和esp32芯片相同，这样才能在网络助手工具上收集数据信息。
-2. 还有需要注意的是当使用芯片进行烧录的时候，需要将芯片进行擦除，然后进行烧录。
-3. 这里是因为 `partition` 的分配内存添加了 storage 的 `spiffs` 文件，可以根据客户需求进行修改，创建之后 flash 需要对芯片进行擦除，重新烧录，否则会出现文件创建不成功。
-4. 数据的头是时间戳，这里只是作为实验，并没有实时校准，可以根据用户自己的需求进行修改。
-5. Console 命令中的获取 `uart`、`flash`、`espnow` 状态，不能使用 `console` 命令将其禁止，因为主程序已经强制使能，如果用户想使用这样的功能，可以将主程序中进行关闭。
-
+1. 手机连接的网络需要和 ESP32 芯片连接的网络相同，这样才能在网络助手工具上收集数据信息。
+2. 当对 ESP32 进行烧录的时候，需要将先进行擦除操作，然后烧录。
+3. 本示例的分区表里添加了 log_info 区域作为保存日志的空间，烧录前需要对芯片进行擦除。
+4. 数据的头是时间戳，但没有进行实时校准，用户可以根据自己的需求进行修改。
+5. Console 命令中获取 `uart`、`flash`、`espnow` 状态，不能使用 `console` 命令将其禁止，因为主程序已经强制使能，如果用户想使用这样的功能，可以将主程序中进行关闭。

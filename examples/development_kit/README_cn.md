@@ -35,7 +35,7 @@ ESP32-MeshKit 是基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-
 * **安卓系统**：[源码](https://github.com/EspressifApp/EspMeshForAndroid)，[apk](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)（安装包）
 
 * **iOS 系统**：打开 App Store， 搜索 `ESP-Mesh`
-* **微信小程序**：打开微信，搜索 `ESPMesh`，目前仅支持配网功能
+* **微信小程序**：打开微信，搜索 `ESPMesh`
 
 > 注： 所有版本中优先更新安卓版本
 

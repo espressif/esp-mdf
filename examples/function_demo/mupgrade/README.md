@@ -46,7 +46,7 @@ While running the server, you may go to `http：// localhost：8070/` to browse 
 
 ### Step 3: Build an OTA example
 
-Navigate to the OTA example directory, and type `make menuconfig`(Make) or `make menuconfig`(CMake) to configure the OTA example. Under the submenu "Example Configuration", please fill in the following information:
+Navigate to the OTA example directory, and type `make menuconfig`(Make) or `idf.py menuconfig`(CMake) to configure the OTA example. Under the submenu "Example Configuration", please fill in the following information:
 
 * ESP-WIFI-MESH network configuration information
 * Firmware upgrade URL, which would look like this:
@@ -57,7 +57,7 @@ https://<host-ip-address>:<host-port>/<firmware-image-filename>
 for e.g,
 https://192.168.0.3:8070/hello-world.bin
 ```
-Save the changes and type `make`(Make) or `make`(CMake) to build the example.
+Save the changes and type `make`(Make) or `idf.py build`(CMake) to build the example.
 
 ### Step 4: Flash the OTA example
 
@@ -86,7 +86,7 @@ When the example starts up, it will print "Starting OTA example..." then:
 
 * Check your PC can ping the ESP32 at its IP, and that the IP, AP and other configuration settings are correct in menuconfig.
 * Check if any firewall software is preventing incoming connections on the PC.
-* Check whether you can see the configured file (default hello-world.bin), by checking the output of following command:
+* Check whether you can get firmware (default hello-world.bin), by checking the output of following command:
 
  ```
  curl -v https：// <host-ip-address>：<host-port> / <firmware-image-filename>
@@ -100,4 +100,4 @@ If you see this error then check that the configured (and actual) flash size is 
 
 ## Note
 
-In order to allow more nodes to join the mesh network for firmware upgrade, in the example we will start the firmware upgrade after 10 seconds.
+In order to allow more nodes to join the mesh network for firmware upgrade, example will start the firmware upgrade after 10 seconds.

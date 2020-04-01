@@ -4,7 +4,7 @@
 
 ## 介绍
 
-本示例将介绍如何基于 `Mwifi` 模块 APIs，实现设备连接远程外部服务器。设备首先通过 ESP-WIFI-MESH 将所有数据传输到根节点，根节点使用 LWIP 连接 MQTT 远程服务器(示例使用：`mqtt://iot.eclipse.org`)。
+本示例将介绍如何基于 `Mwifi` 模块 APIs，实现设备连接远程外部服务器。设备首先通过 ESP-WIFI-MESH 将所有数据传输到根节点，根节点通过 MQTT 连接远程服务器(示例使用：`mqtt://iot.eclipse.org`)。
 
 ## 硬件准备
 

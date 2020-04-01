@@ -58,9 +58,9 @@ ESP-NOW debug 接收板通过 [ESP-NOW](https://docs.espressif.com/projects/esp-
 <p> ESP-WROVER-KIT-V2 </p>
 </div>
 
-> 注: 
-> 1. 如果使用非 ESP-WROVER-KIT 也能运行， 只是部分关于存储的功能无法使用，例如：保存抓包数据
-> 2. 如是使用 ESP-WROVER-KIT V4.1， 并同时使用 SD-Card 和 LCD，请将电阻 R167、R168 取掉，避免屏幕无法正常使用
+**注:**
+> **1. 如果使用非 ESP-WROVER-KIT 也能运行， 只是部分关于存储的功能无法使用，例如：保存抓包数据**
+> **1. 如是使用 ESP-WROVER-KIT V4.1， 并同时使用 SD-Card 和 LCD，请将电阻 R167、R168 取掉，避免屏幕无法正常使用**
 
 ### 项目文件组织结构
 
