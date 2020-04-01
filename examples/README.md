@@ -10,7 +10,6 @@ The examples are grouped into subdirectories by category. Each category director
 * `function_demo`: demonstrates how functions can be used.
 * `development_kit`: provides ESP32-MeshKit and ESP32-Buddy application demos.
 * `maliyun_linkkit`: ESP32-Mesh access to Alibaba Cloud platform example.
-* `solution`: offers a routerless solution, as well as the solutions for street light control, etc.
 
 # Using Examples
 

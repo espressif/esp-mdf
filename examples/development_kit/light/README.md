@@ -52,13 +52,13 @@ To bring ESP32-MeshKit-Light into network configuration mode, turn it off and on
 
 | Light Color | Status |
 | ----------- | ------ |
-| Yellow (flashing) | Waiting to be configured, in network configuration mode. |
-| Orange (flashing) | Connecting to the router to verify the network configuration information received from ESP-Mesh App. |
-| Green (flashing) | Router information verified successfully and is being sent to other whitelisted devices |
+| Yellow (breathing) | Waiting to be configured, in network configuration mode. |
+| Orange (breathing) | Connecting to the router to verify the network configuration information received from ESP-Mesh App. |
+| Green (breathing) | Router information verified successfully and is being sent to other whitelisted devices |
 | White (solid) | Networked successfully |
-| Light blue (flashing for 3 seconds) | Starting to upgrade |
-| Blue (flashing) | Upgraded successfully and waiting to restart|
-| Red (flashing) | Abnormal reboot |
+| Light blue (breathing for 3 seconds) | Starting to upgrade |
+| Blue (breathing) | Upgraded successfully and waiting to restart|
+| Red (solid) | Abnormal reboot |
 
 
 ## Project Overview

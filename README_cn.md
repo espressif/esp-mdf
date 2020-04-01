@@ -64,13 +64,13 @@ ESP-MDF 共分为 Utils、Components 和 Examples 三个部分（如下图所示
 
 ## 使用 ESP-MDF 进行开发
 
-您首先需要详细阅读 [ESP-WIFI-MESH 通信协议](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html)和[ESP-MDF 编译指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)，并通过 ESP32-MeshKit 开发套件调研和了解 ESP-WIFI-MESH。其次基于 [Function demo](examples/function_demo/)进行您的项目开发，当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
+您首先需要详细阅读 [ESP-WIFI-MESH 通信协议](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html)和[ESP-MDF 编程指南](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/index.html)，并通过 ESP32-MeshKit 开发套件调研和了解 ESP-WIFI-MESH。其次基于 [Function demo](examples/function_demo/)进行您的项目开发，当您可以在开发中遇到问题，首先可在[官方论坛](https://esp32.com/viewforum.php?f=21&sid=27bd50a0e45d47b228726ee55437f57e)和[官方 GitHub ](https://github.com/espressif/esp-mdf/issues)上寻找是否已存在类似问题，若不存在类似问题，您也可直接在网站中提问。
 
 ### 开发板指南
 
 #### ESP32-MeshKit 开发套件
 
-ESP32-MeshKit 包含一整套完整的 [ESP-WIFI-MESH 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)（如下图所示），可配套 ESP-Mesh App（[iOS 版](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8)和[安卓版](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)）使用，用于调研和了解 ESP-WIFI-MESH，也可以进行二次开发。
+ESP32-MeshKit 包含一整套完整的 [ESP-WIFI-MESH 的照明解决方案](https://www.espressif.com/zh-hans/products/software/esp-mesh/overview)（如下图所示），可配套 ESP-Mesh App（[iOS 版](https://itunes.apple.com/cn/app/esp-mesh/id1420425921?mt=8)和[安卓版](https://github.com/EspressifApp/Esp32MeshForAndroid/raw/master/release/mesh.apk)）使用，既可以调研和了解 ESP-WIFI-MESH，也可以进行二次开发。
 
 <table>
     <tr>

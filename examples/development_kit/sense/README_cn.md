@@ -92,7 +92,7 @@ ESP32-MeshKit-Sense 开发板上有 5 处跳线，其功能和接法如下：
 
 	ULP 协处理器目前只支持汇编开发, 需要配置 ULP 协处理器编译环境, 详见: [ESP32 的 ULP 协处理器简介和汇编编译环境设置](https://github.com/espressif/esp-iot-solution/blob/master/documents/low_power_solution/esp32_ulp_co-processor_and_assembly_environment_setup_cn.md)。
 
-	> 注: 不支持多线程编译, 即不能使用 `make -j`
+	> **注: 不支持多线程编译, 即不能使用 `make -j`**
 
 3. 示例配置
 
