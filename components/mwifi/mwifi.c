@@ -136,6 +136,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
         case MESH_EVENT_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected");
             mwifi_connected_flag = true;
+            s_disconnected_count = 0;
 
             /**< Start DHCP client on station interface for root node */
             if (esp_mesh_is_root()) {
@@ -183,6 +184,7 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
                 if (esp_mesh_is_root()) {
                     esp_mesh_waive_root(NULL, MESH_VOTE_REASON_ROOT_INITIATED);
+                    MDF_LOGW("WAIVE_ROOT: The root node cannot find the router and only reports the disconnection.");
                 }
 
 #endif /**< CONFIG_MWIFI_WAIVE_ROOT */
