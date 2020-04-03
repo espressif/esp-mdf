@@ -522,3 +522,121 @@ void request_handle_task(void *arg)
     vTaskDelete(NULL);
 }
 ```
+
+# ESP32-MeshKit-Light with Aliyun Linkkit
+
+## Aliyun Linkkit 概述
+
+Aliyun Linkkit 是基于 [ESP-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能家居组网方案，可配套 "mesh App" 使用，以帮助用户更快捷的将 ESP-MESH 应用于产品开发。
+
+- ESP-MESH 作为主干网络用于长供电的场景中，设备可作为根节点（相当于网关）、中间节点和叶子节点,所有设备通过根节点登录到阿里服务器，进而完成间接通讯。以下是 ESP-MESH 所支持的功能：
+  - 支持 MESH 组网,并完成登录,用户操作无感知
+  - 支持远程控制设备状态.
+  - 支持厂商 OTA 更新固件
+  - 支持天猫精灵控制
+  - 后期增加支持公版 App 配网控制.
+
+## 快速开始
+
+### 1.阿里云飞燕设备部署
+
+1. 登录阿里云飞燕平台：[点击这里进入平台](https://living.aliyun.com/#/)
+
+    > 登录平台后, 点击网页上方 [文档中心](https://living.aliyun.com/doc#index.html) 查阅平台相关文档.
+    > <td ><img src="../docs/_static/ClickDocuments.png" width="600"></td><br>
+    > 阅读[快速入门](https://living.aliyun.com/doc#zzi7zk.html)相关的相关资料, 了解平台流程.
+
+2. 创建新项目：点击`创建新项目` 按钮
+
+    <td ><img src="../docs/_static/CreateProject.png" width="600"></td>
+
+3. 创建新产品：点击`创建新产品` 按钮
+
+    <td ><img src="../docs/_static/CreateProduct.png" width="600"></td>
+    <td ><img src="../docs/_static/ConfigDevcieLight.png" width="600"></td>
+
+4. 配置`产品参数`：点击已经创建好的产品进入配置界面
+
+    > 点击 `标准功能` 栏目里的 `添加功能` 按钮, 为设备添加标准功能
+    > <td ><img src="../docs/_static/CreateProductAddInfo.png" width="600"></td><br>
+    > 点击 `自定义功能` 栏目里的 `添加功能` 按钮, 为设备添加自定义功能
+    > <table> <td ><img src="../docs/_static/UserAddFerrHeap.png" width="200"></td> <td ><img src="../docs/_static/UserAddLayerInfo.png" width="200"></td> <td ><img src="../docs/_static/UserAddNodeNum.png" width="200"></td> </table>
+
+5. 配置`设备调试`：选择需要使用的模组型号, 这里使用 `ESP32-WROOM-32DC`
+
+    > 点击 `新增测试设备` 按钮增加测试设备
+    > <td ><img src="../docs/_static/CreateDevice.png" width="600"></td><br>
+    > 输入自定义的设备名称，例如`:test1`
+    > <td ><img src="../docs/_static/RegistrationParameter.png" width="600"></td>
+
+6. 获取 `四元组信息`：需要根据新增设备中的三元组信息外加 Product Secret 组成四元组信息
+
+    > <td ><img src="../docs/_static/GetProductSecret.png" width="600"></td>
+
+7. 配置 `人机交互`：
+
+    > 当前使用 `mesh App`进行配置与控制, 后期会支持 `公版 App`.
+    > <td ><img src="../docs/_static/HumanInteraction.png" width="600"></td>
+
+### 2.设备配置
+
+1. 配置项目：下载工程并进入该目录, 当前选择的实例 demo 是 light
+
+    > `export MDF_PATH= ${path}/esp-mdf`
+    > `cd MDF_PATH/example/aliyun_kit/light`
+
+2. 配置四元组, 将从云平台获取到的四元组配置到项目中.
+
+    > `make menuconfig --> Example Configuration`
+    > `Select light example mode` 选择 `mesh light with aliyun`
+    > `aliyun config` 配置四元组
+
+3. 编译下载, 将项目编译并下载.
+
+    > `make flash monitor ESPPORT=/dev/ttyUSB0`
+
+### 3.设备应用
+
+1. 设备进入配网模式： 当设备全擦除烧录后,默认会进入配网模式
+
+    > 设备上电进入配网模式, 在配网时 RGB 灯会处于黄色闪烁的状态
+    > 设备会往串口打印出 LOG 信息
+    > <td ><img src="../docs/_static/DeviceNetworkConfig.png" width="600"></td>
+
+2. 安装 ESP-Mesh App
+
+    > - **安卓**：[源码](https://github.com/EspressifApp/EspMeshForAndroid)，[apk](https://www.espressif.com/zh-hans/support/download/apps?keys=&field_technology_tid%5B%5D=18)（安装包）
+    > - **iOS**：打开 App Store， 搜索 `ESP-Mesh`
+    > - **微信小程序**：打开微信，搜索 `ESPMesh`，目前仅支持配网功能
+    > 注：所有版本中优先更新安卓版本
+
+3. 设备配网：进入 Mesh App, 点击 `我的` 选项栏中的 `云端` 按钮.
+
+   App 切换为云端控制, 登录账号后,点击右上角`+`按钮, 点击添加设备
+
+    > <table><td ><img src="../docs/_static/UserColud.jpg" width="200"></td> <td ><img src="../docs/_static/AddDevice.jpg" width="200"></td> </table>
+
+4. 设备控制
+
+    > 点击选中的设备,即可进入控制界面.
+    > <table> <td ><img src="../docs/_static/ControlCW.jpg" width="200"></td> <td ><img src="../docs/_static/ControlRGB.jpg" width="200"></td> </table>
+
+5. 设备 OTA
+
+    1. 进入产品管理界面，点击右边的运营中心
+
+        > <td ><img src="../docs/_static/OTASelectPath1.png" width="600"></td>
+
+    1. 点击右边的添加固件
+
+        > <td ><img src="../docs/_static/OTASelectPath2.png" width="600"></td>
+
+    1. 填写必要的固件信息并上传固件
+
+        > <td ><img src="../docs/_static/OTAAddBinConfig.png" width="600"></td>
+
+    1. 点击固件信息后的 '验证固件'的按钮, 选择 OTA 测试设备, 并填写相关参数
+
+        > <td ><img src="../docs/_static/OTACheckDevice.png" width="600"></td>
+
+    1. OTA 固件会被推送下载到根节点,并将固件推送给制定设备上, 设备 OTA 成功后，云端将显示验证成功标志

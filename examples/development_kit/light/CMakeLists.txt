@@ -5,3 +5,4 @@ cmake_minimum_required(VERSION 3.5)
 include($ENV{MDF_PATH}/project.cmake)
 
 project(light)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

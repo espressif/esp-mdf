@@ -69,7 +69,7 @@ mdf_err_t wifi_init();
  * @return
  *     - NULL
  */
-void show_system_info_timercb(void *timer);
+__attribute__((weak)) void show_system_info_timercb(void *timer);
 
 /**
  * @brief   1.Get Mwifi initialization configuration information and Mwifi AP configuration information

@@ -67,4 +67,9 @@ examples/test
 */*/*.DS_Store
 */*/*/*.DS_Store
 
+# vscode settings
+.vscode
+
+# clangd cache
+.clangd
 
