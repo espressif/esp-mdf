@@ -77,7 +77,7 @@ static struct {
 
 static int mesh_config_func(int argc, char **argv)
 {
-    if (arg_parse(argc, argv, (void**) &mesh_config_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **) &mesh_config_args) != ESP_OK) {
         arg_print_errors(stderr, mesh_config_args.end, argv[0]);
         return MDF_FAIL;
     }
@@ -204,7 +204,7 @@ static struct {
 
 static int mesh_status_func(int argc, char **argv)
 {
-    if (arg_parse(argc, argv, (void**) &mesh_status_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **) &mesh_status_args) != ESP_OK) {
         arg_print_errors(stderr, mesh_status_args.end, argv[0]);
         return MDF_FAIL;
     }
@@ -277,7 +277,7 @@ static struct {
 
 static esp_err_t mesh_scan_func(int argc, char **argv)
 {
-    if (arg_parse(argc, argv, (void**) &mesh_scan_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **) &mesh_scan_args) != ESP_OK) {
         arg_print_errors(stderr, mesh_scan_args.end, argv[0]);
         return ESP_FAIL;
     }
@@ -420,7 +420,7 @@ static void mesh_iperf_client_task(void *arg)
             xTaskGetTickCount() < end_ticks && !g_mesh_iperf_cfg.finish; ++total_count) {
         ret = mwifi_write(g_mesh_iperf_cfg.addr, &data_type, buffer,
                           g_mesh_iperf_cfg.packet_len, true);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_write", mdf_err_to_name(ret));
+        MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_write", mdf_err_to_name(ret));
         data_type.custom++;
 
         if (xTaskGetTickCount() >= report_ticks) {
@@ -456,11 +456,13 @@ static void mesh_iperf_client_task(void *arg)
     uint32_t lost_count  = total_count - write_count;
     double total_len     = (total_count * g_mesh_iperf_cfg.packet_len) / 1e6;
 
-    MDF_LOGI("client Report:");
-    MDF_LOGI("[ ID] Interval      Transfer       Bandwidth      Jitter   Lost/Total Datagrams");
-    MDF_LOGI("[000] %2d-%2d sec    %2.2f MBytes    %0.2f Mbits/sec    %d ms    %d/%d (%d%%)",
-             0, spend_time / 1000, total_len, total_len * 8 * 1000 / spend_time, spend_time / write_count,
-             lost_count, total_count, lost_count * 100 / total_count);
+    if (total_count && write_count && spend_time) {
+        MDF_LOGI("client Report:");
+        MDF_LOGI("[ ID] Interval      Transfer       Bandwidth      Jitter   Lost/Total Datagrams");
+        MDF_LOGI("[000] %2d-%2d sec    %2.2f MBytes    %0.2f Mbits/sec    %d ms    %d/%d (%d%%)",
+                 0, spend_time / 1000, total_len, total_len * 8 * 1000 / spend_time, spend_time / write_count,
+                 lost_count, total_count, lost_count * 100 / total_count);
+    }
 
     MDF_FREE(buffer);
     g_mesh_iperf_cfg.finish = true;
@@ -486,9 +488,11 @@ static void mesh_iperf_server_task(void *arg)
 
         if (ret == MDF_ERR_MWIFI_TIMEOUT || ret == ESP_ERR_MESH_TIMEOUT) {
             continue;
+        } else if (ret != MDF_OK) {
+            g_mesh_iperf_cfg.finish = true;
+            MDF_LOGW("<%s> mwifi_read", mdf_err_to_name(ret));
+            goto FREE_MEM;
         }
-
-        MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_read", mdf_err_to_name(ret));
 
         recv_count++;
 
@@ -502,7 +506,7 @@ static void mesh_iperf_server_task(void *arg)
             uint32_t report_timer = (report_ticks - start_ticks) * portTICK_RATE_MS / 1000;
             double report_size    = (data_type.custom - report_count) * g_mesh_iperf_cfg.packet_len / 1e6;
             MDF_LOGI("["MACSTR"]  %2d-%2d sec  %2.2f MBytes  %0.2f Mbits/sec",
-                     MAC2STR(g_mesh_iperf_cfg.addr), report_timer - g_mesh_iperf_cfg.report_interval, report_timer ,
+                     MAC2STR(g_mesh_iperf_cfg.addr), report_timer - g_mesh_iperf_cfg.report_interval, report_timer,
                      report_size, report_size * 8 / g_mesh_iperf_cfg.report_interval);
 
             report_ticks = xTaskGetTickCount() + g_mesh_iperf_cfg.report_interval * 1000 / portTICK_RATE_MS;
@@ -626,7 +630,7 @@ static esp_err_t mesh_iperf_func(int argc, char **argv)
     g_mesh_iperf_cfg.report_interval = 3;
     g_mesh_iperf_cfg.ping_count      = 64;
 
-    if (arg_parse(argc, argv, (void**) &mesh_iperf_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **) &mesh_iperf_args) != ESP_OK) {
         arg_print_errors(stderr, mesh_iperf_args.end, argv[0]);
         return ESP_FAIL;
     }
@@ -663,6 +667,7 @@ static esp_err_t mesh_iperf_func(int argc, char **argv)
     esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
 
     g_mesh_iperf_cfg.finish = false;
+
     if (mesh_iperf_args.client->count) {
         ret = mac_str2hex(mesh_iperf_args.client->sval[0], g_mesh_iperf_cfg.addr);
         MDF_ERROR_CHECK(ret == false, ESP_ERR_INVALID_ARG,
@@ -815,7 +820,7 @@ void app_main()
         MDF_ERROR_ASSERT(mwifi_set_init_config(&networking_config));
         MDF_ERROR_ASSERT(mwifi_start());
     }
-    
+
     /**
      * @brief Add debug function, you can use serial command and wireless debugging.
      *      1. Initialize console module
