@@ -1,0 +1,120 @@
+menuconfig ALIYUN_IOT_NEW_SDK
+    bool "new aliyun sdk IoT Platform"
+    help
+       Select this option to enable support for the aliyun IoT platform,
+       via the esp-mdf/esp-idf component for the aliyun adk.
+
+    choice ALIYUN_PLATFORM_SDK_CHOOSE
+    depends on ALIYUN_IOT_NEW_SDK
+        prompt "Choose MDF/IDF platform"
+        default ALIYUN_PLATFORM_MDF
+        help
+            Choose the MDF/IDF platform which you want to use.
+
+    config ALIYUN_PLATFORM_MDF
+        bool "supportMDF"
+    config ALIYUN_PLATFORM_IDF
+        bool "supportIDF"
+    endchoice
+
+    choice ALIYUN_SUPPORT_TLS_CHOOSE
+    depends on ALIYUN_IOT_NEW_SDK
+        prompt "Choose TLS/TCP connection"
+        default ALIYUN_NETWORK_SUPPORT_TLS
+        help
+            Choose the TLS/TCP connection which you want to use.
+
+    config ALIYUN_NETWORK_SUPPORT_TLS
+        bool "supportTLS"
+    config ALIYUN_NETWORK_SUPPORT_TCP
+        bool "supportTCP"
+    endchoice
+
+    choice ALIYUN_MQTT_MODE_CHOOSE
+    depends on ALIYUN_IOT_NEW_SDK
+        prompt "Choose PRE_AUTH/DIRECT mode"
+        default ALIYUN_MQTT_MODE_DIRECT
+        help
+            Choose the PRE_AUTH/DIRECT mode which you want to use.
+
+    config ALIYUN_MQTT_MODE_DIRECT
+        bool "mqtt mode direct"
+    config ALIYUN_MQTT_MODE_PRE_AUTH
+        bool "mqtt mode pre auth"
+
+    endchoice
+
+menu "aliyun sdk mqtt config"
+depends on ALIYUN_IOT_NEW_SDK
+
+    config ALIYUN_TASK_DEFAULT_PRIOTY
+        int "aliyun mqtt task priority"
+        default 6
+        help
+            aliyun mqtt task priority
+
+    config ALIYUN_MQTT_TASK_SIZE
+        int "aliyun mqtt task size"
+        range 0 10240
+        default 8192
+        help
+            aliyun mqtt task size.
+
+    config ALIYUN_TOPIC_SIZE
+        int "aliyun mqtt topic size"
+        range 0 256
+        default 128
+        help
+            aliyun mqtt topic size.
+
+    config ALIYUN_PAYLOAD_SIZE
+        int "aliyun mqtt payload size"
+        range 0 10240
+        default 1024
+        help
+            aliyun mqtt payload size.
+
+    config ALIYUN_MQTT_WS_WSS_PORT
+        int "aliyun mqtt ws/wss port"
+        range 0 65535
+        default 433
+        help
+            aliyun mqtt ws/wss port.
+
+    config ALIYUN_MQTT_TCP_TLS_PORT
+        int "aliyun mqtt tcp/tls port"
+        range 0 65535
+        default 1883
+        help
+            aliyun mqtt tcp/tls port.
+    endmenu
+
+menu "aliyun sdk message config"
+depends on ALIYUN_IOT_NEW_SDK
+    config BLUFI_BROADCAST_OUI
+        string "MDF aliyun network config type"
+        default "MAY"
+        help
+            MDF aliyun network config type
+
+    config ALIYUN_READ_TIMROUT_MS
+        int "aliyun read_timeout ms"
+        range 0 1000
+        default 50
+        help
+            aliyun read_timeout ms.
+
+    config ALIYUN_ANSWER_DEFAULT_RESENDS_NUM
+        int "aliyun answer default resends num"
+        range 0 10
+        default 3
+        help
+            aliyun answer default resends num.
+
+    config ALIYUN_ANSWER_DEFAULT_TIMEOUT_MS
+        int "aliyun answer default timeout ms"
+        range 100 100000
+        default 10000
+        help
+            aliyun answer default timeout ms.
+endmenu

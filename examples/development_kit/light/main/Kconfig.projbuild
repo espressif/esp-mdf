@@ -64,11 +64,77 @@ config LIGHT_BLINK_PERIOD_MS
         Period of blinking lights.
 endmenu
 
-config LIGHT_VERSION
-    string "Light version"
-    default "1.3.1"
-    help
-        Version of the five-color light
+choice LIGHT_EXAMPLE_MODE
+    bool "Select light example mode"
+    default LIGHT_EXAMPLE_MESH
+    help 
+        Specify which light example to build,support mesh-light or mesh-light with aliyun
+    config LIGHT_EXAMPLE_MESH
+    bool "mesh light"
+    config LIGHT_EXAMPLE_ALIYUN
+    bool "mesh light with aliyun"
+    
+endchoice
+
+config LIGHT_EXAMPLE_MODE
+    int
+    default 0 if LIGHT_EXAMPLE_MESH
+    default 1 if LIGHT_EXAMPLE_ALIYUN
+
+menu "mesh light config"
+    depends on LIGHT_EXAMPLE_MESH
+    config LIGHT_VERSION
+        string "Light version"
+        default "1.2.2"
+        help
+            Version of the five-color light
+    
+    config LIGHT_MEMORY_DEBUG
+        bool "Enable memory debugging"
+        default n
+        help
+            Enable memory debugging.
+    
+    config LIGHT_BLE_GATEWAY
+        bool "Enable the BLE gateway on the non-root node"
+        default n
+        help
+            Enabling the BLE gateway on a non-root node,
+            enabling the BLE gateway will consume a lot of memory.
+endmenu
+
+menu "aliyun config"
+    depends on LIGHT_EXAMPLE_ALIYUN
+    config LIGHT_VERSION
+        string "Light version"
+        default "1.1.1"
+        help
+            Version of the five-color light
+
+    config ALIYUN_META_PRODUCT_KEY
+        string "Aliyun product key"
+        default "xxxx"
+        help
+            Aliyun product key.
+
+    config ALIYUN_META_PRODUCT_SECRET
+        string "Aliyun product secret"
+        default "xxxx"
+        help
+            Aliyun product secret.
+
+    config ALIYUN_META_DEVICE_NAME
+        string "Aliyun device name"
+        default "xxxx"
+        help
+            Aliyun device name.
+
+    config ALIYUN_META_DEVICE_SECRET
+        string "aliyun device secret"
+        default "xxxx"
+        help
+            Aliyun device secret.
+endmenu
 
 config LIGHT_MEMORY_DEBUG
     bool "Enable memory debugging"
@@ -106,3 +172,4 @@ config LIGHT_RESTART_COUNT_FALLBACK
         Number of times the device restarted abnormally, entered, and exited from the previous version.
 
 endmenu
+

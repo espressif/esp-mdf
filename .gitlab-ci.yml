@@ -133,12 +133,6 @@ build_example_button:
     ARTIFACTS_NAME: "button"
     EXAMPLE_PATH: "examples/development_kit/button"
 
-build_example_maliyun_linkkit_light:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "maliyun_linkkit_light"
-    EXAMPLE_PATH: "examples/maliyun_linkkit/light"
-
 build_example_buddy:
   <<: *build_template
   variables:

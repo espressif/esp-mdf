@@ -1,0 +1,74 @@
+menu "Example Configuration"
+
+config DEVICE_VERSION
+    string "Device version"
+    default "1.0.0"
+
+choice DEVICE_TYPE
+    bool "Configure the device type"
+    default DEVICE_TYPE_NODE
+    help
+        Configure the device type
+
+    config DEVICE_TYPE_ROOT
+       bool "Root device"
+    config DEVICE_TYPE_NODE
+       bool "Non-Root device"
+endchoice
+
+config DEVICE_TYPE
+    int
+    default 1 if DEVICE_TYPE_ROOT
+    default 2 if DEVICE_TYPE_NODE
+
+config MESH_ID
+    string "Mesh ID"
+    default "123456"
+    help
+        The maximum length is 6 bytes. Mesh network identification,
+        Nodes with the same mesh ID can, communicate with each other.
+
+config MESH_CHANNEL
+    int "Mesh network channel"
+    range 1 14
+    default 13
+    help
+        Mesh network channel.
+
+config ROUTER_SSID
+    depends on DEVICE_TYPE_ROOT
+    string "Router ssid"
+    default "myssid"
+
+config ROUTER_PASSWORD
+    depends on DEVICE_TYPE_ROOT
+    string "Router password"
+    default "mypassword"
+
+menu "aliyun config"
+    config ALIYUN_META_PRODUCT_KEY
+        string "Aliyun product key"
+        default "xxxx"
+        help 
+            Aliyun product key.
+
+    config ALIYUN_META_PRODUCT_SECRET
+        string "Aliyun product secret"
+        default "xxxx"
+        help
+            Aliyun product secret.
+
+    config ALIYUN_META_DEVICE_NAME
+        string "Aliyun device name"
+        default "xxxx"
+        help 
+            Aliyun device name
+
+    config ALIYUN_META_DEVICE_SECRET
+        string "Aliyun device secret"
+        default "xxxx"
+        help
+            Aliyun device secret
+endmenu
+
+endmenu

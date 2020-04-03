@@ -1,0 +1,37 @@
+menu "Example Configuration"
+
+config WIFI_SSID
+    string "Wi-Fi ssid"
+    default "myssid"
+
+config WIFI_PSWD
+    string "Wi-Fi password"
+    default "mypassword"
+    
+menu "aliyun config"
+    config ALIYUN_META_PRODUCT_KEY
+        string "Aliyun product key"
+        default "xxxx"
+        help 
+            Aliyun product key.
+
+    config ALIYUN_META_PRODUCT_SECRET
+        string "Aliyun product secret"
+        default "xxxx"
+        help
+            Aliyun product secret.
+
+    config ALIYUN_META_DEVICE_NAME
+        string "Aliyun device name"
+        default "xxxx"
+        help 
+            Aliyun device name
+
+    config ALIYUN_META_DEVICE_SECRET
+        string "Aliyun device secret"
+        default "xxxx"
+        help
+            Aliyun device secret
+endmenu
+
+endmenu
