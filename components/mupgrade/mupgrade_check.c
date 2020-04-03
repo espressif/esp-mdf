@@ -203,8 +203,13 @@ mdf_err_t mupgrade_firmware_check(const esp_partition_t *partition)
     uint8_t *firmware_buffer = MDF_MALLOC(firmware_size);
     uint8_t firmware_flag[MUPGRADE_FIRMWARE_FLAG_SIZE]   = MUPGRADE_FIRMWARE_FLAG;
     uint8_t kmp_next_buffer[MUPGRADE_FIRMWARE_FLAG_SIZE] = {0};
+    size_t flag_size = strlen((char *)firmware_flag);
 
-    kmp_next(firmware_flag, MUPGRADE_FIRMWARE_FLAG_SIZE, kmp_next_buffer);
+    if (flag_size > MUPGRADE_FIRMWARE_FLAG_SIZE) {
+        flag_size = MUPGRADE_FIRMWARE_FLAG_SIZE;
+    }
+
+    kmp_next(firmware_flag, flag_size, kmp_next_buffer);
 
     for (int firmware_addr = partition->address;
             firmware_addr + firmware_size < partition->address + partition->size;
@@ -214,7 +219,7 @@ mdf_err_t mupgrade_firmware_check(const esp_partition_t *partition)
         MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Read data from Flash", mdf_err_to_name(ret));
 
         ret = kmp_find(firmware_buffer, firmware_size,
-                       firmware_flag, MUPGRADE_FIRMWARE_FLAG_SIZE, kmp_next_buffer);
+                       firmware_flag, flag_size, kmp_next_buffer);
         MDF_ERROR_BREAK(ret == ESP_OK, "");
     }
 
