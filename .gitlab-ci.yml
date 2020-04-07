@@ -115,6 +115,12 @@ build_example_mwifi_mqtt_example:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/mqtt_example"
 
+build_example_mwifi_ethernet_example:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "mwifi"
+    EXAMPLE_PATH: "examples/function_demo/mwifi/root_on_ethernet"
+
 build_example_mcommon:
   <<: *build_template
   variables:
