@@ -13,125 +13,156 @@
 // limitations under the License.
 
 #include "mesh_mqtt_handle.h"
+#include "cJSON.h"
+#include "esp_wifi.h"
+#include "mbedtls/base64.h"
 #include "mlink.h"
 #include "mwifi.h"
-#include "esp_wifi.h"
 
-typedef struct {
-    uint8_t addr[6]; /**< source MAC address  */
-    size_t size;     /**< Received size */
-    uint8_t *data; /**< Received data */
-} queue_data_t;
+static struct mesh_mqtt {
+    xQueueHandle queue; /**< mqtt receive data queue */
+    esp_mqtt_client_handle_t client; /**< mqtt client */
+    bool is_connected;
+    uint8_t addr[MWIFI_ADDR_LEN];
+    char publish_topic[32];
+    char topo_topic[32];
+} g_mesh_mqtt;
 
-enum {
-    UNSUBSCRIBED,
-    SUBSCRIBED,
-};
+static const char *TAG = "mesh_mqtt";
 
-static const char *TAG                   = "mesh_mqtt";
-static xQueueHandle g_queue_handle       = NULL;
-static xSemaphoreHandle g_connect_handle = NULL;
-static esp_mqtt_client_handle_t g_client = NULL;
-static bool g_mqtt_connect_flag          = false;
-static bool g_mqtt_start_flag            = false;
+static const char publish_topic_template[] = "mesh/%02x%02x%02x%02x%02x%02x/toCloud";
+static const char topo_topic_template[] = "mesh/%02x%02x%02x%02x%02x%02x/topo";
+static const char subscribe_topic_template[] = "mesh/%02x%02x%02x%02x%02x%02x/toDevice";
+static uint8_t mwifi_addr_any[] = MWIFI_ADDR_ANY;
 
-bool mesh_mqtt_is_connect()
+static mesh_mqtt_data_t *mesh_mqtt_parse_data(const char *topic, size_t topic_size, const char *payload, size_t payload_size)
 {
-    return g_mqtt_connect_flag;
-}
+    uint8_t mac[MWIFI_ADDR_LEN];
 
-static mdf_err_t mqtt_update_subdev(uint8_t type, uint8_t *subdev_list, size_t subdev_num)
-{
-    MDF_PARAM_CHECK(subdev_list);
-    MDF_PARAM_CHECK(g_client);
+    char *mac_str = strchr(topic, '/') + 1;
+    assert(mac_str != NULL + 1);
+    char *end_pos = strchr(mac_str, '/');
+    assert(end_pos != NULL);
+    *end_pos = '\0';
+    mlink_mac_str2hex(mac_str, mac);
 
-    char *addr_list  = NULL;
-    char mac_str[13] = {0};
-    char *data       = NULL;
-    char *topic_str  = NULL;
-    uint8_t root_mac[6] = {0};
+    char *str = MDF_MALLOC(payload_size + 1);
 
-    ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, root_mac));
+    if (str == NULL) {
+        MDF_LOGE("No memory");
+        return NULL;
+    }
 
-    for (int i = 0; i < subdev_num; ++i) {
-        mlink_json_pack(&addr_list, "[]", mlink_mac_hex2str(subdev_list + i * MWIFI_ADDR_LEN, mac_str));
+    memcpy(str, payload, payload_size);
+    str[payload_size] = '\0';
+    cJSON *obj = cJSON_Parse(str);
+    MDF_FREE(str);
 
-        /* subscribe topic: /topic/subdev/mac/recv eg: /topic/subdev/240ac4085480/recv*/
-        asprintf(&topic_str, "/topic/subdev/%s/recv", mac_str);
+    if (obj == NULL) {
+        MDF_LOGE("Parse JSON error");
+        return NULL;
+    }
 
-        if (type == SUBSCRIBED) {
-            MDF_LOGI("subscribe: %s", topic_str);
-            esp_mqtt_client_subscribe(g_client, topic_str, 0);
-        } else {
-            MDF_LOGI("unsubscribe: %s", topic_str);
-            esp_mqtt_client_unsubscribe(g_client, topic_str);
+    mesh_mqtt_data_t *request = MDF_CALLOC(1, sizeof(mesh_mqtt_data_t));
+
+    if (request == NULL) {
+        MDF_LOGE("No memory");
+        goto _exit;
+    }
+
+    if (memcmp(mac, mwifi_addr_any, MWIFI_ADDR_LEN) == 0) {
+        request->addrs_list = MDF_MALLOC(MWIFI_ADDR_LEN);
+        memcpy(request->addrs_list, mwifi_addr_any, MWIFI_ADDR_LEN);
+        request->addrs_num = 1;
+    } else {
+        cJSON *addr = cJSON_GetObjectItem(obj, "addr");
+
+        if (addr == NULL || cJSON_IsArray(addr) != true) {
+            MDF_FREE(request);
+            goto _exit;
         }
 
-        MDF_FREE(topic_str);
+        request->addrs_num = cJSON_GetArraySize(addr);
+        request->addrs_list = MDF_MALLOC(MWIFI_ADDR_LEN * request->addrs_num);
+        cJSON *item = NULL;
+        int i = 0;
+        cJSON_ArrayForEach(item, addr) {
+            if (cJSON_IsString(item) != true) {
+                MDF_FREE(request->addrs_list);
+                MDF_FREE(request);
+                goto _exit;
+            }
+
+            mlink_mac_str2hex(item->valuestring, mac);
+            memcpy(request->addrs_list + i * MWIFI_ADDR_LEN, mac, MWIFI_ADDR_LEN);
+            i++;
+        }
     }
 
-    /* gateway topic: /topic/gateway/mac/update eg: /topic/gateway/240ac4085480/update */
-    mlink_mac_hex2str(root_mac, mac_str);
-    mlink_json_pack(&data, "subdev_addrs", addr_list);
-    mlink_json_pack(&data, "gateway_addr", mac_str);
+    cJSON *type = cJSON_GetObjectItem(obj, "type");
 
-    MDF_LOGD("size: %d, data: %s", strlen(data), data);
-
-    asprintf(&topic_str, "/topic/gateway/%s/update", mac_str);
-    esp_mqtt_client_publish(g_client, topic_str, data, 0, 1, 0);
-    MDF_FREE(topic_str);
-
-    MDF_FREE(addr_list);
-    MDF_FREE(data);
-
-    return MDF_OK;
-}
-
-mdf_err_t mesh_mqtt_subscribe(uint8_t *subdev_list, size_t subdev_num)
-{
-    return mqtt_update_subdev(SUBSCRIBED, subdev_list, subdev_num);
-}
-
-mdf_err_t mesh_mqtt_unsubscribe(uint8_t *subdev_list, size_t subdev_num)
-{
-    return mqtt_update_subdev(UNSUBSCRIBED, subdev_list, subdev_num);
-}
-
-mdf_err_t mesh_mqtt_write(uint8_t *addr, void *data, size_t size)
-{
-    MDF_PARAM_CHECK(g_client);
-    MDF_PARAM_CHECK(addr);
-    MDF_PARAM_CHECK(data);
-
-    char *topic_str  = NULL;
-
-    /* publish data topic: /topic/subdev/mac/send eg: /topic/subdev/240ac4085480/send*/
-    asprintf(&topic_str, "/topic/subdev/%02x%02x%02x%02x%02x%02x/send", MAC2STR(addr));
-    esp_mqtt_client_publish(g_client, topic_str, data, size, 0, 0);
-    MDF_FREE(topic_str);
-
-    return MDF_OK;
-}
-
-mdf_err_t mesh_mqtt_read(uint8_t *addr, void **data, size_t *size, TickType_t wait_ticks)
-{
-    MDF_PARAM_CHECK(g_client);
-    MDF_PARAM_CHECK(addr);
-    MDF_PARAM_CHECK(data);
-    MDF_PARAM_CHECK(size);
-
-    queue_data_t q_data = {0x0};
-
-    if (xQueueReceive(g_queue_handle, &q_data, wait_ticks) != pdPASS) {
-        MDF_LOGD("Read queue timeout");
-        return MDF_FAIL;
+    if (type == NULL || cJSON_IsString(type) != true) {
+        MDF_FREE(request->addrs_list);
+        MDF_FREE(request);
+        goto _exit;
     }
 
-    *size = q_data.size;
-    *data = q_data.data;
-    memcpy(addr, q_data.addr, 6);
+    cJSON *data = cJSON_GetObjectItem(obj, "data");
 
-    return MDF_OK;
+    if (data == NULL) {
+        MDF_FREE(request->addrs_list);
+        MDF_FREE(request);
+        goto _exit;
+    }
+
+    if (strcmp(type->valuestring, "bytes") == 0) {
+        if (cJSON_IsString(data) != true) {
+            MDF_LOGW("Data should be string type");
+            MDF_FREE(request->addrs_list);
+            MDF_FREE(request);
+            goto _exit;
+        }
+
+        size_t dst_size = (strlen(data->valuestring) / 4 + 1) * 3;
+        request->data = MDF_MALLOC(dst_size);
+        assert(request->data != NULL);
+        int ret = mbedtls_base64_decode((uint8_t *)request->data, dst_size, &request->size, (uint8_t *)data->valuestring, strlen(data->valuestring));
+        assert(ret == 0);
+    } else if (strcmp(type->valuestring, "string") == 0) {
+        if (cJSON_IsString(data) != true) {
+            MDF_LOGW("Data should be string type");
+            MDF_FREE(request->addrs_list);
+            MDF_FREE(request);
+            goto _exit;
+        }
+
+        request->size = strlen(data->valuestring);
+        request->data = MDF_MALLOC(request->size);
+        assert(request->data != NULL);
+        strcpy(request->data, data->valuestring);
+    } else if (strcmp(type->valuestring, "json") == 0) {
+        str = cJSON_PrintUnformatted(data);
+
+        if (str == NULL) {
+            MDF_FREE(request->addrs_list);
+            MDF_FREE(request);
+            goto _exit;
+        }
+
+        request->size = strlen(str);
+        request->data = MDF_MALLOC(request->size);
+        memcpy(request->data, str, request->size);
+        MDF_FREE(str);
+    } else {
+        MDF_LOGW("Unknow type");
+        MDF_FREE(request->addrs_list);
+        MDF_FREE(request);
+        goto _exit;
+    }
+
+_exit:
+    cJSON_Delete(obj);
+    return request;
 }
 
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
@@ -139,14 +170,13 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
             MDF_LOGD("MQTT_EVENT_CONNECTED");
-            xSemaphoreGive(g_connect_handle);
-            g_mqtt_connect_flag = true;
+            g_mesh_mqtt.is_connected = true;
             mdf_event_loop_send(MDF_EVENT_CUSTOM_MQTT_CONNECT, NULL);
             break;
 
         case MQTT_EVENT_DISCONNECTED:
             MDF_LOGD("MQTT_EVENT_DISCONNECTED");
-            g_mqtt_connect_flag = false;
+            g_mesh_mqtt.is_connected = false;
             mdf_event_loop_send(MDF_EVENT_CUSTOM_MQTT_DISCONNECT, NULL);
             break;
 
@@ -166,15 +196,17 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             MDF_LOGD("MQTT_EVENT_DATA, topic: %.*s, data: %.*s",
                      event->topic_len, event->topic, event->data_len, event->data);
 
-            queue_data_t q_data = {0x0};
-            q_data.data = MDF_MALLOC(event->data_len);
-            q_data.size = event->data_len;
-            mlink_mac_str2hex(event->topic + strlen("/topic/subdev/"), q_data.addr);
-            memcpy(q_data.data, event->data, event->data_len);
+            mesh_mqtt_data_t *item = mesh_mqtt_parse_data(event->topic, event->topic_len, event->data, event->data_len);
 
-            if (xQueueSend(g_queue_handle, &q_data, 0) != pdPASS) {
+            if (item == NULL) {
+                break;
+            }
+
+            if (xQueueSend(g_mesh_mqtt.queue, &item, 0) != pdPASS) {
                 MDF_LOGD("Send receive queue failed");
-                MDF_FREE(q_data.data);
+                MDF_FREE(item->addrs_list);
+                MDF_FREE(item->data);
+                MDF_FREE(item);
             }
 
             break;
@@ -192,19 +224,166 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     return ESP_OK;
 }
 
-mdf_err_t mesh_mqtt_start(char *url)
+bool mesh_mqtt_is_connect()
 {
-    if (g_mqtt_start_flag) {
+    return g_mesh_mqtt.is_connected;
+}
+
+mdf_err_t mesh_mqtt_subscribe()
+{
+    char topic_str[MESH_MQTT_TOPIC_MAX_LEN];
+    char mac_any[] = MWIFI_ADDR_ANY;
+    char mac_root[] = MWIFI_ADDR_ROOT;
+
+    snprintf(topic_str, sizeof(topic_str), subscribe_topic_template, MAC2STR(g_mesh_mqtt.addr));
+    int msg_id = esp_mqtt_client_subscribe(g_mesh_mqtt.client, topic_str, 0);
+    MDF_ERROR_CHECK(msg_id < 0, MDF_FAIL, "Subscribe failed");
+
+    snprintf(topic_str, sizeof(topic_str), subscribe_topic_template, MAC2STR(mac_any));
+    msg_id = esp_mqtt_client_subscribe(g_mesh_mqtt.client, topic_str, 0);
+    MDF_ERROR_CHECK(msg_id < 0, MDF_FAIL, "Subscribe failed");
+
+    snprintf(topic_str, sizeof(topic_str), subscribe_topic_template, MAC2STR(mac_root));
+    msg_id = esp_mqtt_client_subscribe(g_mesh_mqtt.client, topic_str, 0);
+    MDF_ERROR_CHECK(msg_id < 0, MDF_FAIL, "Subscribe failed");
+
+    return MDF_OK;
+}
+
+mdf_err_t mesh_mqtt_unsubscribe()
+{
+    char topic_str[MESH_MQTT_TOPIC_MAX_LEN];
+    snprintf(topic_str, sizeof(topic_str), subscribe_topic_template, MAC2STR(g_mesh_mqtt.addr));
+    int msg_id = esp_mqtt_client_unsubscribe(g_mesh_mqtt.client, topic_str);
+
+    if (msg_id > 0) {
+        MDF_LOGI("Unsubscribe: %s, msg_id = %d", topic_str, msg_id);
+        return MDF_OK;
+    } else {
+        MDF_LOGI("Unsubscribe: %s failed", topic_str);
         return MDF_FAIL;
     }
+}
 
-    g_mqtt_start_flag = true;
+mdf_err_t mesh_mqtt_update_topo()
+{
+    MDF_ERROR_CHECK(g_mesh_mqtt.client == NULL, MDF_ERR_INVALID_STATE, "MQTT client has not started");
+
+    mdf_err_t ret = MDF_FAIL;
+    char mac_addr[13];
+
+    int table_size = esp_mesh_get_routing_table_size();
+    mesh_addr_t *route_table = MDF_CALLOC(table_size, sizeof(mesh_addr_t));
+    ESP_ERROR_CHECK(esp_mesh_get_routing_table(route_table, table_size * sizeof(mesh_addr_t), &table_size));
+
+    cJSON *obj = cJSON_CreateArray();
+
+    for (int i = 0; i < table_size; i++) {
+        mlink_mac_hex2str(route_table[i].addr, mac_addr);
+        cJSON *item = cJSON_CreateString(mac_addr);
+        MDF_ERROR_GOTO(item == NULL, _no_mem, "Create string object failed");
+        cJSON_AddItemToArray(obj, item);
+    }
+
+    MDF_FREE(route_table);
+    char *str = cJSON_PrintUnformatted(obj);
+    MDF_ERROR_GOTO(str == NULL, _no_mem, "Print JSON failed");
+    esp_mqtt_client_publish(g_mesh_mqtt.client, g_mesh_mqtt.topo_topic, str, strlen(str), 0, 0);
+    MDF_FREE(str);
+    ret = MDF_OK;
+_no_mem:
+    cJSON_Delete(obj);
+    return ret;
+}
+
+mdf_err_t mesh_mqtt_write(uint8_t *addr, const char *data, size_t size, mesh_mqtt_publish_data_type_t type)
+{
+    MDF_PARAM_CHECK(addr);
+    MDF_PARAM_CHECK(data);
+    MDF_ERROR_CHECK(type >= MESH_MQTT_DATA_TYPE_MAX, MDF_ERR_INVALID_ARG, "Unknow data type");
+    MDF_ERROR_CHECK(g_mesh_mqtt.client == NULL, MDF_ERR_INVALID_STATE, "MQTT client has not started");
+
+    mdf_err_t ret = MDF_FAIL;
+    char mac_str[13];
+
+    /* publish data topic: mesh/{root_mac}/toCloud */
+    mlink_mac_hex2str(addr, mac_str);
+
+    cJSON *obj = cJSON_CreateObject();
+    MDF_ERROR_GOTO(obj == NULL, _no_mem, "Create JSON failed");
+    cJSON *src_addr = cJSON_AddStringToObject(obj, "addr", mac_str);
+    MDF_ERROR_GOTO(src_addr == NULL, _no_mem, "Add string to JSON failed");
+
+    switch (type) {
+        case MESH_MQTT_DATA_BYTES: {
+            size_t dst_size = (size / 3 + 1) * 4 + 1 + 1;
+            size_t olen = 0;
+            uint8_t *dst = MDF_CALLOC(1, dst_size);
+            int ret = mbedtls_base64_encode(dst, dst_size, &olen, (uint8_t *)data, size);
+            assert(ret == 0);
+            cJSON_AddStringToObject(obj, "type", "bytes");
+            cJSON *src_data = cJSON_AddStringToObject(obj, "data", (char *)dst);
+            MDF_FREE(dst);
+            MDF_ERROR_GOTO(src_data == NULL, _no_mem, "Add data to JSON failed");
+            break;
+        }
+
+        case MESH_MQTT_DATA_STRING: {
+            char *buffer = MDF_MALLOC(size + 1);
+            MDF_ERROR_GOTO(buffer == NULL, _no_mem, "Allocate mem failed");
+            memcpy(buffer, data, size);
+            buffer[size] = '\0';
+            cJSON_AddStringToObject(obj, "type", "string");
+            cJSON *src_data = cJSON_AddStringToObject(obj, "data", buffer);
+            MDF_FREE(buffer);
+            MDF_ERROR_GOTO(src_data == NULL, _no_mem, "Add data to JSON failed");
+            break;
+        }
+
+        case MESH_MQTT_DATA_JSON: {
+            char *buffer = MDF_MALLOC(size + 1);
+            MDF_ERROR_GOTO(buffer == NULL, _no_mem, "Allocate mem failed");
+            memcpy(buffer, data, size);
+            buffer[size] = '\0';
+            cJSON_AddStringToObject(obj, "type", "json");
+            cJSON *src_data = cJSON_AddRawToObject(obj, "data", buffer);
+            MDF_FREE(buffer);
+            MDF_ERROR_GOTO(src_data == NULL, _no_mem, "Add data to JSON failed");
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    char *payload = cJSON_PrintUnformatted(obj);
+    MDF_ERROR_GOTO(payload == NULL, _no_mem, "Print JSON failed");
+
+    esp_mqtt_client_publish(g_mesh_mqtt.client, g_mesh_mqtt.publish_topic, payload, strlen(payload), 0, 0);
+    MDF_FREE(payload);
+
+    ret = MDF_OK;
+_no_mem:
+    cJSON_Delete(obj);
+    return ret;
+}
+
+mdf_err_t mesh_mqtt_read(mesh_mqtt_data_t **request, TickType_t wait_ticks)
+{
+    MDF_PARAM_CHECK(request);
+    MDF_ERROR_CHECK(g_mesh_mqtt.client == NULL, MDF_ERR_INVALID_STATE, "MQTT client has not started");
+
+    if (xQueueReceive(g_mesh_mqtt.queue, request, wait_ticks) != pdPASS) {
+        return MDF_ERR_TIMEOUT;
+    }
+
+    return MDF_OK;
+}
+
+mdf_err_t mesh_mqtt_start(char *url)
+{
     MDF_PARAM_CHECK(url);
-
-    /**
-     * Connect semaphore
-     */
-    g_connect_handle = xSemaphoreCreateBinary();
+    MDF_ERROR_CHECK(g_mesh_mqtt.client != NULL, MDF_ERR_INVALID_STATE, "MQTT client is already running");
 
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = url,
@@ -212,46 +391,33 @@ mdf_err_t mesh_mqtt_start(char *url)
         // .client_cert_pem = (const char *)client_cert_pem_start,
         // .client_key_pem = (const char *)client_key_pem_start,
     };
-
-    g_queue_handle = xQueueCreate(3, sizeof(queue_data_t));
-    g_client = esp_mqtt_client_init(&mqtt_cfg);
-    MDF_ERROR_ASSERT(esp_mqtt_client_start(g_client));
-
-    /**
-     * Waitting connect complete
-     */
-    xSemaphoreTake(g_connect_handle, portMAX_DELAY);
+    MDF_ERROR_ASSERT(esp_read_mac(g_mesh_mqtt.addr, ESP_MAC_WIFI_STA));
+    snprintf(g_mesh_mqtt.publish_topic, sizeof(g_mesh_mqtt.publish_topic), publish_topic_template, MAC2STR(g_mesh_mqtt.addr));
+    snprintf(g_mesh_mqtt.topo_topic, sizeof(g_mesh_mqtt.topo_topic), topo_topic_template, MAC2STR(g_mesh_mqtt.addr));
+    g_mesh_mqtt.queue = xQueueCreate(3, sizeof(mesh_mqtt_data_t *));
+    g_mesh_mqtt.client = esp_mqtt_client_init(&mqtt_cfg);
+    MDF_ERROR_ASSERT(esp_mqtt_client_start(g_mesh_mqtt.client));
 
     return MDF_OK;
 }
 
 mdf_err_t mesh_mqtt_stop()
 {
-    if (!g_mqtt_start_flag) {
-        return MDF_FAIL;
-    }
+    MDF_ERROR_CHECK(g_mesh_mqtt.client == NULL, MDF_ERR_INVALID_STATE, "MQTT client has not been started");
+    mesh_mqtt_data_t *item;
 
-    g_mqtt_start_flag = false;
-
-    queue_data_t q_data = {0x0};
-
-    g_mqtt_connect_flag = false;
-
-    if (uxQueueMessagesWaiting(g_queue_handle)) {
-        if (xQueueReceive(g_queue_handle, (void *)&q_data, 0)) {
-            MDF_FREE(q_data.data);
+    if (uxQueueMessagesWaiting(g_mesh_mqtt.queue)) {
+        if (xQueueReceive(g_mesh_mqtt.queue, &item, 0)) {
+            MDF_FREE(item);
         }
     }
 
-    vQueueDelete(g_queue_handle);
-    g_queue_handle = NULL;
+    vQueueDelete(g_mesh_mqtt.queue);
+    g_mesh_mqtt.queue = NULL;
 
-    vSemaphoreDelete(g_connect_handle);
-    g_connect_handle = NULL;
-
-    esp_mqtt_client_stop(g_client);
-    esp_mqtt_client_destroy(g_client);
-    g_client = NULL;
+    esp_mqtt_client_stop(g_mesh_mqtt.client);
+    esp_mqtt_client_destroy(g_mesh_mqtt.client);
+    g_mesh_mqtt.client = NULL;
 
     return MDF_OK;
 }

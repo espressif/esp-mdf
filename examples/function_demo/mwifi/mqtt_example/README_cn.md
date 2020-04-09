@@ -31,14 +31,89 @@ make erase_flash flash -j5 monitor ESPBAUD=921600 ESPPORT=/dev/ttyUSB0
 
 ### 运行
 
-1. ESP-WIFI-MESH 设备每隔三秒会向 Topic:"/topic/subdev/MAC/send"（MAC：节点的 MAC 地址）推送设备信息
-2. 当 MESH 网络中路由表发生变化时，会向 Topic:"/topic/gateway/MAC/update"（MAC：为根节点的 MAC 地址）推送变化的节点相关信息
-3. 可以从 Topic:"/topic/subdev/MAC/recv" 接收来自服务器的数据
+1. ESP-WIFI-MESH 子设备每隔三秒会向根节点发送心跳信息，信息内容如下：
 
-例如：
-- MQTT 测试工具中订阅 `/topic/subdev/240ac4085480/send` topic 将收到来自设备的数据
-- 在 MQTT 测试工具中向 `/topic/subdev/240ac4085480/recv` topic 发送数据，MAC 地址为 240ac4085480 的设备将收到数据
+    ```json
+    {
+        "type":"heartbeat",
+        "self":"840d8ee3b1d8",
+        "parent":"a45602473007",
+        "layer":1
+    }
+    ```
 
-<div align=center>
-<img src="running.png"  width="600">
-</div>
+    > type 是消息类型，self 是当前设备的 MAC 地址，parent 是当前设备父节点的 MAC 地址，layer 是当前设备的层书。强烈建议开发者在设计基于 MQTT 进行通信的 MESH 系统时保留这一机制。这样既可以方便 Cloud 判断设备是否在线，也很容易看出 MESH 网络完整的 TOPO 结构
+
+1. ESP-WIFI-MESH 根节点收到来自子节点的数据后，会向 Topic: "mesh/{MAC}/toCloud"（MAC：根节点的 MAC 地址）转发来自子节点的消息。信息内容如下：
+
+    ```json
+    {
+        "addr":"840d8ee3b1d8",
+        "type":"json",
+        "data":{
+            "type":"heartbeat",
+            "self":"840d8ee3b1d8",
+            "parent":"a45602473007",
+            "layer":1
+        }
+    }
+    ```
+
+    > addr 是子节点的 MAC 地址，type 是消息类型，data 是来自子设备的消息。
+
+1. 当 MESH 网络中路由表发生变化时，根节点会向 Topic: "mesh/{MAC}/topo"（MAC：为根节点的 MAC 地址）推送变化的节点相关信息, 信息内容如下：
+
+    ```json
+    [
+        "840d8ee3b1d8",
+        "30aea4800ea0"
+    ]
+    ```
+
+    > 列表完整复制了当前根节点的路由表
+
+1. 根节点从 Topic:"mesh/{MAC}/toDevice" (MAC 可以是 3 个值，分别时根节点 MAC 地址，"ffffffffffff" 和 "ff0000010000") 接收来自服务器的数据
+
+例如，有两个节点运行该事例，分别是 840d8ee3b1d8（根节点） 和 30aea4800ea0 (子节点)。
+
+- mosquitto_sub 中订阅 `mesh/+/toCloud` topic 将收到来自设备的消息，如下：
+
+    ```bash
+    mesh/840d8ee3b1d8/toCloud {"addr":"840d8ee3b1d8","type":"json","data":{"type":"heartbeat", "self": "840d8ee3b1d8", "parent":"a45602473007","layer":1}}
+    mesh/840d8ee3b1d8/toCloud {"addr":"30aea4800ea0","type":"json","data":{"type":"heartbeat", "self": "30aea4800ea0", "parent":"840d8ee3b1d9","layer":2}}
+    mesh/840d8ee3b1d8/toCloud {"addr":"840d8ee3b1d8","type":"json","data":{"type":"heartbeat", "self": "840d8ee3b1d8", "parent":"a45602473007","layer":1}}
+    mesh/840d8ee3b1d8/toCloud {"addr":"30aea4800ea0","type":"json","data":{"type":"heartbeat", "self": "30aea4800ea0", "parent":"840d8ee3b1d9","layer":2}}
+    mesh/840d8ee3b1d8/toCloud {"addr":"840d8ee3b1d8","type":"json","data":{"type":"heartbeat", "self": "840d8ee3b1d8", "parent":"a45602473007","layer":1}}
+    mesh/840d8ee3b1d8/toCloud {"addr":"30aea4800ea0","type":"json","data":{"type":"heartbeat", "self": "30aea4800ea0", "parent":"840d8ee3b1d9","layer":2}}
+    mesh/840d8ee3b1d8/toCloud {"addr":"840d8ee3b1d8","type":"json","data":{"type":"heartbeat", "self": "840d8ee3b1d8", "parent":"a45602473007","layer":1}}
+    ```
+
+- mosquitto_sub 中订阅 `mesh/+/topo` topic 将收到来自设备的消息，如下：
+
+    ```bash
+    mesh/840d8ee3b1d8/topo ["840d8ee3b1d8"]
+    mesh/840d8ee3b1d8/topo ["840d8ee3b1d8","30aea4800ea0"]
+    ```
+
+- mosquitto_pub 中向 `mesh/840d8ee3b1d8/toDevice` topic 发送消息，消息内容如下
+
+    ```json
+    {
+        "addr":["30aea4800ea0","840d8ee3b1d8"],
+        "type":"json",
+        "data":{
+            "key1":"123",
+            "key2":"456"
+        }
+    }
+    ```
+
+    此时，两个节点均收到 data 字段的内容，日志如下：
+
+    ```bash
+    I (987708) [mqtt_examples, 116]: Node receive: 84:0d:8e:e3:b1:d8, size: 27, data: {"key1":"123","key2":"456"}
+    ```
+
+    ```bash
+    I (623724) [mqtt_examples, 118]: Node receive: 84:0d:8e:e3:b1:d8, size: 27, data: {"key1":"123","key2":"456"}
+    ```
