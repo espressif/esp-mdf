@@ -37,7 +37,8 @@
 #define GATEWAY_DEL_SUBDEVICE_REPLY BIT1
 
 static const char *TAG = "aliyun_subdevice";
-static EventGroupHandle_t g_subdevice_action_status = NULL;
+static QueueHandle_t g_subdevice_add_queue;
+static QueueHandle_t g_subdevice_del_queue;
 static TaskHandle_t g_aliyun_subdevice_task_handle = NULL;
 static aliyun_answer_status_t g_subdevice_to_gateway_status = ALIYUN_ANSWER_STATUS_FAIL;
 static bool g_network_config_flag = false;
@@ -76,7 +77,7 @@ mdf_err_t aliyun_subdevice_get_login_status(void)
 mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta, uint32_t timeout_ms)
 {
     if (!aliyun_platform_get_cloud_connect_status()) {
-        return MDF_FAIL;
+        return MDF_ERR_INVALID_STATE;
     }
 
     MDF_PARAM_CHECK(meta);
@@ -84,14 +85,12 @@ mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta, uint
     mdf_err_t ret = MDF_FAIL;
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    xEventGroupClearBits(g_subdevice_action_status, GATEWAY_ADD_SUBDEVICE_REPLY);
+    xQueueReset(g_subdevice_add_queue);
     MDF_LOGI("Subdevice add itself to gateway, ProductKey=%s, DeviceName=%s, Mac=" MACSTR, meta->product_key, meta->device_name, MAC2STR(mac));
     ret = aliyun_platform_subdevice_write(ALIYUN_GATEWAY_ADD_SUBDEVICE, meta, sizeof(aliyun_device_meta_t));
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "aliyun_subdevice_login error");
 
-    EventBits_t bits = xEventGroupWaitBits(g_subdevice_action_status, GATEWAY_ADD_SUBDEVICE_REPLY, true, false, pdMS_TO_TICKS(timeout_ms));
-
-    if ((bits & GATEWAY_ADD_SUBDEVICE_REPLY) != GATEWAY_ADD_SUBDEVICE_REPLY) {
+    if (xQueueReceive(g_subdevice_add_queue, &ret, pdMS_TO_TICKS(timeout_ms)) != pdPASS) {
         MDF_LOGW("aliyun_subdevice_add_to_gateway timeout");
         return MDF_ERR_TIMEOUT;
     }
@@ -106,14 +105,13 @@ mdf_err_t aliyun_subdevice_delete_from_gateway(const aliyun_device_meta_t *meta,
 
     mdf_err_t ret = MDF_FAIL;
 
-    xEventGroupClearBits(g_subdevice_action_status, GATEWAY_DEL_SUBDEVICE_REPLY);
+    xQueueReset(g_subdevice_del_queue);
     MDF_LOGI("Subdevice delete itself from gateway, ProductKey=%s, DeviceName=%s", meta->product_key, meta->device_name);
     ret = aliyun_platform_subdevice_write(ALIYUN_GATEWAY_DELETE_SUBDEVICE, meta, sizeof(aliyun_device_meta_t));
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "aliyun_subdevice_logout error");
 
-    EventBits_t bits = xEventGroupWaitBits(g_subdevice_action_status, GATEWAY_DEL_SUBDEVICE_REPLY, true, false, pdMS_TO_TICKS(timeout_ms / portTICK_PERIOD_MS));
-
-    if ((bits & GATEWAY_DEL_SUBDEVICE_REPLY) != GATEWAY_DEL_SUBDEVICE_REPLY) {
+    if (xQueueReceive(g_subdevice_del_queue, &ret, pdMS_TO_TICKS(timeout_ms)) != pdPASS) {
+        MDF_LOGW("aliyun_subdevice_delete_from_gateway timeout");
         return MDF_ERR_TIMEOUT;
     }
 
@@ -662,7 +660,7 @@ mdf_err_t aliyun_subdevice_subscribe_callback(aliyun_msg_type_t type, const uint
             MDF_LOGD("ALIYUN_GATEWAY_ADD_SUBDEVICE_REPLY");
             aliyun_device_reply_t *reply_info = (aliyun_device_reply_t *)data;
             MDF_LOGI("product_key: %s, device_name: %s, status: %d", reply_info->product_key, reply_info->device_name, reply_info->status);
-            xEventGroupSetBits(g_subdevice_action_status, GATEWAY_ADD_SUBDEVICE_REPLY);
+            xQueueSend(g_subdevice_add_queue, &reply_info->status, 0);
         }
         break;
 
@@ -670,7 +668,7 @@ mdf_err_t aliyun_subdevice_subscribe_callback(aliyun_msg_type_t type, const uint
             MDF_LOGD("ALIYUN_GATEWAY_DELETE_SUBDEVICE_REPLY");
             aliyun_device_reply_t *reply_info = (aliyun_device_reply_t *)data;
             MDF_LOGI("product_key: %s, device_name: %s, status: %d", reply_info->product_key, reply_info->device_name, reply_info->status);
-            xEventGroupSetBits(g_subdevice_action_status, GATEWAY_DEL_SUBDEVICE_REPLY);
+            xQueueSend(g_subdevice_del_queue, &reply_info->status, 0);
         }
         break;
 
@@ -1090,9 +1088,14 @@ static void aliyun_subdevice_task(void *arg)
 
     MDF_LOGI("aliyun_subdevice_task is running");
 
-    if (g_subdevice_action_status == NULL) {
-        g_subdevice_action_status = xEventGroupCreate();
-        assert(g_subdevice_action_status != NULL);
+    if (g_subdevice_add_queue == NULL) {
+        g_subdevice_add_queue = xQueueCreate(1, sizeof(int));
+        assert(g_subdevice_add_queue);
+    }
+
+    if (g_subdevice_del_queue == NULL) {
+        g_subdevice_del_queue = xQueueCreate(1, sizeof(int));
+        assert(g_subdevice_del_queue);
     }
 
     while (g_aliyun_subdevice_task_handle != NULL) {
@@ -1126,9 +1129,14 @@ static void aliyun_subdevice_task(void *arg)
         }
     }
 
-    if (g_subdevice_action_status != NULL) {
-        vEventGroupDelete(g_subdevice_action_status);
-        g_subdevice_action_status = NULL;
+    if (g_subdevice_add_queue != NULL) {
+        vQueueDelete(g_subdevice_add_queue);
+        g_subdevice_add_queue = NULL;
+    }
+
+    if (g_subdevice_del_queue != NULL) {
+        vQueueDelete(g_subdevice_del_queue);
+        g_subdevice_del_queue = NULL;
     }
 
     MDF_FREE(buffer);
