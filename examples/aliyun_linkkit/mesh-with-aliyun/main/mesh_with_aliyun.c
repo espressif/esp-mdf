@@ -27,7 +27,7 @@
 #define POWER_SWITCH_2 (2)
 #define POWER_SWITCH_3 (4)
 
-static const char* TAG = "aliyu_mesh";
+static const char *TAG = "aliyu_mesh";
 
 static const char company[] = "ESPRESSIF";
 static xTimerHandle g_print_timer;
@@ -39,17 +39,17 @@ static bool g_gateway_is_ok = false;
 /* thing model */
 static mdf_err_t device_post_property(); // Device post property to cloud
 static mdf_err_t device_post_event(); // Device post event to cloud
-static mdf_err_t device_post_property_cb(uint32_t msg_id, int code, const char* data); // Cloud reply for post property callback
-static mdf_err_t device_post_event_cb(uint32_t msg_id, int code, const char* data); // Device post event to cloud
-static mdf_err_t device_property_set_cb(uint32_t msg_id, const char* params, size_t request_len); // Cloud set property callback
-static mdf_err_t device_service_invoke_cb(uint32_t msg_id, const char* identifier, const char* params, size_t params_len); // Cloud invoke service callback
+static mdf_err_t device_post_property_cb(uint32_t msg_id, int code, const char *data); // Cloud reply for post property callback
+static mdf_err_t device_post_event_cb(uint32_t msg_id, int code, const char *data); // Device post event to cloud
+static mdf_err_t device_property_set_cb(uint32_t msg_id, const char *params, size_t request_len); // Cloud set property callback
+static mdf_err_t device_service_invoke_cb(uint32_t msg_id, const char *identifier, const char *params, size_t params_len); // Cloud invoke service callback
 
 /* basic communication */
 static mdf_err_t device_request_ntp_cb(int64_t utc_ms); // Cloud reply ntp request callback
-static mdf_err_t device_update_info_cb(uint32_t msg_id, int code, const char* data); //Cloud reply update deviceinfo callback
-static mdf_err_t device_delete_info_cb(uint32_t msg_id, int code, const char* data); //Cloud reply delete deviceinfo callback
-static mdf_err_t device_get_config_cb(uint32_t msg_id, int code, const char* data); // Cloud reply get configuration callback
-static mdf_err_t device_config_push_cb(uint32_t msg_id, const char* data); // Cloud push configuration callback
+static mdf_err_t device_update_info_cb(uint32_t msg_id, int code, const char *data); //Cloud reply update deviceinfo callback
+static mdf_err_t device_delete_info_cb(uint32_t msg_id, int code, const char *data); //Cloud reply delete deviceinfo callback
+static mdf_err_t device_get_config_cb(uint32_t msg_id, int code, const char *data); // Cloud reply get configuration callback
+static mdf_err_t device_config_push_cb(uint32_t msg_id, const char *data); // Cloud push configuration callback
 static mdf_err_t device_update_delete_info(char flag); //Device update or delete deviceinfo
 
 static void device_print_system_info(xTimerHandle timer);
@@ -78,7 +78,7 @@ static mdf_err_t wifi_init()
     return MDF_OK;
 }
 
-void user_task(void* args)
+void user_task(void *args)
 {
     MDF_LOGI("user task for aliyun is running");
 
@@ -103,10 +103,10 @@ void user_task(void* args)
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_GET_CONFIG_REPLY, device_get_config_cb));
 
     while (mwifi_is_connected()) {
-        while (mwifi_get_root_status() != true) {
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            MDF_LOGI("Retry get root status");
-        }
+        //while (mwifi_get_root_status() != true) {
+        //    vTaskDelay(pdMS_TO_TICKS(1000));
+        //    MDF_LOGI("Retry get root status");
+        //}
 
         if (esp_mesh_is_root() != true) {
             TickType_t delay = (esp_random() % 30) * 1000 + 2;
@@ -160,68 +160,69 @@ void user_task_init()
  *     2. Do not consume a lot of memory in the callback function.
  *        The task memory of the callback function is only 4KB.
  */
-static mdf_err_t event_loop_cb(mdf_event_loop_t event, void* ctx)
+static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 {
     MDF_LOGI("event_loop_cb, event: %d", event);
 
     switch (event) {
-    case MDF_EVENT_MWIFI_STARTED:
-        MDF_LOGI("MESH is started");
-        break;
+        case MDF_EVENT_MWIFI_STARTED:
+            MDF_LOGI("MESH is started");
+            break;
 
-    case MDF_EVENT_MWIFI_PARENT_CONNECTED:
-        MDF_LOGI("Parent is connected on station interface");
-        aliyun_subdevice_init();
-        user_task_init();
-        break;
+        case MDF_EVENT_MWIFI_PARENT_CONNECTED:
+            MDF_LOGI("Parent is connected on station interface");
+            aliyun_subdevice_init();
+            user_task_init();
+            break;
 
-    case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
-        MDF_LOGI("Parent is disconnected on station interface");
-        mwifi_post_root_status(false);
-        break;
+        case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
+            MDF_LOGI("Parent is disconnected on station interface");
+            mwifi_post_root_status(false);
+            break;
 
-    case MDF_EVENT_MWIFI_ROOT_GOT_IP:
-        MDF_LOGI("root got ip");
-        aliyun_gateway_init();
-        mwifi_post_root_status(true);
-        break;
+        case MDF_EVENT_MWIFI_ROOT_GOT_IP:
+            MDF_LOGI("root got ip");
+            aliyun_gateway_init();
+            break;
 
-    case MDF_EVENT_MWIFI_ROOT_LOST_IP:
-        MDF_LOGI("root lost ip");
-        aliyun_gateway_deinit();
-        break;
+        case MDF_EVENT_MWIFI_ROOT_LOST_IP:
+            MDF_LOGI("root lost ip");
+            aliyun_gateway_deinit();
+            break;
 
-    case MDF_EVENT_MWIFI_ROUTING_TABLE_ADD:
-    case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE:
-        if (esp_mesh_is_root()) {
-            mdf_err_t ret = aliyun_gateway_refresh_subdevice();
-            MDF_ERROR_CHECK(ret != MDF_OK, ret, "aliyun gateway refresh subdevide error");
+        case MDF_EVENT_MWIFI_ROUTING_TABLE_ADD:
+        case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE:
+            if (esp_mesh_is_root()) {
+                mdf_err_t ret = aliyun_gateway_refresh_subdevice();
+                MDF_ERROR_CHECK(ret != MDF_OK, ret, "aliyun gateway refresh subdevide error");
+            }
+
+            break;
+
+        case MDF_EVENT_MWIFI_TODS_STATE: {
+            mesh_event_info_t *info = ctx;
+
+            if (info->toDS_state == true) {
+                g_gateway_is_ok = true;
+            } else {
+                g_gateway_is_ok = false;
+            }
+
+            break;
         }
 
-        break;
+        case MDF_EVENT_MUPGRADE_STATUS: {
+            MDF_LOGI("The upgrade progress is: %d%%", (int)ctx);
 
-    case MDF_EVENT_MWIFI_TODS_STATE: {
-        mesh_event_info_t* info = ctx;
+            if ((int)ctx == 50) {
+                aliyun_subdevice_post_ota_progress((int)ctx, NULL);
+            }
 
-        if (info->toDS_state == true) {
-            g_gateway_is_ok = true;
-        } else {
-            g_gateway_is_ok = false;
+            break;
         }
 
-        break;
-    }
-    case MDF_EVENT_MUPGRADE_STATUS: {
-        MDF_LOGI("The upgrade progress is: %d%%", (int)ctx);
-
-        if ((int)ctx == 50) {
-            aliyun_subdevice_post_ota_progress((int)ctx, NULL);
-        }
-
-        break;
-    }
-    default:
-        break;
+        default:
+            break;
     }
 
     return MDF_OK;
@@ -264,10 +265,10 @@ void app_main()
 static mdf_err_t device_post_property()
 {
     mdf_err_t ret = MDF_FAIL;
-    cJSON* property = cJSON_CreateObject();
+    cJSON *property = cJSON_CreateObject();
 
     int level = gpio_get_level((gpio_num_t)POWER_SWITCH_1);
-    cJSON* obj = cJSON_AddNumberToObject(property, "PowerSwitch_1", level);
+    cJSON *obj = cJSON_AddNumberToObject(property, "PowerSwitch_1", level);
     MDF_ERROR_GOTO(obj == NULL, _exit, "Add key:number to json failed");
     level = gpio_get_level((gpio_num_t)POWER_SWITCH_2);
     obj = cJSON_AddNumberToObject(property, "PowerSwitch_2", level);
@@ -276,7 +277,7 @@ static mdf_err_t device_post_property()
     obj = cJSON_AddNumberToObject(property, "PowerSwitch_3", level);
     MDF_ERROR_GOTO(obj == NULL, _exit, "Add key:number to json failed");
 
-    char* json_string = cJSON_PrintUnformatted(property);
+    char *json_string = cJSON_PrintUnformatted(property);
     MDF_ERROR_GOTO(json_string == NULL, _exit, "format json failed");
     mdf_err_t err = aliyun_subdevice_post_property(json_string);
     MDF_LOGI("Device post property, ret=%d", err);
@@ -287,7 +288,7 @@ _exit:
     return ret;
 }
 
-static mdf_err_t device_post_property_cb(uint32_t msg_id, int code, const char* data)
+static mdf_err_t device_post_property_cb(uint32_t msg_id, int code, const char *data)
 {
     if (code == 200) {
         MDF_LOGI("Device post property successful");
@@ -298,7 +299,7 @@ static mdf_err_t device_post_property_cb(uint32_t msg_id, int code, const char* 
     return MDF_OK;
 }
 
-static mdf_err_t device_post_event_cb(uint32_t msg_id, int code, const char* data)
+static mdf_err_t device_post_event_cb(uint32_t msg_id, int code, const char *data)
 {
     if (code == 200) {
         MDF_LOGI("Device post event successful");
@@ -309,13 +310,13 @@ static mdf_err_t device_post_event_cb(uint32_t msg_id, int code, const char* dat
     return MDF_OK;
 }
 
-static mdf_err_t device_property_set_cb(uint32_t msg_id, const char* params, size_t request_len)
+static mdf_err_t device_property_set_cb(uint32_t msg_id, const char *params, size_t request_len)
 {
     MDF_LOGI("aliyun_propery_set_cb: %.*s(%zu)", (int)request_len, params, request_len);
 
-    cJSON* property = cJSON_Parse(params);
+    cJSON *property = cJSON_Parse(params);
     MDF_ERROR_CHECK(property == NULL, MDF_FAIL, "json parse failed");
-    cJSON* item = cJSON_GetObjectItem(property, "PowerSwitch_1");
+    cJSON *item = cJSON_GetObjectItem(property, "PowerSwitch_1");
 
     if (item != NULL) {
         gpio_set_level((gpio_num_t)POWER_SWITCH_1, (item->valueint == 0) ? 0 : 1);
@@ -339,23 +340,23 @@ static mdf_err_t device_property_set_cb(uint32_t msg_id, const char* params, siz
     return MDF_OK;
 }
 
-static mdf_err_t device_service_invoke_cb(uint32_t msg_id, const char* identifier, const char* params, size_t params_len)
+static mdf_err_t device_service_invoke_cb(uint32_t msg_id, const char *identifier, const char *params, size_t params_len)
 {
     mdf_err_t ret = MDF_FAIL;
     MDF_LOGI("aliyun service invoke cb, identifier=%s, param=%.*s(%zu)", identifier, (int)params_len, params, params_len);
-    cJSON* service = cJSON_Parse(params);
+    cJSON *service = cJSON_Parse(params);
     MDF_ERROR_CHECK(service == NULL, MDF_FAIL, "Parse JSON failed");
-    cJSON* reply = NULL;
+    cJSON *reply = NULL;
 
     if (strcmp(identifier, identifier_freeheap) == 0) {
         reply = cJSON_CreateObject();
         MDF_ERROR_GOTO(reply == NULL, _exit, "Create reply json failed");
-        cJSON* obj = cJSON_AddNumberToObject(reply, "FreeHeap", esp_get_free_heap_size());
+        cJSON *obj = cJSON_AddNumberToObject(reply, "FreeHeap", esp_get_free_heap_size());
         MDF_ERROR_GOTO(obj == NULL, _exit, "Create key-number failed");
     }
 
     if (reply != NULL) {
-        char* data = cJSON_PrintUnformatted(reply);
+        char *data = cJSON_PrintUnformatted(reply);
         MDF_ERROR_GOTO(data == NULL, _exit, "Format json to string failed");
         aliyun_subdevice_reply_service_invoke(msg_id, 200, identifier, data);
         free(data);
@@ -374,7 +375,7 @@ static mdf_err_t device_request_ntp_cb(int64_t utc_ms)
     return MDF_OK;
 }
 
-static mdf_err_t device_update_info_cb(uint32_t msg_id, int code, const char* data)
+static mdf_err_t device_update_info_cb(uint32_t msg_id, int code, const char *data)
 {
     if (code == 200) {
         MDF_LOGI("Device update information(tag) successful");
@@ -385,7 +386,7 @@ static mdf_err_t device_update_info_cb(uint32_t msg_id, int code, const char* da
     return MDF_OK;
 }
 
-static mdf_err_t device_delete_info_cb(uint32_t msg_id, int code, const char* data)
+static mdf_err_t device_delete_info_cb(uint32_t msg_id, int code, const char *data)
 {
     if (code == 200) {
         MDF_LOGI("Device delete information successful");
@@ -396,14 +397,14 @@ static mdf_err_t device_delete_info_cb(uint32_t msg_id, int code, const char* da
     return MDF_OK;
 }
 
-static mdf_err_t device_get_config_cb(uint32_t msg_id, int code, const char* data)
+static mdf_err_t device_get_config_cb(uint32_t msg_id, int code, const char *data)
 {
     MDF_LOGD("Get configuration from cloud");
     printf("%s\n", data);
     return MDF_OK;
 }
 
-static mdf_err_t device_config_push_cb(uint32_t msg_id, const char* data)
+static mdf_err_t device_config_push_cb(uint32_t msg_id, const char *data)
 {
     MDF_LOGD("Recv configuration push from cloud");
     printf("%s\n", data);
@@ -415,12 +416,12 @@ static mdf_err_t device_config_push_cb(uint32_t msg_id, const char* data)
 static mdf_err_t device_update_delete_info(char flag)
 {
     mdf_err_t ret = MDF_FAIL;
-    cJSON* json = cJSON_CreateArray();
+    cJSON *json = cJSON_CreateArray();
     MDF_ERROR_GOTO(json == NULL, _exit, "Create json failed");
-    cJSON* item = cJSON_CreateObject();
+    cJSON *item = cJSON_CreateObject();
     MDF_ERROR_GOTO(item == NULL, _exit, "Create item failed");
     cJSON_AddItemToArray(json, item);
-    cJSON* obj = cJSON_AddStringToObject(item, "attrKey", "Company");
+    cJSON *obj = cJSON_AddStringToObject(item, "attrKey", "Company");
     MDF_ERROR_GOTO(obj == NULL, _exit, "Add string to json failed");
 
     if (flag == 'u') {
@@ -443,7 +444,7 @@ static mdf_err_t device_update_delete_info(char flag)
         MDF_ERROR_GOTO(obj == NULL, _exit, "Add string to json failed");
     }
 
-    char* payload = cJSON_PrintUnformatted(json);
+    char *payload = cJSON_PrintUnformatted(json);
     MDF_ERROR_GOTO(payload == NULL, _exit, "Format json to string failed");
 
     if (flag == 'u') {
@@ -464,11 +465,11 @@ _exit:
 static mdf_err_t device_post_event(int32_t count)
 {
     mdf_err_t ret = MDF_FAIL;
-    cJSON* obj = cJSON_CreateObject();
+    cJSON *obj = cJSON_CreateObject();
     MDF_ERROR_GOTO(obj == NULL, _exit, "Create json obj failed");
-    cJSON* item = cJSON_AddNumberToObject(obj, "count", count);
+    cJSON *item = cJSON_AddNumberToObject(obj, "count", count);
     MDF_ERROR_GOTO(item == NULL, _exit, "Add key-number failed");
-    char* str = cJSON_PrintUnformatted(obj);
+    char *str = cJSON_PrintUnformatted(obj);
     MDF_ERROR_GOTO(str == NULL, _exit, "Format json obj to string failed");
     mdf_err_t err = aliyun_subdevice_post_event(identifier_periodic, str);
     MDF_LOGI("Device post event, ret=%d", err);
@@ -501,7 +502,7 @@ static void device_print_system_info(xTimerHandle timer)
     struct timezone tz;
     int err = gettimeofday(&tv, &tz);
     assert(err == 0);
-    struct tm* ts = gmtime(&tv.tv_sec);
+    struct tm *ts = gmtime(&tv.tv_sec);
     err = strftime(status.format_time, sizeof(status.format_time), "%FT%TZ", ts);
     assert(err > 0);
 
@@ -521,8 +522,8 @@ static void device_print_system_info(xTimerHandle timer)
     status.login_status = aliyun_subdevice_get_login_status();
 
     ESP_LOGI("SYS", "%s, free heap: %u, connect:%d, layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR ", node num: %d, parent rssi: %d, login_status:%d",
-        status.format_time, status.free_heap, status.root_status, status.mesh_layer, MAC2STR(status.mac), MAC2STR(status.parent_bssid.addr),
-        status.node_total_number, status.parent_rssi, status.login_status);
+             status.format_time, status.free_heap, status.root_status, status.mesh_layer, MAC2STR(status.mac), MAC2STR(status.parent_bssid.addr),
+             status.node_total_number, status.parent_rssi, status.login_status);
     ESP_LOGI("SYS", "root mac: " MACSTR ", Minimum free heap: %u", MAC2STR(status.root_mac), status.minimum_free_head);
 
     if (status.count % 10 == 9) {

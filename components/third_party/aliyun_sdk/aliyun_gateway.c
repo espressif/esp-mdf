@@ -396,6 +396,9 @@ static mdf_err_t aliyun_gateway_subdevice_process(int type, const uint8_t *src_a
                 if (subdevice->status == ALIYUN_LIST_FINISH) {
                     ret = aliyun_gateway_add_subdevice_reply(sub_meta, MDF_OK);
                     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Gateway add reply error, reason %s", mdf_err_to_name(ret));
+                } else if (subdevice->status == ALIYUN_LIST_DELETE_WAIT) {
+                    ret = aliyun_list_update_status(sub_meta, ALIYUN_LIST_TOPO_ADD_START, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
+                    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error, product_key=%s, device_name=%s, mac=" MACSTR, sub_meta->product_key, sub_meta->device_name, MAC2STR(src_addr));
                 }
             } else {
                 ret = aliyun_list_insert_meta(sub_meta, src_addr, ALIYUN_DEVICE_TYPE_SUBDEVICE);
@@ -580,7 +583,7 @@ static mdf_err_t aliyun_gateway_publish_process(int type, const uint8_t *src_add
                 MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_ntp_request: %s", buffer->payload);
             } else {
                 /* Cloud does not accept subdevice send ntp request through gateway. Once gateway receive
-                    ntp request from subdevice, gateway handle it by itself */
+                        ntp request from subdevice, gateway handle it by itself */
                 char str[128];
                 int64_t device_send_time;
                 cJSON *request = cJSON_Parse((char *)buffer->payload);
