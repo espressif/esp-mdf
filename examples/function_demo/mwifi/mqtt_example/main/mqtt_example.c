@@ -13,42 +13,20 @@
 // limitations under the License.
 
 #include "mdf_common.h"
-#include "mwifi.h"
 #include "mesh_mqtt_handle.h"
+#include "mwifi.h"
 
-// #define MEMORY_DEBUG
-
-typedef struct {
-    size_t last_num;
-    uint8_t *last_list;
-    size_t change_num;
-    uint8_t *change_list;
-} node_list_t;
+#define MEMORY_DEBUG
 
 static const char *TAG = "mqtt_examples";
-
-static bool addrs_remove(uint8_t *addrs_list, size_t *addrs_num, const uint8_t *addr)
-{
-    for (int i = 0; i < *addrs_num; i++, addrs_list += MWIFI_ADDR_LEN) {
-        if (!memcmp(addrs_list, addr, MWIFI_ADDR_LEN)) {
-            if (--(*addrs_num)) {
-                memcpy(addrs_list, addrs_list + MWIFI_ADDR_LEN, (*addrs_num - i) * MWIFI_ADDR_LEN);
-            }
-
-            return true;
-        }
-    }
-
-    return false;
-}
 
 void root_write_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    char *data    = NULL;
-    size_t size   = MWIFI_PAYLOAD_LEN;
-    uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
-    mwifi_data_type_t data_type      = {0x0};
+    char *data = NULL;
+    size_t size = MWIFI_PAYLOAD_LEN;
+    uint8_t src_addr[MWIFI_ADDR_LEN] = { 0x0 };
+    mwifi_data_type_t data_type = { 0x0 };
 
     MDF_LOGI("Root write task is running");
 
@@ -64,7 +42,8 @@ void root_write_task(void *arg)
         ret = mwifi_root_read(src_addr, &data_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK, MEM_FREE, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
-        ret = mesh_mqtt_write(src_addr, data, size);
+        ret = mesh_mqtt_write(src_addr, data, size, MESH_MQTT_DATA_JSON);
+
         MDF_ERROR_GOTO(ret != MDF_OK, MEM_FREE, "<%s> mesh_mqtt_publish", mdf_err_to_name(ret));
 
 MEM_FREE:
@@ -79,10 +58,6 @@ MEM_FREE:
 void root_read_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    char *data    = NULL;
-    size_t size   = MWIFI_PAYLOAD_LEN;
-    uint8_t dest_addr[MWIFI_ADDR_LEN] = {0x0};
-    mwifi_data_type_t data_type       = {0x0};
 
     MDF_LOGI("Root read task is running");
 
@@ -92,17 +67,25 @@ void root_read_task(void *arg)
             continue;
         }
 
+        mesh_mqtt_data_t *request = NULL;
+        mwifi_data_type_t data_type = { 0x0 };
+
         /**
          * @brief Recv data from mqtt data queue, and forward to special device.
          */
-        ret = mesh_mqtt_read(dest_addr, (void **)&data, &size, 500 / portTICK_PERIOD_MS);
-        MDF_ERROR_GOTO(ret != MDF_OK, MEM_FREE, "");
+        ret = mesh_mqtt_read(&request, pdMS_TO_TICKS(500));
 
-        ret = mwifi_root_write(dest_addr, 1, &data_type, data, size, true);
+        if (ret != MDF_OK) {
+            continue;
+        }
+
+        ret = mwifi_root_write(request->addrs_list, request->addrs_num, &data_type, request->data, request->size, true);
         MDF_ERROR_GOTO(ret != MDF_OK, MEM_FREE, "<%s> mwifi_root_write", mdf_err_to_name(ret));
 
 MEM_FREE:
-        MDF_FREE(data);
+        MDF_FREE(request->addrs_list);
+        MDF_FREE(request->data);
+        MDF_FREE(request);
     }
 
     MDF_LOGW("Root read task is exit");
@@ -113,10 +96,10 @@ MEM_FREE:
 static void node_read_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    char *data    = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
-    size_t size   = MWIFI_PAYLOAD_LEN;
-    mwifi_data_type_t data_type      = {0x0};
-    uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
+    char *data = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
+    size_t size = MWIFI_PAYLOAD_LEN;
+    mwifi_data_type_t data_type = { 0x0 };
+    uint8_t src_addr[MWIFI_ADDR_LEN] = { 0x0 };
 
     MDF_LOGI("Node read task is running");
 
@@ -130,7 +113,7 @@ static void node_read_task(void *arg)
         memset(data, 0, MWIFI_PAYLOAD_LEN);
         ret = mwifi_read(src_addr, &data_type, data, &size, portMAX_DELAY);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "<%s> mwifi_read", mdf_err_to_name(ret));
-        MDF_LOGD("Node receive: " MACSTR ", size: %d, data: %s", MAC2STR(src_addr), size, data);
+        MDF_LOGI("Node receive: " MACSTR ", size: %d, data: %s", MAC2STR(src_addr), size, data);
     }
 
     MDF_LOGW("Node read task is exit");
@@ -141,11 +124,11 @@ static void node_read_task(void *arg)
 static void node_write_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
-    int count     = 0;
-    size_t size   = 0;
-    char *data    = NULL;
-    mwifi_data_type_t data_type     = {0x0};
-    uint8_t sta_mac[MWIFI_ADDR_LEN] = {0};
+    size_t size = 0;
+    char *data = NULL;
+    mwifi_data_type_t data_type = { 0x0 };
+    uint8_t sta_mac[MWIFI_ADDR_LEN] = { 0 };
+    mesh_addr_t parent_mac = { 0 };
 
     MDF_LOGI("Node task is running");
 
@@ -160,8 +143,9 @@ static void node_write_task(void *arg)
         /**
          * @brief Send device information to mqtt server throught root node.
          */
-        size = asprintf(&data, "{\"mac\": \"%02x%02x%02x%02x%02x%02x\", \"seq\":%d,\"layer\":%d}",
-                        MAC2STR(sta_mac), count++, esp_mesh_get_layer());
+        esp_mesh_get_parent_bssid(&parent_mac);
+        size = asprintf(&data, "{\"type\":\"heartbeat\", \"self\": \"%02x%02x%02x%02x%02x%02x\", \"parent\":\"%02x%02x%02x%02x%02x%02x\",\"layer\":%d}",
+                        MAC2STR(sta_mac), MAC2STR(parent_mac.addr), esp_mesh_get_layer());
 
         MDF_LOGD("Node send, size: %d, data: %s", size, data);
         ret = mwifi_write(NULL, &data_type, data, size, true);
@@ -180,12 +164,12 @@ static void node_write_task(void *arg)
  */
 static void print_system_info_timercb(void *timer)
 {
-    uint8_t primary                 = 0;
-    wifi_second_chan_t second       = 0;
-    mesh_addr_t parent_bssid        = {0};
-    uint8_t sta_mac[MWIFI_ADDR_LEN] = {0};
-    mesh_assoc_t mesh_assoc         = {0x0};
-    wifi_sta_list_t wifi_sta_list   = {0x0};
+    uint8_t primary = 0;
+    wifi_second_chan_t second = 0;
+    mesh_addr_t parent_bssid = { 0 };
+    uint8_t sta_mac[MWIFI_ADDR_LEN] = { 0 };
+    mesh_assoc_t mesh_assoc = { 0x0 };
+    wifi_sta_list_t wifi_sta_list = { 0x0 };
 
     esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
     esp_wifi_ap_get_sta_list(&wifi_sta_list);
@@ -194,7 +178,8 @@ static void print_system_info_timercb(void *timer)
     esp_mesh_get_parent_bssid(&parent_bssid);
 
     MDF_LOGI("System information, channel: %d, layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR
-             ", parent rssi: %d, node num: %d, free heap: %u", primary,
+             ", parent rssi: %d, node num: %d, free heap: %u",
+             primary,
              esp_mesh_get_layer(), MAC2STR(sta_mac), MAC2STR(parent_bssid.addr),
              mesh_assoc.rssi, esp_mesh_get_total_node_num(), esp_get_free_heap_size());
 
@@ -208,15 +193,15 @@ static void print_system_info_timercb(void *timer)
         MDF_LOGE("At least one heap is corrupt");
     }
 
-    mdf_mem_print_heap();
+    //mdf_mem_print_heap();
     mdf_mem_print_record();
-    mdf_mem_print_task();
+    //mdf_mem_print_task();
 #endif /**< MEMORY_DEBUG */
 }
 
 static mdf_err_t wifi_init()
 {
-    mdf_err_t ret          = nvs_flash_init();
+    mdf_err_t ret = nvs_flash_init();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -249,7 +234,6 @@ static mdf_err_t wifi_init()
 static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 {
     MDF_LOGI("event_loop_cb, event: %d", event);
-    static node_list_t node_list = {0x0};
 
     switch (event) {
         case MDF_EVENT_MWIFI_STARTED:
@@ -270,68 +254,15 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             break;
 
         case MDF_EVENT_MWIFI_ROUTING_TABLE_ADD:
-            MDF_LOGI("MDF_EVENT_MWIFI_ROUTING_TABLE_ADD, total_num: %d", esp_mesh_get_total_node_num());
-
-            if (esp_mesh_is_root()) {
-
-                /**
-                 * @brief find new add device.
-                 */
-                node_list.change_num  = esp_mesh_get_routing_table_size();
-                node_list.change_list = MDF_MALLOC(node_list.change_num * sizeof(mesh_addr_t));
-                ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)node_list.change_list,
-                                node_list.change_num * sizeof(mesh_addr_t), (int *)&node_list.change_num));
-
-                for (int i = 0; i < node_list.last_num; ++i) {
-                    addrs_remove(node_list.change_list, &node_list.change_num, node_list.last_list + i * MWIFI_ADDR_LEN);
-                }
-
-                node_list.last_list = MDF_REALLOC(node_list.last_list,
-                                                  (node_list.change_num + node_list.last_num) * MWIFI_ADDR_LEN);
-                memcpy(node_list.last_list + node_list.last_num * MWIFI_ADDR_LEN,
-                       node_list.change_list, node_list.change_num * MWIFI_ADDR_LEN);
-                node_list.last_num += node_list.change_num;
-
-                /**
-                 * @brief subscribe topic for new node
-                 */
-                MDF_LOGI("total_num: %d, add_num: %d", node_list.last_num, node_list.change_num);
-                mesh_mqtt_subscribe(node_list.change_list, node_list.change_num);
-                MDF_FREE(node_list.change_list);
-            }
-
-            break;
-
         case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE:
             MDF_LOGI("MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE, total_num: %d", esp_mesh_get_total_node_num());
 
-            if (esp_mesh_is_root()) {
-                /**
-                 * @brief find removed device.
-                 */
-                size_t table_size      = esp_mesh_get_routing_table_size();
-                uint8_t *routing_table = MDF_MALLOC(table_size * sizeof(mesh_addr_t));
-                ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)routing_table,
-                                table_size * sizeof(mesh_addr_t), (int *)&table_size));
+            if (esp_mesh_is_root() && mwifi_get_root_status()) {
+                mdf_err_t err = mesh_mqtt_update_topo();
 
-                for (int i = 0; i < table_size; ++i) {
-                    addrs_remove(node_list.last_list, &node_list.last_num, routing_table + i * MWIFI_ADDR_LEN);
+                if (err != MDF_OK) {
+                    MDF_LOGE("Update topo failed");
                 }
-
-                node_list.change_num  = node_list.last_num;
-                node_list.change_list = MDF_MALLOC(node_list.last_num * MWIFI_ADDR_LEN);
-                memcpy(node_list.change_list, node_list.last_list, node_list.change_num * MWIFI_ADDR_LEN);
-
-                node_list.last_num  = table_size;
-                memcpy(node_list.last_list, routing_table, table_size * MWIFI_ADDR_LEN);
-                MDF_FREE(routing_table);
-
-                /**
-                 * @brief unsubscribe topic for leaved node
-                 */
-                MDF_LOGI("total_num: %d, add_num: %d", node_list.last_num, node_list.change_num);
-                mesh_mqtt_unsubscribe(node_list.change_list, node_list.change_num);
-                MDF_FREE(node_list.change_list);
             }
 
             break;
@@ -341,34 +272,29 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             mesh_mqtt_start(CONFIG_MQTT_URL);
 
-            /**
-             * @brief subscribe topic for all subnode
-             */
-            size_t table_size      = esp_mesh_get_routing_table_size();
-            uint8_t *routing_table = MDF_MALLOC(table_size * sizeof(mesh_addr_t));
-            ESP_ERROR_CHECK(esp_mesh_get_routing_table((mesh_addr_t *)routing_table,
-                            table_size * sizeof(mesh_addr_t), (int *)&table_size));
-
-            node_list.last_num  = table_size;
-            node_list.last_list = MDF_REALLOC(node_list.last_list,
-                                              node_list.last_num * MWIFI_ADDR_LEN);
-            memcpy(node_list.last_list, routing_table, table_size * MWIFI_ADDR_LEN);
-            MDF_FREE(routing_table);
-
-            MDF_LOGI("subscribe %d node", node_list.last_num);
-            mesh_mqtt_subscribe(node_list.last_list, node_list.last_num);
-            MDF_FREE(node_list.change_list);
-
-            xTaskCreate(root_write_task, "root_write", 4 * 1024,
-                        NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
-            xTaskCreate(root_read_task, "root_read", 4 * 1024,
-                        NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
             break;
         }
 
         case MDF_EVENT_CUSTOM_MQTT_CONNECT:
             MDF_LOGI("MQTT connect");
+            mdf_err_t err = mesh_mqtt_update_topo();
+
+            if (err != MDF_OK) {
+                MDF_LOGE("Update topo failed");
+            }
+
+            err = mesh_mqtt_subscribe();
+
+            if (err != MDF_OK) {
+                MDF_LOGE("Subscribe failed");
+            }
+
             mwifi_post_root_status(true);
+
+            xTaskCreate(root_write_task, "root_write", 4 * 1024,
+                        NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
+            xTaskCreate(root_read_task, "root_read", 4 * 1024,
+                        NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
             break;
 
         case MDF_EVENT_CUSTOM_MQTT_DISCONNECT:
@@ -385,12 +311,12 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
 void app_main()
 {
-    mwifi_init_config_t cfg   = MWIFI_INIT_CONFIG_DEFAULT();
-    mwifi_config_t config     = {
-        .router_ssid     = CONFIG_ROUTER_SSID,
+    mwifi_init_config_t cfg = MWIFI_INIT_CONFIG_DEFAULT();
+    mwifi_config_t config = {
+        .router_ssid = CONFIG_ROUTER_SSID,
         .router_password = CONFIG_ROUTER_PASSWORD,
-        .mesh_id         = CONFIG_MESH_ID,
-        .mesh_password   = CONFIG_MESH_PASSWORD,
+        .mesh_id = CONFIG_MESH_ID,
+        .mesh_password = CONFIG_MESH_PASSWORD,
     };
 
     /**
@@ -398,6 +324,7 @@ void app_main()
      */
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    esp_log_level_set("mesh_mqtt", ESP_LOG_DEBUG);
 
     /**
      * @brief Initialize wifi mesh.
