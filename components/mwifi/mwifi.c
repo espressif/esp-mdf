@@ -39,7 +39,7 @@ static mwifi_config_t *g_ap_config        = NULL;
 static mwifi_init_config_t *g_init_config = NULL;
 static bool g_rootless_flag                       = false;
 static mesh_event_toDS_state_t g_toDs_status_flag = false;
-static esp_timer_handle_t g_waive_root_timer      = NULL;
+static xTimerHandle g_waive_root_timer;
 static int g_waive_root_interval                  = MWIFI_WAIVE_ROOT_INTERVAL; /**< Avoid frequent triggers waive root*/
 
 bool mwifi_is_started()
@@ -73,16 +73,23 @@ bool mwifi_get_root_status()
 
 #ifdef CONFIG_MWIFI_WAIVE_ROOT
 
-static void mwifi_waive_root_timer_delete(void)
+static mdf_err_t mwifi_waive_root_timer_delete(void)
 {
+    mdf_err_t ret = MDF_OK;
+
     if (g_waive_root_timer) {
-        esp_timer_stop(g_waive_root_timer);
-        esp_timer_delete(g_waive_root_timer);
-        g_waive_root_timer = NULL;
+        if (xTimerDelete(g_waive_root_timer, 0) != pdPASS) {
+            MDF_LOGE("Delete waive root timer failed");
+            ret = MDF_FAIL;
+        } else {
+            g_waive_root_timer = NULL;
+        }
     }
+
+    return ret;
 }
 
-static void mwifi_waive_root_timercb(void *timer)
+static void mwifi_waive_root_timercb(TimerHandle_t timer)
 {
     if (!g_waive_root_timer) {
         MDF_LOGW("Timer has been deleted");
@@ -109,17 +116,13 @@ static void mwifi_waive_root_timercb(void *timer)
 
 static mdf_err_t mwifi_waive_root_timer_create(void)
 {
-    mdf_err_t ret = MDF_OK;
-    esp_timer_create_args_t timer_conf = {
-        .callback = mwifi_waive_root_timercb,
-        .name     = "mwifi_waive_root"
-    };
+    g_waive_root_timer = xTimerCreate("mwifi_waive_root", pdMS_TO_TICKS(60 * 1000), true, NULL, mwifi_waive_root_timercb);
+    MDF_ERROR_CHECK(g_waive_root_timer == NULL, MDF_FAIL, "Create an esp_timer instance");
 
-    ret = esp_timer_create(&timer_conf, &g_waive_root_timer);
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Create an esp_timer instance");
-
-    ret = esp_timer_start_periodic(g_waive_root_timer, 60000 * 1000U);
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "Start one-shot timer");
+    if (xTimerStart(g_waive_root_timer, 0) != pdPASS) {
+        MDF_LOGE("Start waive root timer failed");
+        return MDF_FAIL;
+    }
 
     return MDF_OK;
 }
@@ -174,8 +177,8 @@ static void esp_mesh_event_cb(mesh_event_t event)
             mwifi_connected_flag = false;
 
             /**
-             * @brief The root node cannot find the router and only reports the disconnection.
-             */
+                 * @brief The root node cannot find the router and only reports the disconnection.
+                 */
             if (s_disconnected_count++ > 30) {
                 s_disconnected_count = 0;
                 mdf_event_loop_send(MDF_EVENT_MWIFI_NO_PARENT_FOUND, NULL);
@@ -198,8 +201,8 @@ static void esp_mesh_event_cb(mesh_event_t event)
             g_mwifi_started_flag = true;
 
             /** stop DHCP server on softAP interface
-             * stop DHCP client on station interface
-             */
+                 * stop DHCP client on station interface
+                 */
             tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
             tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
             break;
@@ -210,8 +213,8 @@ static void esp_mesh_event_cb(mesh_event_t event)
             mwifi_connected_flag = false;
 
             /** stop DHCP server on softAP interface
-             * stop DHCP client on station interface
-             */
+                 * stop DHCP client on station interface
+                 */
             tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
             tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
             break;
@@ -365,10 +368,10 @@ mdf_err_t mwifi_start()
     switch (ap_config->mesh_type) {
         case MESH_NODE:
             /** Enable network Fixed Root Setting
-             *  - Enabling fixed root disables automatic election of the root node via voting.
-             *  - All devices in the network shall use the same Fixed Root Setting (enabled or disabled).
-             *  - If Fixed Root is enabled, users should make sure a root node is designated for the network.
-             */
+                 *  - Enabling fixed root disables automatic election of the root node via voting.
+                 *  - All devices in the network shall use the same Fixed Root Setting (enabled or disabled).
+                 *  - If Fixed Root is enabled, users should make sure a root node is designated for the network.
+                 */
             ESP_ERROR_CHECK(esp_mesh_fix_root(true));
             break;
 
@@ -377,9 +380,9 @@ mdf_err_t mwifi_start()
 
         default:
             /** Designate device type over the mesh network
-             *  - MESH_ROOT: designates the root node for a mesh network
-             *  - MESH_LEAF: designates a device as a standalone Wi-Fi station
-             */
+                 *  - MESH_ROOT: designates the root node for a mesh network
+                 *  - MESH_LEAF: designates a device as a standalone Wi-Fi station
+                 */
             ESP_ERROR_CHECK(esp_mesh_set_type(ap_config->mesh_type));
             break;
     }
