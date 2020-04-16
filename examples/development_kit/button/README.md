@@ -6,7 +6,7 @@
 
 ESP32-MeshKit-Button is a smart button solution based on [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html). The ESP-MeshKit solution features network configuration, upgrade, device association, etc.
 
-ESP32-MeshKit-Button is designed to be used with [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf). Before configuring the device, please refer to [ESP32-MeshKit Guide](../README.md).
+ESP32-MeshKit-Button is designed to be used with [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_en.pdf). Before configuring the device, please refer to [ESP32-MeshKit Guide](../README.md). **Please read the last part of this document before compiling this example: Wake-up Button Test**
 
 ESP32-MeshKit-Button will help you better understand how ESP-WIFI-MESH can be used in systems with ultra-low power consumption. 
 
