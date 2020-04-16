@@ -4,7 +4,7 @@
 
 ## 概述
 
-ESP32-MeshKit-Button 是基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能开关，包含配网、升级和设备联动等功能，它将帮助您更好地了解 ESP-WIFI-MESH 在超低功耗场景下的使用情况。ESP32-MeshKit-Button 仅作为子节点连入 ESP-WIFI-MESH，因此需要配合 [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf) 使用。在运行本示例之前请先详细阅读 [ESP32-MeshKit 指南](../README_cn.md)。
+ESP32-MeshKit-Button 是基于 [ESP-WIFI-MESH](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/mesh.html) 的智能开关，包含配网、升级和设备联动等功能，它将帮助您更好地了解 ESP-WIFI-MESH 在超低功耗场景下的使用情况。ESP32-MeshKit-Button 仅作为子节点连入 ESP-WIFI-MESH，因此需要配合 [ESP32-MeshKit-Light](https://www.espressif.com/sites/default/files/documentation/esp32-meshkit-light_user_guide_cn.pdf) 使用。在运行本示例之前请先详细阅读 [ESP32-MeshKit 指南](../README_cn.md)。**在编译本示例前请先阅读本文档的最后一部分：唤醒按键检测**。
 
 <div align=center>
 <img src="docs/_static/zh_CN/module_diagram.png" width="800">
