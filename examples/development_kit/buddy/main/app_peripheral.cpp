@@ -110,7 +110,7 @@ esp_err_t COled::show_status(float temprature, float humidity, void * context)
     draw_1616char(41, 0, tempraturestr[1]);
 
     /*< humidity >*/
-    char humiditystr[6];
+    char humiditystr[8];
     sprintf(humiditystr, "%4.1f", humidity);
     humiditystr[4] = '\0';
 

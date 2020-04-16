@@ -58,7 +58,7 @@ static void root_read_task(void *arg)
     mdf_err_t ret = MDF_OK;
     char *data    = NULL;
     size_t size   = 0;
-    char mac_str[16] = {0};
+    char mac_str[18] = {0};
     uint8_t src_addr[MWIFI_ADDR_LEN] = {0x0};
     mwifi_data_type_t mwifi_type     = {0};
     esp_http_client_handle_t client  = NULL;
