@@ -329,10 +329,14 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             conn_params.timeout = 400;    // timeout = 400*10ms = 4000ms
             //start sent the update connection parameters to the peer device.
             esp_ble_gap_update_conn_params(&conn_params);
+            g_gatts_is_connected = true;
+            g_spp_gatts_if       = gatts_if;
+            g_spp_conn_id        = param->connect.conn_id;
             break;
 
         case ESP_GATTS_DISCONNECT_EVT:
             esp_ble_gap_start_advertising(&g_ble_adv_params);
+            g_gatts_is_connected = false;
             break;
 
         case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
