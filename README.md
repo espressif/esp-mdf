@@ -106,7 +106,7 @@ This section provides the steps for quick start with your development of ESP-MDF
 
 The directory ``~/esp`` will be used further to install the compiling toolchain, ESP-MDF and demo programs. You can use another directory, but make sure to modify the commands accordingly.
 
-1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html#get-started-setup-toolchain): please set up according to your PC's operating system ([Windows](http://docs.espressif.com/projects/esp-idf/en/stable/get-started/windows-setup.html), [Linux](http://docs.espressif.com/projects/esp-idf/en/stable/get-started/linux-setup.html) or [Mac OS](http://docs.espressif.com/projects/esp-idf/en/stable/get-started/macos-setup.html)).
+1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/v3.2.2/get-started/index.html#setup-toolchain): please set up according to your PC's operating system ([Windows](https://docs.espressif.com/projects/esp-idf/en/v3.2.2/get-started/windows-setup.html), [Linux](https://docs.espressif.com/projects/esp-idf/en/v3.2.2/get-started/linux-setup.html) or [Mac OS](https://docs.espressif.com/projects/esp-idf/en/v3.2.2/get-started/macos-setup.html)).
 
 2. **Get ESP-MDF**:
     ```shell
