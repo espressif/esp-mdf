@@ -121,23 +121,13 @@ mdf_err_t aliyun_idf_gateway_write(const uint8_t *dest_addrs, aliyun_msg_type_t 
 }
 
 mdf_err_t aliyun_idf_subdevice_read(aliyun_msg_type_t *type,
-                                    void *data, size_t *size, uint32_t wait_ticks)
+                                    void **data, size_t *size, uint32_t wait_ticks)
 {
     MDF_PARAM_CHECK(g_idf_gateway_write_queue);
 
-    aliyun_idf_buf_t *mqtt_buf = NULL;
-
-    if (xQueueReceive(g_idf_gateway_write_queue, &mqtt_buf, wait_ticks) != pdTRUE) {
-        MDF_FREE(mqtt_buf);
+    if (xQueueReceive(g_idf_gateway_write_queue, data, wait_ticks) != pdTRUE) {
         return MDF_ERR_TIMEOUT;
     }
-
-    MDF_PARAM_CHECK(mqtt_buf);
-
-    *type = mqtt_buf->type;
-    memcpy(data, mqtt_buf->data, *size > mqtt_buf->size  ?  *size : mqtt_buf->size);
-    *size = mqtt_buf->size;
-    MDF_FREE(mqtt_buf);
 
     return MDF_OK;
 }

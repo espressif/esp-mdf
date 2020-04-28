@@ -98,7 +98,7 @@ mdf_err_t aliyun_mdf_subdevice_write(aliyun_msg_type_t type, const void *data, s
 }
 
 mdf_err_t aliyun_mdf_subdevice_read(aliyun_msg_type_t *type,
-                                    uint8_t *data, size_t *size, uint32_t wait_ticks)
+                                    uint8_t **data, size_t *size, uint32_t wait_ticks)
 {
     mdf_err_t ret = MDF_OK;
     mwifi_data_type_t data_type = { 0 };
@@ -110,7 +110,8 @@ mdf_err_t aliyun_mdf_subdevice_read(aliyun_msg_type_t *type,
         *type = data_type.custom;
 
         if (data_type.upgrade) { // This mesh package contains upgrade data.
-            ret = mupgrade_handle(src_addr, data, *size);
+            ret = mupgrade_handle(src_addr, *data, *size);
+            MDF_FREE(*data);
             MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "mupgrade_handle Error");
             return MDF_ERR_TIMEOUT;
 
