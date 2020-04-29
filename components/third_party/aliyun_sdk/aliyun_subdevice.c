@@ -1079,9 +1079,8 @@ static void aliyun_subdevice_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
 
-    aliyun_buffer_t *buffer = MDF_MALLOC(sizeof(aliyun_buffer_t) + CONFIG_ALIYUN_TOPIC_SIZE + CONFIG_ALIYUN_PAYLOAD_SIZE + 2);
-    buffer->topic = (char *)buffer->data;
-    buffer->payload = buffer->data + CONFIG_ALIYUN_TOPIC_SIZE + 1;
+    uint8_t *payload = NULL;
+    size_t length = 0;
 
     aliyun_msg_type_t type = 0;
     int64_t heartbeat_interval = (esp_random() % 60 + HEART_BEAT_INTERVAL) * 1000000 + esp_timer_get_time();
@@ -1106,11 +1105,10 @@ static void aliyun_subdevice_task(void *arg)
             continue;
         }
 
-        buffer->payload_len = CONFIG_ALIYUN_PAYLOAD_SIZE;
-        ret = aliyun_platform_subdevice_read(&type, buffer->payload, &buffer->payload_len, CONFIG_ALIYUN_READ_TIMROUT_MS / portTICK_RATE_MS);
+        ret = aliyun_platform_subdevice_read(&type, &payload, &length, CONFIG_ALIYUN_READ_TIMROUT_MS / portTICK_RATE_MS);
 
         if (ret == MDF_OK) {
-            aliyun_subdevice_subscribe_callback(type, buffer->payload, buffer->payload_len);
+            aliyun_subdevice_subscribe_callback(type, payload, length);
         } else if (ret == ESP_ERR_MESH_TIMEOUT || ret == MDF_ERR_TIMEOUT) {
             aliyun_subdevice_loop_process();
             aliyun_subdevice_cyclic_process();
@@ -1127,6 +1125,7 @@ static void aliyun_subdevice_task(void *arg)
         } else {
             MDF_LOGW("aliyun_subdevice_read error, ret: 0x%x", ret);
         }
+        MDF_FREE(payload);
     }
 
     if (g_subdevice_add_queue != NULL) {
@@ -1139,7 +1138,6 @@ static void aliyun_subdevice_task(void *arg)
         g_subdevice_del_queue = NULL;
     }
 
-    MDF_FREE(buffer);
     MDF_LOGW("aliyun_subdevice_task is exit");
     vTaskDelete(NULL);
 }

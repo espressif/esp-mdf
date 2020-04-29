@@ -34,7 +34,7 @@ mdf_err_t aliyun_idf_gateway_write(const uint8_t *dest_addrs,
                                    aliyun_msg_type_t type, const void *data, size_t size);
 
 mdf_err_t aliyun_idf_gateway_read(uint8_t *src_addr, aliyun_msg_type_t *type,
-                                  void *data, size_t *size, uint32_t wait_ticks);
+                                  void **data, size_t *size, uint32_t wait_ticks);
 
 mdf_err_t aliyun_idf_subdevice_read(aliyun_msg_type_t *type,
                                     void *data, size_t *size, uint32_t wait_ticks);
