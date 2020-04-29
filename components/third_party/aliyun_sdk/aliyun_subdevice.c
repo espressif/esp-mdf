@@ -1125,6 +1125,7 @@ static void aliyun_subdevice_task(void *arg)
         } else {
             MDF_LOGW("aliyun_subdevice_read error, ret: 0x%x", ret);
         }
+
         MDF_FREE(payload);
     }
 

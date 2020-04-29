@@ -181,7 +181,7 @@ mdf_err_t aliyun_mqtt_connect(aliyun_mqtt_config_t *mqtt_config)
         .disable_auto_reconnect = false,
         .task_stack = CONFIG_ALIYUN_MQTT_TASK_SIZE,
         .buffer_size = CONFIG_ALIYUN_TOPIC_SIZE + CONFIG_ALIYUN_PAYLOAD_SIZE + 8,
-        .task_prio = CONFIG_ALIYUN_TASK_DEFAULT_PRIOTY,
+        .task_prio = CONFIG_ALIYUN_MQTT_TASK_PRIOTY,
     };
 
     g_mqtt_client = esp_mqtt_client_init(&mqtt_cfg);

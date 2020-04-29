@@ -54,9 +54,9 @@ mdf_err_t aliyun_mdf_subdevice_write(aliyun_msg_type_t type, const void *data, s
 mdf_err_t aliyun_mdf_subdevice_read(aliyun_msg_type_t *type,
                                     uint8_t **data, size_t *size, TickType_t wait_ticks);
 
-size_t aliyun_mdf_get_routing_table_size(void);
+int aliyun_mdf_get_routing_table_size(void);
 
-mdf_err_t aliyun_mdf_get_routing_table(uint8_t *routing_table, size_t *table_size);
+mdf_err_t aliyun_mdf_get_routing_table(uint8_t *routing_table, int *table_size);
 
 mdf_err_t aliyun_mdf_ota_start(char *ota_version, size_t ota_size);
 

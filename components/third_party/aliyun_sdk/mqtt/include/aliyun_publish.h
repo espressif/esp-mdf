@@ -22,9 +22,9 @@
 extern "C" {
 #endif /**< _cplusplus */
 
-mdf_err_t aliyun_publish_sub_todo_add(const char *product_key, const char *device, aliyun_buffer_t *buffer);
+mdf_err_t aliyun_publish_sub_topo_add(const char *product_key, const char *device, aliyun_buffer_t *buffer);
 
-mdf_err_t aliyun_publish_sub_todo_delete(const char *product_key, const char *device, aliyun_buffer_t *buffer);
+mdf_err_t aliyun_publish_sub_topo_delete(const char *product_key, const char *device, aliyun_buffer_t *buffer);
 
 mdf_err_t aliyun_publish_sub_combine_login(const char *product_key, const char *device, aliyun_buffer_t *buffer);
 

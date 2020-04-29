@@ -17,6 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "mdf_mem.h"
+#include "aliyun_gateway.h"
 
 #include "aliyun_kv.h"
 
@@ -101,8 +102,8 @@ static mdf_err_t aliyun_gateway_thing_sub_topo_add(const aliyun_device_meta_t *g
     ret = aliyun_list_update_status(sub_meta, ALIYUN_LIST_TOPO_ADD_WAIT, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error");
 
-    ret = aliyun_publish_sub_todo_add(gateway_meta->product_key, gateway_meta->device_name, buffer);
-    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_todo_add error");
+    ret = aliyun_publish_sub_topo_add(gateway_meta->product_key, gateway_meta->device_name, buffer);
+    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_topo_add error");
 
     return MDF_OK;
 }
@@ -127,8 +128,8 @@ static mdf_err_t aliyun_gateway_thing_sub_topo_delete(const aliyun_device_meta_t
     ret = aliyun_list_update_status(sub_meta, ALIYUN_LIST_TOPO_DELETE_WAIT, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error");
 
-    ret = aliyun_publish_sub_todo_delete(gateway_meta->product_key, gateway_meta->device_name, buffer);
-    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_todo_add error");
+    ret = aliyun_publish_sub_topo_delete(gateway_meta->product_key, gateway_meta->device_name, buffer);
+    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_topo_add error");
 
     return MDF_OK;
 }
@@ -154,7 +155,7 @@ static mdf_err_t aliyun_gateway_thing_sub_combine_login(const aliyun_device_meta
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error");
 
     ret = aliyun_publish_sub_combine_login(gateway_meta->product_key, gateway_meta->device_name, buffer);
-    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_todo_add error");
+    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_topo_add error");
 
     return MDF_OK;
 }
@@ -180,7 +181,7 @@ mdf_err_t aliyun_gateway_thing_sub_combine_logout(const aliyun_device_meta_t *ga
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error");
 
     ret = aliyun_publish_sub_combine_logout(gateway_meta->product_key, gateway_meta->device_name, buffer);
-    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_todo_add error");
+    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_topo_add error");
 
     return MDF_OK;
 }
@@ -188,59 +189,61 @@ mdf_err_t aliyun_gateway_thing_sub_combine_logout(const aliyun_device_meta_t *ga
 static mdf_err_t aliyun_gateway_loop_process_timeout(const aliyun_device_meta_t *gateway_meta, aliyun_buffer_t *buffer)
 {
     mdf_err_t ret = MDF_OK;
-    //uint32_t status;
-    //aliyun_device_meta_t sub_meta = { 0 };
-    sub_info_list_t *subdevice;
+    /* Because delete list member is execute in one task, so it is safe to use reference rather than value*/
+    static sub_info_list_t *subdevice_list[ALIYUN_PROCESS_SIZE];
+    int unhandled_num = 0;
 
-    //ret = aliyun_list_select_timeout(&sub_meta, &status);
-    ret = aliyun_list_get_by_timeout(&subdevice);
+    ret = aliyun_list_get_by_timeout(subdevice_list, ALIYUN_PROCESS_SIZE, &unhandled_num);
 
     if (ret != MDF_OK) {
-        return MDF_FAIL;
+        return ret;
     }
 
-    //switch (status) {
-    switch (subdevice->status) {
-        case ALIYUN_LIST_TOPO_ADD_WAIT:
-            MDF_LOGI("ALIYUN_LIST_TOPO_ADD_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_topo_add(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_TOPO_ADD_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
-                            subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
-            break;
+    for (int i = 0; i < unhandled_num; i++) {
+        sub_info_list_t *subdevice = subdevice_list[i];
 
-        case ALIYUN_LIST_TOPO_DELETE_WAIT:
-            MDF_LOGI("ALIYUN_LIST_TOPO_DELETE_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_topo_delete(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_TOPO_DELETE_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
-                            subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
-            break;
+        switch (subdevice->status) {
+            case ALIYUN_LIST_TOPO_ADD_WAIT:
+                MDF_LOGI("ALIYUN_LIST_TOPO_ADD_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_topo_add(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_TOPO_ADD_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
+                                subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
+                break;
 
-        case ALIYUN_LIST_LOGIN_WAIT:
-            MDF_LOGI("ALIYUN_LIST_LOGIN_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_combine_login(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_LOGIN_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
-                            subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
-            break;
+            case ALIYUN_LIST_TOPO_DELETE_WAIT:
+                MDF_LOGI("ALIYUN_LIST_TOPO_DELETE_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_topo_delete(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_TOPO_DELETE_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
+                                subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
+                break;
 
-        case ALIYUN_LIST_LOGOUT_WAIT:
-            MDF_LOGI("ALIYUN_LIST_LOGOUT_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_combine_logout(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_LOGOUT_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
-                            subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
-            break;
+            case ALIYUN_LIST_LOGIN_WAIT:
+                MDF_LOGI("ALIYUN_LIST_LOGIN_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_combine_login(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_LOGIN_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
+                                subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
+                break;
 
-        case ALIYUN_LIST_DELETE_WAIT:
-            MDF_LOGI("ALIYUN_LIST_DELETE_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_unsubscribe_subdevice_all_topic(&subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_unsubscribe_subdevice_all_topic error, product_key:%s, device_name:%s",
-                            subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_list_delete_meta(&subdevice->meta);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+            case ALIYUN_LIST_LOGOUT_WAIT:
+                MDF_LOGI("ALIYUN_LIST_LOGOUT_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_combine_logout(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "ALIYUN_LIST_LOGOUT_WAIT, product_key:%s, device_name:%s, status :%d, ret:%d",
+                                subdevice->meta.product_key, subdevice->meta.device_name, subdevice->status, ret);
+                break;
 
-        default:
-            MDF_LOGV("type is not find (%d)", subdevice->status);
-            break;
+            case ALIYUN_LIST_DELETE_WAIT:
+                MDF_LOGI("ALIYUN_LIST_DELETE_WAIT, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_unsubscribe_subdevice_all_topic(&subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_unsubscribe_subdevice_all_topic error, product_key:%s, device_name:%s",
+                                subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_list_delete_meta(&subdevice->meta);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
+
+            default:
+                MDF_LOGV("type is not find (%d)", subdevice->status);
+                break;
+        }
     }
 
     return ret;
@@ -249,126 +252,144 @@ static mdf_err_t aliyun_gateway_loop_process_timeout(const aliyun_device_meta_t 
 static mdf_err_t aliyun_gateway_loop_process_unfinished(const aliyun_device_meta_t *gateway_meta, aliyun_buffer_t *buffer)
 {
     mdf_err_t ret = MDF_OK;
-    //uint32_t status;
-    //aliyun_device_meta_t sub_meta = { 0 };
-    sub_info_list_t *subdevice;
+    /* Because delete list member is execute in one task, so it is safe to use reference rather than  value*/
+    static sub_info_list_t *subdevice_list[ALIYUN_PROCESS_SIZE];
+    int unhandled_num = 0;
 
-    //ret = aliyun_list_select_unfinished(&sub_meta, &status);
-    ret = aliyun_list_get_by_unfinished(&subdevice);
+    ret = aliyun_list_get_by_unfinished(subdevice_list, ALIYUN_PROCESS_SIZE, &unhandled_num);
 
     if (ret != MDF_OK) {
-        return MDF_FAIL;
+        return ret;
     }
 
-    //switch (status) {
-    switch (subdevice->status) {
-        case ALIYUN_LIST_TOPO_ADD_START:
-            MDF_LOGI("ALIYUN_LIST_TOPO_ADD_START, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_topo_add(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_topo_add error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+    for (int i = 0; i < unhandled_num; i++) {
+        sub_info_list_t *subdevice = subdevice_list[i];
 
-        case ALIYUN_LIST_TOPO_ADD_SUCC:
-            MDF_LOGI("ALIYUN_LIST_TOPO_ADD_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_combine_login(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_combine_login error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+        switch (subdevice->status) {
+            case ALIYUN_LIST_TOPO_ADD_START:
+                MDF_LOGI("ALIYUN_LIST_TOPO_ADD_START, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_topo_add(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_topo_add error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-        case ALIYUN_LIST_TOPO_ADD_FAIL:
-            MDF_LOGW("ALIYUN_LIST_TOPO_ADD_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_FAIL);
+            case ALIYUN_LIST_TOPO_ADD_SUCC:
+                MDF_LOGI("ALIYUN_LIST_TOPO_ADD_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_combine_login(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_combine_login error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-            if (ret != MDF_OK) {
-                MDF_LOGE("aliyun_gateway_add_subdevice_reply error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            }
-
-            ret = aliyun_list_delete_meta(&subdevice->meta);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
-
-        case ALIYUN_LIST_LOGIN_SUCC:
-            MDF_LOGI("ALIYUN_LIST_LOGIN_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-
-            if (subdevice->no_subscribe != true) {
-                ret = aliyun_subscribe_subdevice_all_topic(&subdevice->meta, buffer);
-                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Subdevice subscribe error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-                ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_OK);
+            case ALIYUN_LIST_TOPO_ADD_FAIL:
+                MDF_LOGW("ALIYUN_LIST_TOPO_ADD_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_FAIL);
 
                 if (ret != MDF_OK) {
-                    MDF_LOGE("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
+                    MDF_LOGW("aliyun_gateway_add_subdevice_reply error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
                 }
-            }
 
-            ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_FINISH, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+                ret = aliyun_list_delete_meta(&subdevice->meta);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-        case ALIYUN_LIST_LOGIN_FAIL:
-            MDF_LOGW("ALIYUN_LIST_LOGIN_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_FAIL);
+            case ALIYUN_LIST_LOGIN_SUCC:
+                MDF_LOGI("ALIYUN_LIST_LOGIN_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
 
-            if (ret != MDF_OK) {
-                MDF_LOGE("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
-            }
+                if (subdevice->no_subscribe != true) {
+                    ret = aliyun_subscribe_subdevice_all_topic(&subdevice->meta, buffer);
+                    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Subdevice subscribe error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                    ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_OK);
 
-            ret = aliyun_list_delete_meta(&subdevice->meta);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+                    if (ret != MDF_OK) {
+                        MDF_LOGW("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
+                    }
+                }
 
-        case ALIYUN_LIST_LOGOUT_START:
-            MDF_LOGI("ALIYUN_LIST_LOGOUT_START, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_combine_logout(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_combine_logout error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+                ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_FINISH, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-        case ALIYUN_LIST_LOGOUT_SUCC:
-            MDF_LOGI("ALIYUN_LIST_LOGOUT_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_topo_delete(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_topo_delete error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+            case ALIYUN_LIST_LOGIN_FAIL:
+                MDF_LOGW("ALIYUN_LIST_LOGIN_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_FAIL);
 
-        case ALIYUN_LIST_LOGOUT_FAIL:
-            // TODO Logout fail handling
-            MDF_LOGW("ALIYUN_LIST_LOGOUT_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+                if (ret != MDF_OK) {
+                    MDF_LOGW("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
+                }
 
-        case ALIYUN_LIST_TOPO_DELETE_SUCC:
-            MDF_LOGI("ALIYUN_LIST_TOPO_DELETE_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name); //ret = aliyun_unsubscribe_subdevice_all_topic(&sub_meta, buffer);
-            ret = aliyun_gateway_delete_subdevice_reply(&subdevice->meta, MDF_OK);
+                ret = aliyun_list_delete_meta(&subdevice->meta);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-            if (ret != MDF_OK) {
-                MDF_LOGE("Gateway delete reply error, pruduct_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
-            }
+            case ALIYUN_LIST_LOGOUT_START:
+                MDF_LOGI("ALIYUN_LIST_LOGOUT_START, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_combine_logout(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_combine_logout error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-            ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_DELETE_WAIT, ALIYUN_SUB_STATUS_DELETE_TIMEOUT);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+            case ALIYUN_LIST_LOGOUT_SUCC:
+                MDF_LOGI("ALIYUN_LIST_LOGOUT_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_topo_delete(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_topo_delete error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
 
-        case ALIYUN_LIST_TOPO_DELETE_FAIL:
-            //TODO Topo delete handling
-            MDF_LOGW("ALIYUN_LIST_DELETE_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+            case ALIYUN_LIST_LOGOUT_FAIL:
+                MDF_LOGW("ALIYUN_LIST_LOGOUT_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
 
-        case ALIYUN_LIST_DELETE:
-            MDF_LOGI("ALIYUN_LIST_DELETE, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_unsubscribe_subdevice_all_topic(&subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_unsubscribe_subdevice_all_topic error, product_key:%s, device_name:%s",
-                            subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_combine_logout(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_combine_logout error, product_key:%s, device_name:%s",
-                            subdevice->meta.product_key, subdevice->meta.device_name);
-            ret = aliyun_gateway_thing_sub_topo_delete(gateway_meta, &subdevice->meta, buffer);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_topo_delete error, product_key:%s, device_name:%s",
-                            subdevice->meta.product_key, subdevice->meta.device_name);
-            aliyun_gateway_delete_subdevice_reply(&subdevice->meta, MDF_OK);
-            ret = aliyun_list_delete_meta(&subdevice->meta);
-            MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s",
-                            subdevice->meta.product_key, subdevice->meta.device_name);
-            break;
+                if (aliyun_list_is_device_in_routing_table(subdevice->addrs) == true) {
+                    MDF_LOGW("Subdevice is online, Relogin");
+                    aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_TOPO_ADD_SUCC, ALIYUN_SUB_STATUS_DELETE_TIMEOUT);
+                } else {
+                    MDF_LOGW("Subdevice is offline, start topo delete");
+                    aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_LOGOUT_SUCC, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
+                }
 
-        default:
-            MDF_LOGV("type is not find: %d", subdevice->status);
-            break;
+                break;
+
+            case ALIYUN_LIST_TOPO_DELETE_SUCC:
+                MDF_LOGI("ALIYUN_LIST_TOPO_DELETE_SUCC, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name); //ret = aliyun_unsubscribe_subdevice_all_topic(&sub_meta, buffer);
+                ret = aliyun_gateway_delete_subdevice_reply(&subdevice->meta, MDF_OK);
+
+                if (ret != MDF_OK) {
+                    MDF_LOGW("Gateway delete reply error, pruduct_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
+                }
+
+                ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_DELETE_WAIT, ALIYUN_SUB_STATUS_DELETE_TIMEOUT);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
+
+            case ALIYUN_LIST_TOPO_DELETE_FAIL:
+                MDF_LOGW("ALIYUN_LIST_DELETE_FAIL, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+
+                if (aliyun_list_is_device_in_routing_table(subdevice->addrs) == true) {
+                    MDF_LOGW("Subdevice is online, re-add");
+                    aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_TOPO_ADD_START, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
+                } else {
+                    MDF_LOGW("Subdevice is offline, wait for delete");
+                    aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_DELETE_WAIT, ALIYUN_SUB_STATUS_DELETE_TIMEOUT);
+                }
+
+                break;
+
+            case ALIYUN_LIST_DELETE:
+                MDF_LOGI("ALIYUN_LIST_DELETE, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_unsubscribe_subdevice_all_topic(&subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_unsubscribe_subdevice_all_topic error, product_key:%s, device_name:%s",
+                                subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_combine_logout(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_combine_logout error, product_key:%s, device_name:%s",
+                                subdevice->meta.product_key, subdevice->meta.device_name);
+                ret = aliyun_gateway_thing_sub_topo_delete(gateway_meta, &subdevice->meta, buffer);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_gateway_thing_sub_topo_delete error, product_key:%s, device_name:%s",
+                                subdevice->meta.product_key, subdevice->meta.device_name);
+                aliyun_gateway_delete_subdevice_reply(&subdevice->meta, MDF_OK);
+                ret = aliyun_list_delete_meta(&subdevice->meta);
+                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_delete_meta error, product_key:%s, device_name:%s",
+                                subdevice->meta.product_key, subdevice->meta.device_name);
+                break;
+
+            default:
+                MDF_LOGV("type is not find: %d", subdevice->status);
+                break;
+        }
     }
 
     return ret;
@@ -399,7 +420,7 @@ static mdf_err_t aliyun_gateway_subdevice_process(int type, const uint8_t *src_a
                     ret = aliyun_gateway_add_subdevice_reply(sub_meta, MDF_OK);
 
                     if (ret != MDF_OK) {
-                        MDF_LOGE("Gateway add reply error, reason %s", mdf_err_to_name(ret));
+                        MDF_LOGW("Gateway add reply error, reason %s", mdf_err_to_name(ret));
                     }
                 } else if (subdevice->status == ALIYUN_LIST_DELETE_WAIT) {
                     ret = aliyun_list_update_status(sub_meta, ALIYUN_LIST_TOPO_ADD_START, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
@@ -425,11 +446,17 @@ static mdf_err_t aliyun_gateway_subdevice_process(int type, const uint8_t *src_a
                 } else {
                     /* if subdevice delete itself, but subdevice has not finish add process, return FAIL */
                     ret = aliyun_gateway_delete_subdevice_reply(sub_meta, MDF_FAIL);
-                    MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Gateway delete reply error, reason %s", mdf_err_to_name(ret));
+
+                    if (ret != MDF_OK) {
+                        MDF_LOGW("Gateway delete reply error, reason %s", mdf_err_to_name(ret));
+                    }
                 }
             } else {
                 ret = aliyun_gateway_delete_subdevice_reply(sub_meta, MDF_OK);
-                MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Gateway delete reply error, reason %s", mdf_err_to_name(ret));
+
+                if (ret != MDF_OK) {
+                    MDF_LOGW("Gateway delete reply error, reason %s", mdf_err_to_name(ret));
+                }
             }
         }
         break;
@@ -471,7 +498,6 @@ static mdf_err_t aliyun_gateway_publish_process(int type, const uint8_t *src_add
     mdf_err_t ret = MDF_OK;
     sub_info_list_t *subdevice;
 
-    //ret = aliyun_list_select_meta_status(src_addr, &subdevice_meta, &status);
     ret = aliyun_list_get_by_addr(src_addr, &subdevice);
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_get_by_addr src_addr not find, type=%d, src_addr=" MACSTR,
                     type, MAC2STR(src_addr));
@@ -718,7 +744,6 @@ static void aliyun_gateway_read_task(void *arg)
 
         if (!aliyun_platform_get_cloud_connect_status()) {
             aliyun_subscribe_gateway_all_topic(&gateway_meta, buffer);
-            vTaskDelay(pdMS_TO_TICKS(2000));
             aliyun_list_update_subdevice_reconnet();
             aliyun_platform_set_cloud_connect_status(true);
         }
@@ -731,7 +756,7 @@ static void aliyun_gateway_read_task(void *arg)
         } else if (ret == MDF_ERR_TIMEOUT || ret == ESP_ERR_MESH_TIMEOUT) {
             aliyun_gateway_loop_process(&gateway_meta, buffer);
         } else {
-            MDF_LOGD("aliyun_platform_gateway_read error, ret: 0x%x", ret);
+            MDF_LOGE("aliyun_platform_gateway_read error, ret: 0x%x", ret);
         }
     }
 
@@ -801,11 +826,11 @@ mdf_err_t aliyun_gateway_deinit(void)
 
 mdf_err_t aliyun_gateway_refresh_subdevice(void)
 {
-    size_t table_size = aliyun_platform_get_routing_table_size() + ROUTING_TABLE_MARGIN;
-    MDF_LOGI("aliyun_platform_get_routing_table_size:%d", table_size);
+    int table_size = aliyun_platform_get_routing_table_size() + ROUTING_TABLE_MARGIN;
 
     uint8_t *routing_table = MDF_MALLOC(table_size * ALIYUN_SUBDEVICE_ADDRS_MAXLEN);
     aliyun_platform_get_routing_table(routing_table, &table_size);
+    MDF_LOGI("aliyun_platform_get_routing_table_size:%d", table_size);
 
     aliyun_list_select_refresh(routing_table, table_size);
 
