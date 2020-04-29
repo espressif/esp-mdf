@@ -32,9 +32,11 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
         size_t config_size = sizeof(mupgrade_config_t) + MUPGRADE_PACKET_MAX_NUM / 8;
         g_upgrade_config   = MDF_CALLOC(1, config_size);
         MDF_ERROR_GOTO(!g_upgrade_config, EXIT, "<MDF_ERR_NO_MEM> g_upgrade_config");
-        g_upgrade_config->start_time = xTaskGetTickCount();
 
         mdf_info_load(MUPGRADE_STORE_CONFIG_KEY, g_upgrade_config, &config_size);
+
+        g_upgrade_config->start_time = xTaskGetTickCount();
+        g_upgrade_config->partition = esp_ota_get_next_update_partition(NULL);
     }
 
     /**< If g_upgrade_config->status has been created and
@@ -143,11 +145,11 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
         g_upgrade_config   = MDF_CALLOC(1, config_size);
         MDF_ERROR_CHECK(!g_upgrade_config, MDF_ERR_NO_MEM, "<MDF_ERR_NO_MEM> g_upgrade_config");
 
-        g_upgrade_config->start_time = xTaskGetTickCount();
-        g_upgrade_config->partition  = esp_ota_get_next_update_partition(NULL);
-
         /**< Get upgrade infomation to flash. */
         ret = mdf_info_load(MUPGRADE_STORE_CONFIG_KEY, g_upgrade_config, &config_size);
+
+        g_upgrade_config->start_time = xTaskGetTickCount();
+        g_upgrade_config->partition = esp_ota_get_next_update_partition(NULL);
 
         if (ret != MDF_OK) {
             MDF_FREE(g_upgrade_config);
