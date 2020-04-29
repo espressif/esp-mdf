@@ -21,7 +21,7 @@
 
 static const char *TAG = "aliyun_publish";
 
-mdf_err_t aliyun_publish_sub_todo_add(const char *product_key, const char *device_name, aliyun_buffer_t *buffer)
+mdf_err_t aliyun_publish_sub_topo_add(const char *product_key, const char *device_name, aliyun_buffer_t *buffer)
 {
     MDF_PARAM_CHECK(product_key);
     MDF_PARAM_CHECK(device_name);
@@ -39,7 +39,7 @@ mdf_err_t aliyun_publish_sub_todo_add(const char *product_key, const char *devic
     return aliyun_mqtt_publish(buffer->topic, buffer->payload, buffer->payload_len, ALIYUN_MQTT_QOS0);
 }
 
-mdf_err_t aliyun_publish_sub_todo_delete(const char *product_key, const char *device_name, aliyun_buffer_t *buffer)
+mdf_err_t aliyun_publish_sub_topo_delete(const char *product_key, const char *device_name, aliyun_buffer_t *buffer)
 {
     MDF_PARAM_CHECK(product_key);
     MDF_PARAM_CHECK(device_name);

@@ -18,6 +18,9 @@
 
 #include "aliyun_list.h"
 #include "aliyun_platform.h"
+#include "mdf_mem.h"
+
+#define ROUTING_TABLE_MARGIN (10)
 
 static const char *TAG = "aliyun_list";
 
@@ -172,25 +175,6 @@ mdf_err_t aliyun_list_select_addrs(const aliyun_device_meta_t *meta, uint8_t add
     return MDF_FAIL;
 }
 
-mdf_err_t aliyun_list_select_meta_status(const uint8_t *addrs, aliyun_device_meta_t *meta, uint32_t *status)
-{
-    MDF_PARAM_CHECK(addrs);
-    MDF_PARAM_CHECK(meta);
-
-    aliyun_list_mutex_lock();
-    sub_info_list_t *it, *tmp;
-    SLIST_FOREACH_SAFE(it, &g_info_list, next, tmp) {
-        if (!memcmp(it->addrs, addrs, ALIYUN_SUBDEVICE_ADDRS_MAXLEN)) {
-            memcpy(meta, &it->meta, sizeof(aliyun_device_meta_t));
-            *status = it->status;
-            aliyun_list_mutex_unlock();
-            return MDF_OK;
-        }
-    }
-    aliyun_list_mutex_unlock();
-    return MDF_FAIL;
-}
-
 mdf_err_t aliyun_list_get_by_addr(const uint8_t *addrs, sub_info_list_t **sub_info)
 {
     MDF_PARAM_CHECK(addrs);
@@ -247,7 +231,8 @@ mdf_err_t aliyun_list_select_status(const aliyun_device_meta_t *meta, uint32_t *
 
 static mdf_err_t aliyun_list_check_wait(uint32_t status)
 {
-    if (status == ALIYUN_LIST_TOPO_ADD_WAIT || status == ALIYUN_LIST_TOPO_DELETE_WAIT || status == ALIYUN_LIST_LOGIN_WAIT || status == ALIYUN_LIST_LOGOUT_WAIT || status == ALIYUN_LIST_DELETE_WAIT) {
+    if (status == ALIYUN_LIST_TOPO_ADD_WAIT || status == ALIYUN_LIST_TOPO_DELETE_WAIT || status == ALIYUN_LIST_LOGIN_WAIT
+            || status == ALIYUN_LIST_LOGOUT_WAIT || status == ALIYUN_LIST_DELETE_WAIT) {
         return MDF_OK;
     } else {
         return MDF_FAIL;
@@ -272,7 +257,7 @@ mdf_err_t aliyun_list_select_refresh(uint8_t *routing_table, size_t table_size)
 
         if (!exist_flag) {
             if (it->status == ALIYUN_LIST_FINISH) {
-                MDF_LOGW("aliyun_list_select_refresh product_key:%s, device_name:%s", it->meta.product_key, it->meta.device_name);
+                MDF_LOGD("aliyun_list_select_refresh product_key:%s, device_name:%s", it->meta.product_key, it->meta.device_name);
                 it->status = ALIYUN_LIST_LOGOUT_START;
             }
         } else {
@@ -286,78 +271,82 @@ mdf_err_t aliyun_list_select_refresh(uint8_t *routing_table, size_t table_size)
     return MDF_OK;
 }
 
-mdf_err_t aliyun_list_select_timeout(aliyun_device_meta_t *meta, uint32_t *status)
+mdf_err_t aliyun_list_get_by_timeout(sub_info_list_t **sub_list, size_t sub_list_sz, int *num)
 {
-    MDF_PARAM_CHECK(status);
-    MDF_PARAM_CHECK(meta);
+    MDF_PARAM_CHECK(sub_list);
+
+    sub_info_list_t *it, *tmp;
+    mdf_err_t ret = MDF_OK;
+    int i = 0;
 
     aliyun_list_mutex_lock();
-    sub_info_list_t *it, *tmp;
     SLIST_FOREACH_SAFE(it, &g_info_list, next, tmp) {
         if (aliyun_list_check_wait(it->status) == MDF_OK && aliyun_platform_get_utc_ms() >= it->timeout) {
-            *status = it->status;
-            memcpy(meta, &it->meta, sizeof(aliyun_device_meta_t));
-            aliyun_list_mutex_unlock();
-            return MDF_OK;
+            sub_list[i++] = it;
+
+            if (i >= sub_list_sz) {
+                break;
+            }
         }
     }
     aliyun_list_mutex_unlock();
-    return MDF_FAIL;
-}
+    *num = i;
 
-mdf_err_t aliyun_list_get_by_timeout(sub_info_list_t **sub_info)
-{
-    MDF_PARAM_CHECK(sub_info);
-
-    aliyun_list_mutex_lock();
-    sub_info_list_t *it, *tmp;
-    SLIST_FOREACH_SAFE(it, &g_info_list, next, tmp) {
-        if (aliyun_list_check_wait(it->status) == MDF_OK && aliyun_platform_get_utc_ms() >= it->timeout) {
-            *sub_info = it;
-            aliyun_list_mutex_unlock();
-            return MDF_OK;
-        }
+    if (i == 0) {
+        ret = MDF_FAIL;
     }
-    aliyun_list_mutex_unlock();
-    return MDF_FAIL;
+
+    return ret;
 }
 
-mdf_err_t aliyun_list_select_unfinished(aliyun_device_meta_t *meta, uint32_t *status)
+mdf_err_t aliyun_list_get_by_unfinished(sub_info_list_t **sub_list, size_t sub_list_sz, int *num)
 {
-    MDF_PARAM_CHECK(status);
-    MDF_PARAM_CHECK(meta);
+    MDF_PARAM_CHECK(sub_list);
 
-    aliyun_list_mutex_lock();
     sub_info_list_t *it, *tmp;
+    mdf_err_t ret = MDF_OK;
+    aliyun_list_mutex_lock();
 
+    int i = 0;
     SLIST_FOREACH_SAFE(it, &g_info_list, next, tmp) {
         if (aliyun_list_check_wait(it->status) != MDF_OK && it->status != ALIYUN_LIST_FINISH) {
-            *status = it->status;
-            memcpy(meta, &it->meta, sizeof(aliyun_device_meta_t));
-            aliyun_list_mutex_unlock();
-            return MDF_OK;
+            sub_list[i++] = it;
+
+            if (i >= sub_list_sz) {
+                break;
+            }
         }
     }
     aliyun_list_mutex_unlock();
-    return MDF_FAIL;
+    *num = i;
+
+    if (i == 0) {
+        ret = MDF_FAIL;
+    }
+
+    return ret;
 }
 
-mdf_err_t aliyun_list_get_by_unfinished(sub_info_list_t **sub_info)
+bool aliyun_list_is_device_in_routing_table(const uint8_t *addr)
 {
-    MDF_PARAM_CHECK(sub_info);
+    if (addr == NULL) {
+        MDF_LOGE("parameter error(addr)");
+        return false;
+    }
 
-    aliyun_list_mutex_lock();
-    sub_info_list_t *it, *tmp;
+    int table_size = aliyun_platform_get_routing_table_size() + ROUTING_TABLE_MARGIN;
+    uint8_t *routing_table = MDF_MALLOC(table_size * ALIYUN_SUBDEVICE_ADDRS_MAXLEN);
+    aliyun_platform_get_routing_table(routing_table, &table_size);
 
-    SLIST_FOREACH_SAFE(it, &g_info_list, next, tmp) {
-        if (aliyun_list_check_wait(it->status) != MDF_OK && it->status != ALIYUN_LIST_FINISH) {
-            *sub_info = it;
-            aliyun_list_mutex_unlock();
-            return MDF_OK;
+    for (int i = 0; i < table_size; i++) {
+        if (memcmp(routing_table + i * ALIYUN_SUBDEVICE_ADDRS_MAXLEN, addr, ALIYUN_SUBDEVICE_ADDRS_MAXLEN) == 0) {
+            MDF_FREE(routing_table);
+            return true;
         }
     }
-    aliyun_list_mutex_unlock();
-    return MDF_FAIL;
+
+    MDF_FREE(routing_table);
+    return false;
 }
 
 mdf_err_t aliyun_list_update_status(const aliyun_device_meta_t *meta, uint32_t status, uint32_t timeout)

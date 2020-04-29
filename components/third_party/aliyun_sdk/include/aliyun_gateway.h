@@ -18,6 +18,8 @@
 #include "aliyun_defs.h"
 #include "mdf_err.h"
 
+#define ALIYUN_PROCESS_SIZE (10) /**< Maximum handle size once process*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif /**< _cplusplus */

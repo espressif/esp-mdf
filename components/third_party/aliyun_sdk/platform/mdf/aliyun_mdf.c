@@ -125,15 +125,15 @@ mdf_err_t aliyun_mdf_subdevice_read(aliyun_msg_type_t *type,
     }
 }
 
-size_t aliyun_mdf_get_routing_table_size(void)
+int aliyun_mdf_get_routing_table_size(void)
 {
     return esp_mesh_get_routing_table_size();
 }
 
-mdf_err_t aliyun_mdf_get_routing_table(uint8_t *routing_table, size_t *table_size)
+mdf_err_t aliyun_mdf_get_routing_table(uint8_t *routing_table, int *table_size)
 {
     return esp_mesh_get_routing_table((mesh_addr_t *)routing_table,
-                                      *table_size * sizeof(mesh_addr_t), (int *)table_size);
+                                      *table_size * sizeof(mesh_addr_t), table_size);
 }
 
 mdf_err_t aliyun_mdf_ota_start(char *ota_version, size_t ota_size)

@@ -126,17 +126,15 @@ mdf_err_t aliyun_list_get_by_meta(const aliyun_device_meta_t *meta, sub_info_lis
 mdf_err_t aliyun_list_select_addrs(const aliyun_device_meta_t *meta, uint8_t addrs[]);
 
 /**
- * @brief  Device list select meta status.
+ * @brief  get device by addr.
  *
  * @param  addrs  Device unique address.
- * @param  meta   Device triplet information.
- * @param  status Device status buf.
+ * @param  sub_info where to save device point.
  *
  * @return
  *     - MDF_FAIL
  *     - MDF_OK
  */
-mdf_err_t aliyun_list_select_meta_status(const uint8_t *addrs, aliyun_device_meta_t *meta, uint32_t *status);
 mdf_err_t aliyun_list_get_by_addr(const uint8_t *addrs, sub_info_list_t **sub_info);
 
 /**
@@ -176,30 +174,30 @@ mdf_err_t aliyun_list_select_status(const aliyun_device_meta_t *meta, uint32_t *
 mdf_err_t aliyun_list_select_refresh(uint8_t *routing_table, size_t table_size);
 
 /**
- * @brief  Device list select timeout.
+ * @brief  Get device list through timeout status.
  *
- * @param  meta   Device triplet information.
- * @param  status Device status buf.
+ * @param  sub_list  where to save device poist list.
+ * @param  sub_list_sz sub_list size.
+ * @param  num  real number that device has been select.
  *
  * @return
  *     - MDF_FAIL
  *     - MDF_OK
  */
-mdf_err_t aliyun_list_select_timeout(aliyun_device_meta_t *meta, uint32_t *status);
-mdf_err_t aliyun_list_get_by_timeout(sub_info_list_t **sub_info);
+mdf_err_t aliyun_list_get_by_timeout(sub_info_list_t **sub_list, size_t sub_list_sz, int *num);
 
 /**
- * @brief  Device list select unfinished.
+ * @brief  Get device list through unfinished status.
  *
- * @param  meta   Device triplet information.
- * @param  status Device status buf.
+ * @param  sub_list  where to save device point list.
+ * @param  sub_list_sz sub_list size.
+ * @param  num  real number that device has been select.
  *
  * @return
  *     - MDF_FAIL
  *     - MDF_OK
  */
-mdf_err_t aliyun_list_select_unfinished(aliyun_device_meta_t *meta, uint32_t *status);
-mdf_err_t aliyun_list_get_by_unfinished(sub_info_list_t **sub_info);
+mdf_err_t aliyun_list_get_by_unfinished(sub_info_list_t **sub_list, size_t sub_list_sz, int *num);
 
 /**
  * @brief  Device list update msg_id.
@@ -279,6 +277,15 @@ uint32_t aliyun_list_select_ota_start_addrs_num(void);
  *     - MDF_OK
  */
 uint32_t aliyun_list_select_ota_start_addrs_list(uint8_t *addrs_list, size_t size);
+
+/**
+ * @brief check if addr is in routing_table
+ *
+ * @param addr device addr(mac)
+ * @return true in routing_table
+ * @return false  not in routing_table
+ */
+bool aliyun_list_is_device_in_routing_table(const uint8_t *addr);
 
 #ifdef __cplusplus
 }

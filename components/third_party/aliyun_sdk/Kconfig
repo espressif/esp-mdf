@@ -9,12 +9,12 @@ menuconfig ALIYUN_IOT_NEW_SDK
         prompt "Choose MDF/IDF platform"
         default ALIYUN_PLATFORM_MDF
         help
-            Choose the MDF/IDF platform which you want to use.
+            Choose the MDF/IDF platform which you want to use. MDF for MESH application, IDF for direct Wi-Fi direct connection application.
 
     config ALIYUN_PLATFORM_MDF
-        bool "supportMDF"
+        bool "MDF"
     config ALIYUN_PLATFORM_IDF
-        bool "supportIDF"
+        bool "IDF"
     endchoice
 
     choice ALIYUN_SUPPORT_TLS_CHOOSE
@@ -25,9 +25,9 @@ menuconfig ALIYUN_IOT_NEW_SDK
             Choose the TLS/TCP connection which you want to use.
 
     config ALIYUN_NETWORK_SUPPORT_TLS
-        bool "supportTLS"
+        bool "TLS"
     config ALIYUN_NETWORK_SUPPORT_TCP
-        bool "supportTCP"
+        bool "TCP"
     endchoice
 
     choice ALIYUN_MQTT_MODE_CHOOSE
@@ -43,15 +43,24 @@ menuconfig ALIYUN_IOT_NEW_SDK
         bool "mqtt mode pre auth"
 
     endchoice
+    
+    config ALIYUN_TASK_DEFAULT_PRIOTY
+    depends on ALIYUN_IOT_NEW_SDK
+        int "aliyun sdk task priority"
+        range 0 10
+        default 8
+        help
+            aliyun sdk task priority, include aliyun_gateway_write, aliyun_gateway_read and aliyun_subdevice_task.
 
 menu "aliyun sdk mqtt config"
 depends on ALIYUN_IOT_NEW_SDK
 
-    config ALIYUN_TASK_DEFAULT_PRIOTY
+    config ALIYUN_MQTT_TASK_PRIOTY
         int "aliyun mqtt task priority"
-        default 6
+        range 0 10
+        default 9
         help
-            aliyun mqtt task priority
+            aliyun mqtt task priority, It should not less than aliyun sdk task priority.
 
     config ALIYUN_MQTT_TASK_SIZE
         int "aliyun mqtt task size"
@@ -67,7 +76,7 @@ depends on ALIYUN_IOT_NEW_SDK
         help
             aliyun mqtt topic size.
 
-    config ALIYUN_PAYLOAD_SIZE
+    config ALIYUN_PAYLOAD_SIZE 
         int "aliyun mqtt payload size"
         range 0 10240
         default 1024
