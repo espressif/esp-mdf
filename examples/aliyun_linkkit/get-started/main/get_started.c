@@ -159,7 +159,14 @@ void app_main()
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_CONFIG_PUSH, device_config_push_cb));
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_GET_CONFIG_REPLY, device_get_config_cb));
 
-    vTaskDelay(pdMS_TO_TICKS(1000 * 3));
+    aliyun_device_meta_t self_meta = { 0 };
+    aliyun_get_meta(&self_meta);
+    MDF_LOGI("product_key: %s", self_meta.product_key);
+    MDF_LOGI("device_name: %s", self_meta.device_name);
+
+    while (aliyun_subdevice_add_to_gateway(&self_meta, 20 * 1000) != MDF_OK) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 
     mdf_err_t err = aliyun_subdevice_request_ntp();
     MDF_LOGI("Device request ntp, ret=%d", err);

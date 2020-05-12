@@ -1105,7 +1105,7 @@ static void aliyun_subdevice_task(void *arg)
             continue;
         }
 
-        ret = aliyun_platform_subdevice_read(&type, &payload, &length, CONFIG_ALIYUN_READ_TIMROUT_MS / portTICK_RATE_MS);
+        ret = aliyun_platform_subdevice_read(&type, (void **)&payload, &length, CONFIG_ALIYUN_READ_TIMROUT_MS / portTICK_RATE_MS);
 
         if (ret == MDF_OK) {
             aliyun_subdevice_subscribe_callback(type, payload, length);
