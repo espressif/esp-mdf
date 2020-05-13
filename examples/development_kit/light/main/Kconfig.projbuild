@@ -1,175 +1,163 @@
 menu "Example Configuration"
 
-menu "light driver config"
-config LIGHT_GPIO_RED
-    int "Light red pin GPIO number"
-    range 0 33
-    default 4
-    help
-        There are more enumerations like that
-        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-        They are not shown here to reduce redundant information.
-        @note GPIO34..39 are input mode only.
-
-config LIGHT_GPIO_GREEN
-    int "Light green pin GPIO number"
-    range 0 33
-    default 16
-    help
-        There are more enumerations like that
-        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-        They are not shown here to reduce redundant information.
-        @note GPIO34..39 are input mode only.
-
-config LIGHT_GPIO_BLUE
-    int "Light blue pin GPIO number"
-    range 0 33
-    default 5
-    help
-        There are more enumerations like that
-        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-        They are not shown here to reduce redundant information.
-        @note GPIO34..39 are input mode only.
-
-config LIGHT_GPIO_COLD
-    int "Light cold colors pin GPIO number"
-    range 0 33
-    default 23
-    help
-        There are more enumerations like that
-        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-        They are not shown here to reduce redundant information.
-        @note GPIO34..39 are input mode only.
-
-config LIGHT_GPIO_WARM
-    int "Light warm color pin GPIO number"
-    range 0 33
-    default 19
-    help
-        There are more enumerations like that
-        up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-        They are not shown here to reduce redundant information.
-        @note GPIO34..39 are input mode only.
-
-config LIGHT_FADE_PERIOD_MS
-    int "The time from the current color to the next color"
-    default 500
-    help
-        The time from the current color to the next color.
-
-config LIGHT_BLINK_PERIOD_MS
-    int "Period of blinking lights"
-    default 2000
-    help
-        Period of blinking lights.
-endmenu
-
-choice LIGHT_EXAMPLE_MODE
-    bool "Select light example mode"
-    default LIGHT_EXAMPLE_MESH
-    help 
-        Specify which light example to build,support mesh-light or mesh-light with aliyun
-    config LIGHT_EXAMPLE_MESH
-    bool "mesh light"
-    config LIGHT_EXAMPLE_ALIYUN
-    bool "mesh light with aliyun"
+    menu "light driver config"
+    config LIGHT_GPIO_RED
+        int "Light red pin GPIO number"
+        range 0 33
+        default 4
+        help
+            There are more enumerations like that
+            up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+            They are not shown here to reduce redundant information.
+            @note GPIO34..39 are input mode only.
     
-endchoice
-
-config LIGHT_EXAMPLE_MODE
-    int
-    default 0 if LIGHT_EXAMPLE_MESH
-    default 1 if LIGHT_EXAMPLE_ALIYUN
-
-menu "mesh light config"
-    depends on LIGHT_EXAMPLE_MESH
-    config LIGHT_VERSION
-        string "Light version"
-        default "1.2.2"
+    config LIGHT_GPIO_GREEN
+        int "Light green pin GPIO number"
+        range 0 33
+        default 16
         help
-            Version of the five-color light
+            There are more enumerations like that
+            up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+            They are not shown here to reduce redundant information.
+            @note GPIO34..39 are input mode only.
     
-    config LIGHT_MEMORY_DEBUG
-        bool "Enable memory debugging"
-        default n
+    config LIGHT_GPIO_BLUE
+        int "Light blue pin GPIO number"
+        range 0 33
+        default 5
         help
-            Enable memory debugging.
+            There are more enumerations like that
+            up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+            They are not shown here to reduce redundant information.
+            @note GPIO34..39 are input mode only.
     
-    config LIGHT_BLE_GATEWAY
-        bool "Enable the BLE gateway on the non-root node"
-        default n
+    config LIGHT_GPIO_COLD
+        int "Light cold colors pin GPIO number"
+        range 0 33
+        default 23
         help
-            Enabling the BLE gateway on a non-root node,
-            enabling the BLE gateway will consume a lot of memory.
-endmenu
-
-menu "aliyun config"
-    depends on LIGHT_EXAMPLE_ALIYUN
-    config LIGHT_VERSION
-        string "Light version"
-        default "1.1.1"
+            There are more enumerations like that
+            up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+            They are not shown here to reduce redundant information.
+            @note GPIO34..39 are input mode only.
+    
+    config LIGHT_GPIO_WARM
+        int "Light warm color pin GPIO number"
+        range 0 33
+        default 19
         help
-            Version of the five-color light
-
-    config ALIYUN_META_PRODUCT_KEY
-        string "Aliyun product key"
-        default "xxxx"
+            There are more enumerations like that
+            up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
+            They are not shown here to reduce redundant information.
+            @note GPIO34..39 are input mode only.
+    
+    config LIGHT_FADE_PERIOD_MS
+        int "The time from the current color to the next color"
+        default 500
         help
-            Aliyun product key.
-
-    config ALIYUN_META_PRODUCT_SECRET
-        string "Aliyun product secret"
-        default "xxxx"
+            The time from the current color to the next color.
+    
+    config LIGHT_BLINK_PERIOD_MS
+        int "Period of blinking lights"
+        default 2000
         help
-            Aliyun product secret.
+            Period of blinking lights.
+    endmenu
 
-    config ALIYUN_META_DEVICE_NAME
-        string "Aliyun device name"
-        default "xxxx"
-        help
-            Aliyun device name.
+    choice LIGHT_EXAMPLE_MODE
+        bool "Select light example mode"
+        default LIGHT_EXAMPLE_MESH
+        help 
+            Specify which light example to build,support mesh-light or mesh-light with aliyun
+        config LIGHT_EXAMPLE_MESH
+        bool "mesh light"
+        config LIGHT_EXAMPLE_ALIYUN
+        bool "mesh light with aliyun"
+        
+    endchoice
 
-    config ALIYUN_META_DEVICE_SECRET
-        string "aliyun device secret"
-        default "xxxx"
-        help
-            Aliyun device secret.
-endmenu
+    config LIGHT_EXAMPLE_MODE
+        int
+        default 0 if LIGHT_EXAMPLE_MESH
+        default 1 if LIGHT_EXAMPLE_ALIYUN
 
-config LIGHT_MEMORY_DEBUG
-    bool "Enable memory debugging"
-    default n
-    help
-        Enable memory debugging.
+    menu "mesh light config"
+        depends on LIGHT_EXAMPLE_MESH
+        config LIGHT_VERSION
+            string "Light version"
+            default "1.2.2"
+            help
+                Version of the five-color light
+        
+        config LIGHT_MEMORY_DEBUG
+            bool "Enable memory debugging"
+            default n
+            help
+                Enable memory debugging.
+        
+        config LIGHT_BLE_GATEWAY
+            bool "Enable the BLE gateway on the non-root node"
+            default n
+            help
+                Enabling the BLE gateway on a non-root node,
+                enabling the BLE gateway will consume a lot of memory.
+    
+        config LIGHT_NETWORKING_TIME_OPTIMIZE_ENABLE
+            bool "Optimize networking time"
+            default n
+            help
+                1. Set the Bluetooth configuration network device to a fixed root node, eliminating the time of competing for the root node
+                2. Once the networking is complete, select again whether there is a better root node.
+                3. When power is turned on again, the device that was the root node last time is selected as the root node by default.
+        
+        config LIGHT_RESTART_COUNT_RESET
+            int "Reset the number of times the device has been powered off continuously to enter the configured network mode"
+            range 3 10
+            default 3
+            help
+                Reset the number of times the device has been powered off continuously to enter the configured network mode.
+        
+        config LIGHT_RESTART_COUNT_FALLBACK
+            int "Number of times the device restarted abnormally, entered, and exited from the previous version"
+            range 15 32
+            default 15
+            help
+                Number of times the device restarted abnormally, entered, and exited from the previous version.
+    
+    endmenu
 
-config LIGHT_BLE_GATEWAY
-    bool "Enable the BLE gateway on the non-root node"
-    default n
-    help
-        Enabling the BLE gateway on a non-root node,
-        enabling the BLE gateway will consume a lot of memory.
-
-config LIGHT_NETWORKING_TIME_OPTIMIZE_ENABLE
-    bool "Optimize networking time"
-    default n
-    help
-        1. Set the Bluetooth configuration network device to a fixed root node, eliminating the time of competing for the root node
-        2. Once the networking is complete, select again whether there is a better root node.
-        3. When power is turned on again, the device that was the root node last time is selected as the root node by default.
-
-config LIGHT_RESTART_COUNT_RESET
-    int "Reset the number of times the device has been powered off continuously to enter the configured network mode"
-    range 3 10
-    default 3
-    help
-        Reset the number of times the device has been powered off continuously to enter the configured network mode.
-
-config LIGHT_RESTART_COUNT_FALLBACK
-    int "Number of times the device restarted abnormally, entered, and exited from the previous version"
-    range 15 32
-    default 15
-    help
-        Number of times the device restarted abnormally, entered, and exited from the previous version.
+    menu "aliyun config"
+        depends on LIGHT_EXAMPLE_ALIYUN
+        config LIGHT_VERSION
+            string "Light version"
+            default "1.1.1"
+            help
+                Version of the five-color light
+    
+        config ALIYUN_META_PRODUCT_KEY
+            string "Aliyun product key"
+            default "xxxx"
+            help
+                Aliyun product key.
+    
+        config ALIYUN_META_PRODUCT_SECRET
+            string "Aliyun product secret"
+            default "xxxx"
+            help
+                Aliyun product secret.
+    
+        config ALIYUN_META_DEVICE_NAME
+            string "Aliyun device name"
+            default "xxxx"
+            help
+                Aliyun device name.
+    
+        config ALIYUN_META_DEVICE_SECRET
+            string "aliyun device secret"
+            default "xxxx"
+            help
+                Aliyun device secret.
+    endmenu
 
 endmenu
 
