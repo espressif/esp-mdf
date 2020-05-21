@@ -1,9 +1,5 @@
 
-set(COMPONENT_SRCS "router_example.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS "")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES mcommon mconfig mwifi mlink)
-
-register_component()
+idf_component_register(SRCS "./router_example.c"
+                    INCLUDE_DIRS ""
+                    REQUIRES mcommon mconfig mwifi mlink
+)

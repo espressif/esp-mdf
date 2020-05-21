@@ -1,22 +1,22 @@
 
 # componet standalone mode
 if(NOT CONFIG_IOT_SOLUTION_EMBED)
-    set(COMPONENT_SRCS "adaptation.cpp"
+    set(srcs "adaptation.cpp"
                         "font7s.c"
                         "glcdfont.c"
                         "iot_lcd.cpp"
                         "spi_lcd.c"
                         "Adafruit-GFX-Library/Adafruit_GFX.cpp"
                         # "Adafruit-GFX-Library/Adafruit_SPITFT.cpp"
-                        "Adafruit-GFX-Library/glcdfont.c")
-
-    set(COMPONENT_ADD_INCLUDEDIRS "."
+                        "Adafruit-GFX-Library/glcdfont.c"
+    )
+    set(include_dirs "."
                                     "include"
                                     "Adafruit-GFX-Library/Fonts"
                                     "Adafruit-GFX-Library")
 else()
     if(CONFIG_IOT_LCD_ENABLE)
-        set(COMPONENT_SRCS "adaptation.cpp"
+        set(srcs "adaptation.cpp"
                             "font7s.c"
                             "glcdfont.c"
                             "iot_lcd.cpp"
@@ -25,20 +25,22 @@ else()
                             # "Adafruit-GFX-Library/Adafruit_SPITFT.cpp"
                             "Adafruit-GFX-Library/glcdfont.c")
 
-        set(COMPONENT_ADD_INCLUDEDIRS "."
+        set(include_dirs "."
                                         "include"
                                         "Adafruit-GFX-Library/Fonts"
                                         "Adafruit-GFX-Library")
     else()
-        set(COMPONENT_SRCS "")
-        set(COMPONENT_ADD_INCLUDEDIRS "")
+        set(srcs "")
+        set(include_dirs "")
         message(STATUS "Building empty lcd component due to configuration")
     endif()
 endif()
 
 # requirements can't depend on config
-set(COMPONENT_REQUIRES spi_flash)
+idf_component_register(SRCS ${srcs}
+                    INCLUDE_DIRS ${include_dirs}
+                    REQUIRES spi_flash
+)
 
-register_component()
-
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
 add_compile_options(-D__AVR_ATtiny85__)

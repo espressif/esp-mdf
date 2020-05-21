@@ -8,9 +8,8 @@ if(CONFIG_BT_ENABLED)
                         "mconfig_blufi.c")
 endif()
 
-set(COMPONENT_ADD_INCLUDEDIRS "include")
+set(COMPONENT_INCLUDEDIRS "include")
 
-# requirements can't depend on config
-set(COMPONENT_REQUIRES bt mcommon mespnow mwifi miniz nvs_flash)
-
-register_component()
+idf_component_register(SRCS "${COMPONENT_SRCS}"
+                    INCLUDE_DIRS "${COMPONENT_INCLUDEDIRS}"
+                    REQUIRES bt mcommon mespnow mwifi miniz nvs_flash)

@@ -147,7 +147,7 @@ void mdf_mem_print_task(void);
  */
 #define MDF_REALLOC_RETRY(ptr, size) ({ \
         void *new_ptr = NULL; \
-        while (size && !(new_ptr = realloc(ptr, size))) { \
+        while (size > 0 && !(new_ptr = realloc(ptr, size))) { \
             MDF_LOGW("<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
             vTaskDelay(pdMS_TO_TICKS(100)); \
         } \

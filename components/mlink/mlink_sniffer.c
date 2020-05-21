@@ -201,6 +201,7 @@ static void sniffer_wifi_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
 #include "esp_gap_ble_api.h"
 #endif /**< CONFIG_BT_ENABLED */
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 static mdf_err_t mlink_sniffer_ble_cb(void *data, size_t size)
 {
 #if CONFIG_BT_ENABLED
@@ -243,6 +244,7 @@ static mdf_err_t mlink_sniffer_ble_cb(void *data, size_t size)
 
     return ESP_OK;
 }
+#endif
 
 mdf_err_t mlink_sniffer_set_config(const mlink_sniffer_config_t *config)
 {
@@ -288,7 +290,7 @@ mdf_err_t mlink_sniffer_data(uint8_t **data, size_t *size)
 
         *size += sniffer_node->data.size + sizeof(sniffer_node->data.size);
 
-        if(!(*data = MDF_REALLOC(*data, *size))){
+        if (!(*data = MDF_REALLOC(*data, *size))) {
             MDF_FREE(*data);
             return MDF_ERR_NO_MEM;
         }
@@ -338,6 +340,7 @@ mdf_err_t mlink_sniffer_wifi_stop()
     return MDF_OK;
 }
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 mdf_err_t mlink_sniffer_ble_start()
 {
     mdf_err_t ret = MDF_OK;
@@ -362,6 +365,7 @@ mdf_err_t mlink_sniffer_ble_stop()
 
     return MDF_OK;
 }
+#endif
 
 mdf_err_t mlink_sniffer_init()
 {

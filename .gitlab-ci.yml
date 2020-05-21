@@ -9,7 +9,11 @@ variables:
   MAKEFLAGS: "-j5 --no-keep-going"
 
 # GitLab-CI environment
-
+  SUBMODULE_FETCH_TOOL: "esp-idf/tools/ci/ci_fetch_submodule.py"
+  # by default we will fetch all submodules
+  # jobs can overwrite this variable to only fetch submodules they required
+  # set to "none" if don't need to fetch submodules
+  SUBMODULES_TO_FETCH: "all"
   # more attempts for more robust
   GET_SOURCES_ATTEMPTS: "10"
   ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
@@ -20,11 +24,19 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
   MDF_PATH: "$CI_PROJECT_DIR"
   IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
+  # Docker images
+  BOT_DOCKER_IMAGE_TAG: ":latest"
+
+.setup_tools_unless_target_test: &setup_tools_unless_target_test |
+  if [ "$CI_JOB_STAGE" != "target_test" ]; then
+  esp-idf/tools/idf_tools.py --non-interactive install && eval "$(esp-idf/tools/idf_tools.py --non-interactive export)" || exit 1
+  fi
+
+.fetch_submodules: &fetch_submodules |
+  python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
+
 
 before_script:
-  - export PATH="/opt/xtensa-esp32-elf/bin:$PATH"
-  - export PATH="/opt/esp32ulp-elf-binutils/bin:$PATH"
-  - export PATH="$MDF_PATH/esp-idf/tools:$PATH"
   # add gitlab ssh key
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
@@ -34,15 +46,14 @@ before_script:
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
   # replace submodule esp-idf to internal repository to speedup cloning
   - sed -i "s%https://github.com/espressif/esp-idf.git%${GITLAB_SSH_SERVER}/idf/esp-idf.git%" .gitmodules
-  # replace submodule Adafruit-GFX-Library to internal repository to speedup cloning
-  - sed -i "s%https://github.com/adafruit/Adafruit-GFX-Library.git%${GITLAB_SSH_SERVER}/zzchen/adafruit-gfx-library.git%" .gitmodules
-  - git submodule update --init
-  - source esp-idf/tools/ci/setup_python.sh
   # (the same regular expressions are used to set these are used in 'only:' sections below
+  - git submodule update --init --recursive
+  - source esp-idf/tools/ci/setup_python.sh
   - source esp-idf/tools/ci/configure_ci_environment.sh
+  - *setup_tools_unless_target_test
+  - export PATH="$MDF_PATH/esp-idf/tools:$PATH"
+  - unset IDF_PATH
 
-  # fetch the submodules (& if necessary re-fetch repo) from gitlab
-  - time ./esp-idf/tools/ci/get-full-sources.sh
 
 .build_template: &build_template
   stage: build
@@ -145,17 +156,17 @@ build_example_buddy:
     ARTIFACTS_NAME: "buddy"
     EXAMPLE_PATH: "examples/development_kit/buddy"
 
-build_example_aliyun_getstarted:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "aliyun_getstarted"
-    EXAMPLE_PATH: "examples/aliyun_linkkit/get-started"
-
-build_example_mesh_with_aliyun:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mesh_with_aliyun"
-    EXAMPLE_PATH: "examples/aliyun_linkkit/mesh-with-aliyun"
+# build_example_aliyun_getstarted:
+#   <<: *build_template
+#   variables:
+#     ARTIFACTS_NAME: "aliyun_getstarted"
+#     EXAMPLE_PATH: "examples/aliyun_linkkit/get-started"
+# 
+# build_example_mesh_with_aliyun:
+#   <<: *build_template
+#   variables:
+#     ARTIFACTS_NAME: "mesh_with_aliyun"
+#     EXAMPLE_PATH: "examples/aliyun_linkkit/mesh-with-aliyun"
 
 push_master_to_github:
   stage: deploy

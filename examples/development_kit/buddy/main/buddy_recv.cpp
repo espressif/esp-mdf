@@ -177,9 +177,6 @@ static void espnow_recv_task(void *arg)
                                 break;
                             }
 
-                            char file_name[32] = {0x0};
-
-
                             MDF_LOGI("================= CORE DUMP START =================");
 
                             for (int offset = 0; offset < written_size; offset += recv_size) {

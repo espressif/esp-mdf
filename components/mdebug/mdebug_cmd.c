@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "esp_console.h"
 #include "argtable3/argtable3.h"
-#include "wpa2/utils/base64.h"
+#include "esp_console.h"
+#include "mbedtls/base64.h"
 
 #include "mdf_common.h"
 #include "mdebug.h"
 
-#define MDEBUG_LOG_MAX_SIZE   (MESPNOW_PAYLOAD_LEN * 2 - 2)  /**< Set log length size */
+#define MDEBUG_LOG_MAX_SIZE (MESPNOW_PAYLOAD_LEN * 2 - 2) /**< Set log length size */
 
 static const char *TAG = "mdebug_cmd";
 
@@ -101,7 +101,7 @@ static int log_func(int argc, char **argv)
 
     mdebug_log_get_config(&log_config);
 
-    if (arg_parse(argc, argv, (void **) &log_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **)&log_args) != ESP_OK) {
         arg_print_errors(stderr, log_args.end, argv[0]);
         return MDF_FAIL;
     }
@@ -119,7 +119,7 @@ static int log_func(int argc, char **argv)
                         "The format of the address is incorrect. Please enter the format as xx:xx:xx:xx:xx:xx");
     }
 
-    if (log_args.enable_type->count) {  /**< Enable write to flash memory */
+    if (log_args.enable_type->count) { /**< Enable write to flash memory */
         if (!strcasecmp(log_args.enable_type->sval[0], "flash")) {
             log_config.log_flash_enable = true;
         } else if (!strcasecmp(log_args.enable_type->sval[0], "uart")) {
@@ -129,7 +129,7 @@ static int log_func(int argc, char **argv)
         }
     }
 
-    if (log_args.disable_type->count) {  /**< Disable write to flash memory */
+    if (log_args.disable_type->count) { /**< Disable write to flash memory */
         if (!strcasecmp(log_args.enable_type->sval[0], "flash")) {
             log_config.log_flash_enable = false;
         } else if (!strcasecmp(log_args.enable_type->sval[0], "uart")) {
@@ -302,7 +302,7 @@ static int coredump_func(int argc, char **argv)
     ssize_t coredump_size = 0;
     const esp_partition_t *coredump_part = NULL;
 
-    if (arg_parse(argc, argv, (void **) &coredump_args) != ESP_OK) {
+    if (arg_parse(argc, argv, (void **)&coredump_args) != ESP_OK) {
         arg_print_errors(stderr, coredump_args.end, argv[0]);
         return MDF_FAIL;
     }
@@ -338,7 +338,10 @@ static int coredump_func(int argc, char **argv)
         for (int offset = 4; offset < coredump_size; offset += COREDUMP_BUFFER_SIZE) {
             size_t size = MIN(COREDUMP_BUFFER_SIZE, coredump_size - offset);
             esp_partition_read(coredump_part, offset, buffer, size);
-            uint8_t *b64_buf = base64_encode(buffer, size, NULL);
+            size_t dlen = (size + 2) / 3 * 4; //base64 encode maximum length = ⌈ n / 3 ⌉ * 4
+            size_t olen = 0;
+            uint8_t *b64_buf = MDF_MALLOC(dlen);
+            mbedtls_base64_encode(b64_buf, dlen, &olen, buffer, size);
             printf("%s", b64_buf);
             MDF_FREE(b64_buf);
         }

@@ -83,6 +83,7 @@ mdf_err_t mlink_sniffer_wifi_start();
  */
 mdf_err_t mlink_sniffer_wifi_stop();
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Start BLE scanning
  *
@@ -100,6 +101,8 @@ mdf_err_t mlink_sniffer_ble_start();
  *    - MDF_FAIL
  */
 mdf_err_t mlink_sniffer_ble_stop();
+
+#endif
 
 /**
  * @brief Set the configuration of the sniffer

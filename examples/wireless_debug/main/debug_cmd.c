@@ -14,7 +14,6 @@
 
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
-#include "wpa2/utils/base64.h"
 
 #include "sdcard.h"
 #include "debug_recv.h"
@@ -260,6 +259,7 @@ static struct {
 static int wifi_config_func(int argc, char **argv)
 {
     int valid = 0; /* avoid save a empty config */
+
     if (arg_parse(argc, argv, (void **) &wifi_config_args) != ESP_OK) {
         arg_print_errors(stderr, wifi_config_args.end, argv[0]);
         return ESP_FAIL;
@@ -296,7 +296,7 @@ static int wifi_config_func(int argc, char **argv)
     }
 
     if (wifi_config_args.save->count) {
-        if(valid){
+        if (valid) {
             mdf_info_save("wifi_config", &wifi_config, sizeof(wifi_config_t));
         } else {
             MDF_LOGE("Configuration is empty");

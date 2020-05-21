@@ -917,11 +917,15 @@ static mdf_err_t mlink_sniffer_set_cfg(mlink_handle_data_t *handle_data)
         ret = mlink_sniffer_wifi_stop();
     }
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+
     if (config.enable_type & MLINK_SNIFFER_BLE) {
         ret = mlink_sniffer_ble_start();
     } else {
         ret = mlink_sniffer_ble_stop();
     }
+
+#endif
 
     return ret;
 }

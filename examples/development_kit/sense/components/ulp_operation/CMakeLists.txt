@@ -1,12 +1,9 @@
 
-set(COMPONENT_SRCS "ulp_sensor.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS ". include")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES mcommon mwifi mlink soc hts221 bh1750 ulp)
-
-register_component()
+idf_component_register(
+    SRCS "./ulp_sensor.c"
+    INCLUDE_DIRS "." "./include"
+    REQUIRES mcommon mwifi mlink soc hts221 bh1750 ulp nvs_flash driver
+    )
 
 #
 # ULP support additions to component makefile.
@@ -18,11 +15,8 @@ set(ULP_APP_NAME ulp_${COMPONENT_NAME})
 # 2. Specify all assembly source files here.
 #    Files should be placed into a separate directory (in this case, ulp/),
 #    which should not be added to COMPONENT_SRCS.
-set(ULP_S_SOURCES "ulp/bh1750.S"
-                    "ulp/hts221.S"
-                    "ulp/i2c_dev.S"
-                    "ulp/i2c.S"
-                    "ulp/stack.S")
+set(ULP_S_SOURCES "ulp/bh1750.S ulp/hts221.S ulp/i2c.S ulp/i2c_dev.S ulp/stack.S"
+                    )
 #
 # 3. List all the component source files which include automatically
 #    generated ULP export file, $(ULP_APP_NAME).h:
@@ -31,4 +25,5 @@ set(ULP_EXP_DEP_SRCS "ulp_sensor.c")
 # 4. Include build rules for ULP program
 # End of ULP support additions to component makefile.
 #
-include($ENV{IDF_PATH}/components/ulp/component_ulp_common.cmake)
+#include($ENV{IDF_PATH}/components/ulp/component_ulp_common.cmake)
+ulp_embed_binary(${ULP_APP_NAME} ${ULP_S_SOURCES} ${ULP_EXP_DEP_SRCS})

@@ -286,8 +286,8 @@ light_handle_t iot_light_create(ledc_timer_t timer, ledc_mode_t speed_mode, uint
     ledc_timer_config_t timer_conf = {
         .timer_num = timer,
         .speed_mode = speed_mode,
+        .duty_resolution = timer_bit,
         .freq_hz = freq_hz,
-        .bit_num = timer_bit
     };
     ERR_ASSERT(TAG, ledc_timer_config(&timer_conf), NULL);
     light_t *light_ptr = (light_t *)calloc(1, sizeof(light_t) + sizeof(light_channel_t *) * channel_num);
@@ -344,7 +344,7 @@ esp_err_t iot_light_delete(light_handle_t light_handle)
         }
     }
 
-    ledc_fade_func_uninstall(0);
+    ledc_fade_func_uninstall();
     g_fade_installed = false;
     iot_timer_stop(&(light->hw_timer));
 FREE_MEM:

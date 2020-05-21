@@ -11,10 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include "rom/rtc.h"
-
 #include "mupgrade.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/rtc.h"
+#endif
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/rtc.h"
+#endif
+
 
 #ifndef CONFIG_MUPGRADE_FIRMWARE_FLAG
 #define CONFIG_MUPGRADE_FIRMWARE_FLAG   "** MUPGRADE_FIRMWARE_FLAG **"
@@ -107,8 +113,6 @@ static bool restart_trigger()
     return ret;
 }
 
-#ifndef CONFIG_FREERTOS_UNICORE
-
 static void mupgrade_version_fallback_task(void *arg)
 {
     if (restart_trigger() && mupgrade_version_fallback() == MDF_OK) {
@@ -119,8 +123,6 @@ static void mupgrade_version_fallback_task(void *arg)
 
     vTaskDelete(NULL);
 }
-
-#endif /**< CONFIG_FREERTOS_UNICORE */
 
 #endif /**< CONFIG_MUPGRADE_VERSION_FALLBACK_RESTART */
 
@@ -133,20 +135,8 @@ __attribute((constructor)) mdf_err_t mupgrade_partition_switch()
 
 #ifdef CONFIG_MUPGRADE_VERSION_FALLBACK_RESTART
 
-#ifdef CONFIG_FREERTOS_UNICORE
-    mdf_err_t ret = MDF_OK;
-
-    if (restart_trigger()) {
-        ret = mupgrade_version_fallback();
-        MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ota_set_boot_partition failed!");
-
-        esp_restart();
-    }
-
-#else
     xTaskCreate(mupgrade_version_fallback_task, "mupgrade_version_fallback", 4 * 1024,
                 NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY + 5, NULL);
-#endif /**< CONFIG_FREERTOS_UNICORE */
 
 #endif /**< CONFIG_MUPGRADE_VERSION_FALLBACK_RESTART */
 

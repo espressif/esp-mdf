@@ -51,6 +51,7 @@ enum button_cid {
 
 static const char *TAG                          = "button";
 static EventGroupHandle_t g_event_group_trigger = NULL;
+esp_netif_t *sta_netif;
 
 static mdf_err_t wifi_init()
 {
@@ -64,8 +65,9 @@ static mdf_err_t wifi_init()
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -250,6 +252,11 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
     switch (event) {
         case MDF_EVENT_MWIFI_PARENT_CONNECTED: {
             MDF_LOGI("Parent is connected on station interface");
+
+            if (esp_mesh_is_root()) {
+                esp_netif_dhcpc_start(sta_netif);
+            }
+
             wifi_second_chan_t second           = 0;
             mlink_espnow_config_t espnow_config = {0x0};
 

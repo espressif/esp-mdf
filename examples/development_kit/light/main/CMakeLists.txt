@@ -1,16 +1,13 @@
 
 if(CONFIG_LIGHT_EXAMPLE_ALIYUN)
 set(COMPONENT_SRCS "aliyun_light_example.c")
+set(COMPONENT_REQUIRES mcommon mwifi mlink mdebug light_driver light_handle mesh_utils aliyun_sdk)
 else()
 set(COMPONENT_SRCS "light_example.c")
+set(COMPONENT_REQUIRES mcommon mwifi mlink mdebug light_driver light_handle mesh_utils)
 endif()
 
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES mcommon mwifi mlink mdebug light_driver light_handle mesh_utils aliyun_sdk)
-# if(CONFIG_LIGHT_EXAMPLE_ALIYUN)
-# list(APPEND COMPONENT_REQUIRES aliyun_sdk)
-# endif()
-
-register_component()
+idf_component_register(SRCS "./light_example.c"
+                    INCLUDE_DIRS "."
+                    REQUIRES mcommon mwifi mlink mdebug light_driver light_handle mesh_utils
+)

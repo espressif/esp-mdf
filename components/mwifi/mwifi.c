@@ -129,51 +129,60 @@ static mdf_err_t mwifi_waive_root_timer_create(void)
 
 #endif /**< CONFIG_MWIFI_WAIVE_ROOT */
 
-static void esp_mesh_event_cb(mesh_event_t event)
+static void esp_ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-    MDF_LOGD("esp_mesh_event_cb event.id: %d", event.id);
-    static int s_disconnected_count = 0;
-    static mesh_event_info_t s_evet_info = {0};
+    MDF_LOGD("esp_ip_event_cb event_id: %d", event_id);
+    static mesh_event_info_t s_event_info = { 0 };
 
-    switch (event.id) {
-        case MESH_EVENT_PARENT_CONNECTED:
+    /**< Send event to the event handler */
+    memcpy(&s_event_info, event_data, sizeof(mesh_event_info_t));
+
+    switch (event_id) {
+        case IP_EVENT_STA_LOST_IP: {
+            MDF_LOGI("Root loses the IP address");
+            esp_mesh_disconnect();
+            mdf_event_loop_send(MDF_EVENT_MWIFI_ROOT_LOST_IP, &s_event_info);
+            break;
+        }
+
+#ifdef CONFIG_MWIFI_WAIVE_ROOT
+
+        case IP_EVENT_STA_GOT_IP: {
+            mwifi_waive_root_timer_delete();
+            mwifi_waive_root_timer_create();
+            mdf_event_loop_send(MDF_EVENT_MWIFI_ROOT_GOT_IP, &s_event_info);
+            break;
+        }
+
+#endif /**< CONFIG_MWIFI_WAIVE_ROOT */
+
+        default:
+            break;
+    }
+}
+
+static void esp_mesh_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    MDF_LOGD("esp_mesh_event_cb event_id: %d", event_id);
+    static int s_disconnected_count = 0;
+    static mesh_event_info_t s_evet_info = { {0} };
+
+    switch (event_id) {
+        case MESH_EVENT_PARENT_CONNECTED: {
             MDF_LOGI("Parent is connected");
             mwifi_connected_flag = true;
             s_disconnected_count = 0;
 
-            /**< Start DHCP client on station interface for root node */
             if (esp_mesh_is_root()) {
-                tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
                 g_rootless_flag = false;
-            } else {
-                tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
             }
 
             break;
+        }
 
-#ifdef CONFIG_MWIFI_WAIVE_ROOT
-
-        case MESH_EVENT_ROOT_GOT_IP:
-            mwifi_waive_root_timer_delete();
-            mwifi_waive_root_timer_create();
-            break;
-
-        case MESH_EVENT_LAYER_CHANGE:
-            if (!esp_mesh_is_root()) {
-                mwifi_waive_root_timer_delete();
-            }
-
-            break;
-
-#endif /**< CONFIG_MWIFI_WAIVE_ROOT */
-
-        case MESH_EVENT_ROOT_LOST_IP:
-            MDF_LOGI("Root loses the IP address");
-            esp_mesh_disconnect();
-            break;
-
-        case MESH_EVENT_PARENT_DISCONNECTED:
-            MDF_LOGI("Parent is disconnected, reason: %d", event.info.disconnected.reason);
+        case MESH_EVENT_PARENT_DISCONNECTED: {
+            mesh_event_disconnected_t *disconnected = (mesh_event_disconnected_t *)event_data;
+            MDF_LOGI("Parent is disconnected, reason: %d", disconnected->reason);
             mwifi_connected_flag = false;
 
             /**
@@ -194,51 +203,63 @@ static void esp_mesh_event_cb(mesh_event_t event)
             }
 
             break;
+        }
 
-        case MESH_EVENT_STARTED:
+#ifdef CONFIG_MWIFI_WAIVE_ROOT
+
+        case MESH_EVENT_LAYER_CHANGE: {
+            if (!esp_mesh_is_root()) {
+                mwifi_waive_root_timer_delete();
+            }
+
+            break;
+        }
+
+#endif /**< CONFIG_MWIFI_WAIVE_ROOT */
+
+        case MESH_EVENT_STARTED: {
             MDF_LOGI("MESH is started");
             s_disconnected_count = 0;
             g_mwifi_started_flag = true;
 
-            /** stop DHCP server on softAP interface
-                 * stop DHCP client on station interface
-                 */
-            tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
-            tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
             break;
+        }
 
-        case MESH_EVENT_STOPPED:
+        case MESH_EVENT_STOPPED: {
             MDF_LOGI("MESH is stopped");
             g_mwifi_started_flag = false;
             mwifi_connected_flag = false;
 
-            /** stop DHCP server on softAP interface
-                 * stop DHCP client on station interface
-                 */
-            tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
-            tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
             break;
+        }
 
-        case MDF_EVENT_MWIFI_ROUTING_TABLE_ADD:
+        case MESH_EVENT_ROUTING_TABLE_ADD: {
+            mesh_event_routing_table_change_t *routing_table = (mesh_event_routing_table_change_t *)event_data;
             MDF_LOGI("Routing table is changed by adding newly joined children add_num: %d, total_num: %d",
-                     event.info.routing_table.rt_size_change,
-                     event.info.routing_table.rt_size_new);
+                     routing_table->rt_size_change,
+                     routing_table->rt_size_new);
             g_waive_root_interval = MWIFI_WAIVE_ROOT_INTERVAL;
             break;
+        }
 
-        case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE:
+        case MESH_EVENT_ROUTING_TABLE_REMOVE: {
+            mesh_event_routing_table_change_t *routing_table = (mesh_event_routing_table_change_t *)event_data;
             MDF_LOGI("Routing table is changed by removing leave children remove_num: %d, total_num: %d",
-                     event.info.routing_table.rt_size_change,
-                     event.info.routing_table.rt_size_new);
+                     routing_table->rt_size_change,
+                     routing_table->rt_size_new);
             break;
+        }
 
-        case MESH_EVENT_TODS_STATE:
-            g_toDs_status_flag = event.info.toDS_state;
+        case MESH_EVENT_TODS_STATE: {
+            mesh_event_toDS_state_t *tdos_state = (mesh_event_toDS_state_t *)event_data;
             MDF_LOGI("State represents: %d", g_toDs_status_flag);
+            g_toDs_status_flag = *tdos_state;
             break;
+        }
 
-        case MESH_EVENT_NETWORK_STATE:
-            g_rootless_flag = event.info.network_state.is_rootless;
+        case MESH_EVENT_NETWORK_STATE: {
+            mesh_event_network_state_t *network_state = (mesh_event_network_state_t *)event_data;
+            g_rootless_flag = network_state->is_rootless;
 
             MDF_LOGI("Network state: %s", g_rootless_flag ? "root_less" : "root_connect");
 
@@ -247,16 +268,20 @@ static void esp_mesh_event_cb(mesh_event_t event)
                 mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info);
             }
 
-            memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
+            memcpy(&s_evet_info, event_data, sizeof(mesh_event_info_t));
             break;
+        }
 
         default:
             break;
     }
 
     /**< Send event to the event handler */
-    memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
-    mdf_event_loop_send(event.id, &s_evet_info);
+    if (event_data != NULL) {
+        memcpy(&s_evet_info, event_data, sizeof(mesh_event_info_t));
+    }
+
+    mdf_event_loop_send(event_id, &s_evet_info);
 }
 
 mdf_err_t mwifi_init(const mwifi_init_config_t *config)
@@ -316,6 +341,7 @@ void mwifi_print_config()
     MDF_LOGI("max_layer             : %d", esp_mesh_get_max_layer());
     MDF_LOGI("max_connection        : %d", cfg.mesh_ap.max_connection);
     MDF_LOGI("capacity_num          : %d", esp_mesh_get_capacity_num());
+    MDF_LOGI("topology              : %d", esp_mesh_get_topology());
 
     MDF_LOGI("****************  Stability  ****************");
     MDF_LOGI("assoc_expire_ms       : %d", esp_mesh_get_ap_assoc_expire() * 1000);
@@ -388,7 +414,8 @@ mdf_err_t mwifi_start()
     }
 
     /**< Set mesh event callback. */
-    mesh_config.event_cb = esp_mesh_event_cb;
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &esp_ip_event_cb, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, &esp_mesh_event_cb, NULL));
 
     /**
      * @brief Mesh root configuration
@@ -414,6 +441,7 @@ mdf_err_t mwifi_start()
      *  - Set mesh network capacity (max:1000, default:300)
      */
     mesh_config.mesh_ap.max_connection = init_config->max_connection;
+    ESP_ERROR_CHECK(esp_mesh_set_topology(init_config->topology));
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(init_config->max_layer));
     ESP_ERROR_CHECK(esp_mesh_set_capacity_num(init_config->capacity_num));
 
@@ -855,7 +883,7 @@ mdf_err_t mwifi_write(const uint8_t *dest_addrs, const mwifi_data_type_t *data_t
 
         ret = compress(compress_data, &compress_size, mesh_data.data, mesh_data.size);
         MDF_ERROR_GOTO(ret != MZ_OK, EXIT, "Compressed whitelist failed, ret: 0x%x", -ret);
-        MDF_LOGD("compress, size: %d, compress_size: %d, rate: %d%%",
+        MDF_LOGD("compress, size: %zu, compress_size: %d, rate: %d%%",
                  size, (int)compress_size, (int)compress_size * 100 / size);
 
         if (compress_size > size) {

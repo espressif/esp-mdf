@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rom/uart.h"
-
 #include "mwifi.h"
 #include "mdf_common.h"
 #include "mespnow.h"
@@ -41,6 +39,7 @@ struct mesh_iperf_cfg {
 };
 
 static const char *TAG = "mwifi_test";
+esp_netif_t *sta_netif;
 
 static bool mac_str2hex(const char *mac_str, uint8_t *mac_hex)
 {
@@ -741,8 +740,9 @@ static mdf_err_t wifi_init()
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -755,8 +755,6 @@ static mdf_err_t wifi_init()
 
 static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 {
-    mesh_event_info_t *event_info = (mesh_event_info_t *)ctx;
-
     switch (event) {
         case MDF_EVENT_MWIFI_STARTED:
             MDF_LOGI("MESH is started");
@@ -764,27 +762,37 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected on station interface");
+
+            if (esp_mesh_is_root()) {
+                esp_netif_dhcpc_start(sta_netif);
+            }
+
             break;
 
         case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
             MDF_LOGI("Parent is disconnected on station interface");
             break;
 
-        case MDF_EVENT_MWIFI_CHILD_DISCONNECTED:
+        case MDF_EVENT_MWIFI_CHILD_DISCONNECTED: {
+            mesh_event_info_t *event_info = (mesh_event_info_t *)ctx;
             MDF_LOGI("disconnected child: " MACSTR, MAC2STR(event_info->child_disconnected.mac));
             break;
+        }
 
         case MDF_EVENT_MWIFI_ROUTING_TABLE_ADD:
-        case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE:
+        case MDF_EVENT_MWIFI_ROUTING_TABLE_REMOVE: {
+            mesh_event_info_t *event_info = (mesh_event_info_t *)ctx;
             MDF_LOGI("total_num: %d, changed: %d", esp_mesh_get_total_node_num(), event_info->routing_table.rt_size_change);
             break;
+        }
 
         case MDF_EVENT_MWIFI_ROOT_GOT_IP: {
+            ip_event_got_ip_t *event_info = (ip_event_got_ip_t *)ctx;
             MDF_LOGI("Root obtains the IP address. It is posted by LwIP stack automatically");
             MDF_LOGI("sta ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
-                     IP2STR(&event_info->got_ip.ip_info.ip),
-                     IP2STR(&event_info->got_ip.ip_info.netmask),
-                     IP2STR(&event_info->got_ip.ip_info.gw));
+                     IP2STR(&event_info->ip_info.ip),
+                     IP2STR(&event_info->ip_info.netmask),
+                     IP2STR(&event_info->ip_info.gw));
             break;
         }
 

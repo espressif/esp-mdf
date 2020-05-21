@@ -34,6 +34,7 @@
 #define LIGHT_RESTART_COUNT_RESET     CONFIG_LIGHT_RESTART_COUNT_RESET
 
 static const char *TAG                       = "light_example";
+esp_netif_t *sta_netif;
 static TaskHandle_t g_root_write_task_handle = NULL;
 static TaskHandle_t g_root_read_task_handle  = NULL;
 static bool g_config_from_blufi_flag         = false;
@@ -425,6 +426,11 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected on station interface");
+
+            if (esp_mesh_is_root()) {
+                esp_netif_dhcpc_start(sta_netif);
+            }
+
             light_driver_breath_stop();
 
 #ifdef CONFIG_LIGHT_NETWORKING_TIME_OPTIMIZE_ENABLE
@@ -588,6 +594,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MCONFIG_BLUFI_FINISH:
             g_config_from_blufi_flag = true;
+            __attribute__ ((fallthrough));
 
         case MDF_EVENT_MCONFIG_CHAIN_FINISH:
             light_driver_breath_start(0, 255, 0); /**< green blink */
@@ -725,6 +732,10 @@ void app_main()
      *          3.Initialize espnow(ESP-NOW is a kind of connectionless WiFi communication protocol)
      */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
+
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    MDF_ERROR_ASSERT(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
 
@@ -809,6 +820,7 @@ void app_main()
     MDF_ERROR_ASSERT(mlink_set_handle("show_layer", light_show_layer));
     MDF_ERROR_ASSERT(mlink_set_handle("get_tsf_time", light_get_tsf_time));
 
+    MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
     /**
      * @brief Initialize and start esp-mesh network according to network configuration information.
      */

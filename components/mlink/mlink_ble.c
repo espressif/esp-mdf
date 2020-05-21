@@ -397,7 +397,7 @@ mdf_err_t mlink_ble_set_scan(uint16_t interval, uint16_t window, mlink_ble_cb_t 
 
     g_ble_scan_flag = false;
 
-    if(!interval && !window && !scan_cb){
+    if (!interval && !window && !scan_cb) {
         MDF_LOGD("stop the device scanning the peer device");
         return MDF_OK;
     }
