@@ -194,6 +194,7 @@ const char *mdf_err_to_name(mdf_err_t code)
             return mdf_err_msg_table[i].msg;
         }
     }
+
 #endif //CONFIG_MDF_ERR_TO_NAME_LOOKUP
 
     return mdf_unknown_msg;

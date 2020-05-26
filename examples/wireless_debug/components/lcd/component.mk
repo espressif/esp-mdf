@@ -23,3 +23,6 @@ COMPONENT_SRCDIRS :=
 endif
 
 endif
+ifeq ($(GCC_NOT_5_2_0), 1)
+Adafruit-GFX-Library/glcdfont.o: CFLAGS += -Wno-unused-const-variable
+endif

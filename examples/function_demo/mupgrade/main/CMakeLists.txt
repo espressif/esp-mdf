@@ -1,9 +1,5 @@
 
-set(COMPONENT_SRCS "mupgrade_example.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS "")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES mcommon mconfig mwifi mlink)
-
-register_component()
+idf_component_register(SRCS "./mupgrade_example.c"
+                INCLUDE_DIRS ""
+                REQUIRES mcommon mconfig mwifi mlink
+)

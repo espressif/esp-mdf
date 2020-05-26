@@ -14,7 +14,6 @@
 
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
-#include "wpa2/utils/base64.h"
 
 #include "mwifi.h"
 #include "mdebug_espnow.h"
@@ -1083,8 +1082,6 @@ static int attenuator_func(int argc, char **argv)
         arg_print_errors(stderr, attenuator_args.end, argv[0]);
         return MDF_FAIL;
     }
-
-    mdf_err_t ret = MDF_OK;
 
     if (attenuator_args.attenuator_data->count) {
         attenuator_set(attenuator_args.attenuator_data->ival[0]);

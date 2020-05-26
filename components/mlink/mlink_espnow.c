@@ -115,6 +115,7 @@ mdf_err_t mlink_espnow_init(mlink_espnow_config_t *config)
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mespnow_init");
 
     /**< espnow need to set the channel */
+    esp_wifi_set_promiscuous(1);
     ESP_ERROR_CHECK(esp_wifi_set_channel(config->channel, second));
     ESP_ERROR_CHECK(mespnow_add_peer(ESP_IF_WIFI_STA, config->parent_bssid, NULL));
     memcpy(&g_espnow_config, config, sizeof(mlink_espnow_config_t));

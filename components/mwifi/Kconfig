@@ -49,16 +49,35 @@ menu "MDF Mwifi"
         config MWIFI_CAPACITY_NUM
             int "Mesh network capacity"
             range 1 512
-            default 1024
+            default 512
             help
                 Network capacity, defining max number of devices allowed in the mesh network.
+        
+        choice
+            bool "Mesh Topology"
+            default MESH_TOPO_TREE
+            help 
+                Mesh Network Topology
+            config MESH_TOPO_TREE
+                bool "MESH_TOPO_TREE"
+            config MESH_TOPO_CHAIN
+                bool "MESH_TOPO_CHAIN"
+        endchoice
+        
+        config MWIFI_TOPOLOGY
+            int
+            default 0 if MESH_TOPO_TREE
+            default 1 if MESH_TOPO_CHAIN
+            help 
+                Mesh Network Topology
 
         config MWIFI_MAX_LAYER
             int "Max number of allowed layers"
-            range 1 25
+            range 1 25 if MESH_TOPO_TREE
+            range 1 1000 if MESH_TOPO_CHAIN
             default 16
             help
-                Max number of allowed layers
+                Max layer allowed in mesh network
 
         config MWIFI_MAX_CONNECTION
             int "Max number of mesh softAP connections"

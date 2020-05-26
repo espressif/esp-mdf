@@ -22,7 +22,8 @@
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
 #include "sys/dirent.h"
-#include "wpa2/utils/base64.h"
+#include "mbedtls/base64.h"
+#include "soc/soc_memory_layout.h"
 
 #include "mdf_common.h"
 #include "sdcard.h"
@@ -30,7 +31,13 @@
 static const char *TAG = "sdcard";
 
 #define SDCARD_BASE_PATH "/sdcard"
-#define SDCARD_FILE_NAME_MAX_LEN 64
+#define SDCARD_FILE_NAME_MAX_LEN 256 + sizeof(SDCARD_BASE_PATH) + 1
+
+/* calculate base64 length after encoding */
+static inline size_t base64_after_encoding_size(size_t input_size)
+{
+    return (input_size + 2) / 3 * 4;
+}
 
 static bool g_is_mount_flag = false;
 
@@ -303,7 +310,10 @@ esp_err_t sdcard_print_file(const char *file_name, file_format_t type, ssize_t s
                 break;
 
             case FILE_TYPE_BASE64: {
-                uint8_t *b64_buf = base64_encode(buffer, read_size, NULL);
+                size_t b64_buf_size = base64_after_encoding_size(read_size);
+                size_t b64_olen = 0;
+                uint8_t *b64_buf = MDF_CALLOC(b64_buf_size, sizeof(uint8_t));
+                mbedtls_base64_encode(b64_buf, b64_buf_size, &b64_olen, buffer, read_size);
                 printf("%s", b64_buf);
                 MDF_FREE(b64_buf);
                 break;

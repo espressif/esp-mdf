@@ -126,7 +126,7 @@ void mdf_mem_print_record(void)
 
     xSemaphoreGive(g_mem_info_lock);
 
-    MDF_LOGI("Memory record, num: %d, size: %d", g_mem_count, total_size);
+    MDF_LOGI("Memory record, num: %d, size: %zu", g_mem_count, total_size);
 }
 
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )

@@ -598,6 +598,11 @@ mdf_err_t mconfig_chain_master(const mconfig_data_t *mconfig_data, TickType_t du
     mconfig_chain_data_t *chain_data = MDF_MALLOC(chain_size);
     MDF_ERROR_CHECK(!chain_data, MDF_ERR_NO_MEM, "");
     memcpy(&chain_data->mconfig_data, mconfig_data, sizeof(mconfig_data_t) + mconfig_data->whitelist_size);
+
+    /* for  compatibility */
+    mwifi_init_config_t *init_config = &(chain_data->mconfig_data.init_config);
+    init_config->max_layer_deprecated = (init_config->max_layer > 255) ? 255 : init_config->max_layer;
+
     g_chain_master_duration_ticks = duration_ticks;
     g_filter_rssi = -120;
 

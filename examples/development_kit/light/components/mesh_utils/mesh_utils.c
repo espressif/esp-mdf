@@ -15,8 +15,10 @@
 #include "mdf_common.h"
 #include "mwifi.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "mconfig_blufi.h"
 #include "mconfig_chain.h"
+#endif
 
 #define DEVICE_MASTER_NETWORK_CONFIG_DURATION_MS    (60000)
 #define DEVICE_RESTART_TIMEOUT_MS                   (3000)
@@ -115,12 +117,9 @@ mdf_err_t wifi_init()
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
-    MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
     MDF_ERROR_ASSERT(esp_mesh_set_6m_rate(false));
     MDF_ERROR_ASSERT(esp_wifi_start());
 

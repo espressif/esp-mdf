@@ -27,7 +27,7 @@
 #include "mbedtls/aes.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/md5.h"
-#include "rom/crc.h"
+#include "esp32/rom/crc.h"
 
 #include "mdf_common.h"
 #include "mdf_event_loop.h"
@@ -317,13 +317,13 @@ static void mconfig_blufi_security_deinit(void)
 }
 
 /**< Set Blufi application specified event callback function */
-static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
+static void blufi_wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     mdf_err_t ret = MDF_OK;
     static int s_disconnected_unknown_count   = 0;
     static int s_disconnected_handshake_count = 0;
 
-    switch (event->event_id) {
+    switch (event_id) {
         case SYSTEM_EVENT_STA_CONNECTED:
 
             /**< Send MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED event to the event handler */
@@ -334,7 +334,8 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
             s_disconnected_handshake_count = 0;
 
             esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
-            g_recv_config->config.channel = event->event_info.connected.channel;
+            wifi_event_sta_connected_t *event = (wifi_event_sta_connected_t *)event_data;
+            g_recv_config->config.channel = event->channel;
 
             ret = mconfig_ble_connect_timer_create();
             MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mconfig_ble_connect_timercb", mdf_err_to_name(ret));
@@ -342,7 +343,7 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
 
         case SYSTEM_EVENT_STA_DISCONNECTED: {
             esp_blufi_sta_conn_state_t sta_conn_state     = ESP_BLUFI_STA_CONN_SUCCESS;
-            system_event_sta_disconnected_t *disconnected = &event->event_info.disconnected;
+            wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t *)event_data;
 
             MDF_LOGW("disconnected reason: %d", disconnected->reason);
 
@@ -391,7 +392,10 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
                 MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_ble_gap_disconnect", mdf_err_to_name(ret));
             } else {
                 ret = esp_wifi_connect();
-                MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_wifi_connect");
+
+                if (ret != ESP_OK) {
+                    MDF_LOGE("esp_wifi_connect");
+                }
             }
 
             break;
@@ -400,8 +404,6 @@ static mdf_err_t blufi_wifi_event_handler(void *ctx, system_event_t *event)
         default:
             break;
     }
-
-    return MDF_OK;
 }
 
 static mdf_err_t mconfig_blufi_adv_start()
@@ -852,7 +854,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
             MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Set the configuration of the ESP32 STA", mdf_err_to_name(ret));
 
-            esp_event_loop_set_cb(blufi_wifi_event_handler, NULL);
+            esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &blufi_wifi_event_handler, NULL);
 
             ret = esp_wifi_connect();
             MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Connect the ESP32 WiFi station to the AP", mdf_err_to_name(ret));
@@ -949,7 +951,7 @@ mdf_err_t mconfig_blufi_deinit()
 
     mconfig_ble_connect_timer_delete();
 
-    esp_event_loop_set_cb(NULL, NULL);
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &blufi_wifi_event_handler);
     esp_wifi_disconnect();
     MDF_FREE(g_recv_config);
 

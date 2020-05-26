@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 
 #include "mdf_common.h"
 #include "mwifi.h"
@@ -26,27 +26,21 @@
 
 static const char *TAG = "main";
 
-static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
+static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-    switch (event->event_id) {
-        case SYSTEM_EVENT_STA_GOT_IP:
-            MDF_LOGI("ip:%s", ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-            break;
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+        MDF_LOGW("ESP32 station disconnected from AP");
 
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            MDF_LOGW("ESP32 station disconnected from AP");
+        if (!mwifi_is_started()) {
+            esp_wifi_connect();
+        }
 
-            if (!mwifi_is_started()) {
-                esp_wifi_connect();
-            }
-
-            break;
-
-        default:
-            break;
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        MDF_LOGI("ip: "IPSTR, IP2STR(&event->ip_info.ip));
+    } else {
+        MDF_LOGI("event_base: %s, event_id: %d", event_base, event_id);
     }
-
-    return ESP_OK;
 }
 
 /**
@@ -64,8 +58,12 @@ static mdf_err_t wifi_init()
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(wifi_event_handler, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_sta();
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));

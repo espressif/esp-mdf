@@ -33,6 +33,7 @@
 
 #include "driver/rtc_io.h"
 #include "driver/adc.h"
+#include "esp_sleep.h"
 
 #include "iot_hts221.h"
 #include "iot_bh1750.h"
@@ -78,6 +79,7 @@ static const char *TAG                          = "sense_main";
 static TaskHandle_t g_root_write_task_handle    = NULL;
 static TaskHandle_t g_root_read_task_handle     = NULL;
 static EventGroupHandle_t g_event_group_trigger = NULL;
+esp_netif_t *sta_netif;
 
 static esp_err_t sense_work_mode_set(sense_work_mode_t work_mode)
 {
@@ -238,8 +240,10 @@ static mdf_err_t wifi_init(void)
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    MDF_ERROR_ASSERT(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
+
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -518,6 +522,11 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected on station interface");
+
+            if (esp_mesh_is_root()) {
+                esp_netif_dhcpc_start(sta_netif);
+            }
+
             sense_state_led_oprt(STATE_LED_NETWORK, STATE_LED_OPRT_ON);
             xTaskCreate(trigger_handle_task, "trigger_handle", 1024 * 3,  NULL, 1, NULL);
             break;

@@ -9,9 +9,11 @@ set(COMPONENT_SRCS "mlink_espnow.c"
                     "mlink_ble.c"
                     "mlink_sniffer.c")
 
-set(COMPONENT_ADD_INCLUDEDIRS "include")
+set(COMPONENT_INCLUDEDIRS "include")
 
 # requirements can't depend on config
 set(COMPONENT_REQUIRES mcommon mespnow mwifi mupgrade mconfig json mdns esp_http_server)
 
-register_component()
+idf_component_register(SRCS "${COMPONENT_SRCS}"
+                    INCLUDE_DIRS "${COMPONENT_INCLUDEDIRS}"
+                    REQUIRES mcommon mespnow mwifi mupgrade mconfig json mdns esp_http_server)

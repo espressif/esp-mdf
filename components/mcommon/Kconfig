@@ -1,7 +1,7 @@
 menu "MDF Mcommon"
 
     config MDF_TASK_DEFAULT_PRIOTY
-        int "Task's priority "
+        int "Task's priority"
         default 6
         help
             Configure the priority of all mesh tasks

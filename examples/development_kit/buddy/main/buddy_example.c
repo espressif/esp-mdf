@@ -34,6 +34,7 @@
 #define BUDDY_RESTART_COUNT_RESET     (3)
 
 static const char *TAG  = "buddy_example";
+esp_netif_t *sta_netif;
 
 typedef struct {
     bool finish;
@@ -311,6 +312,10 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected on station interface");
+            if(esp_mesh_is_root()){
+                esp_netif_dhcpc_start(sta_netif);
+            }
+
             oled_context.g_mesh_build_tick = xTaskGetTickCount() - oled_context.g_mesh_start_tick;
             ws2812b_green();
             break;
@@ -523,6 +528,9 @@ void app_main()
      *          3.Initialize espnow(ESP-NOW is a kind of connectionless WiFi communication protocol)
      */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    MDF_ERROR_ASSERT(esp_netif_create_default_wifi_mesh_netifs(&sta_netif,NULL));
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
     MDF_ERROR_ASSERT(mwifi_init(&init_config));

@@ -68,8 +68,6 @@ extern "C" {
 #define MDF_EVENT_MWIFI_ROOT_ADDRESS            (MESH_EVENT_ROOT_ADDRESS)       /**< The root address is obtained. It is posted by Mwifi stack automatically. */
 #define MDF_EVENT_MWIFI_ROOT_SWITCH_REQ         (MESH_EVENT_ROOT_SWITCH_REQ)    /**< Root switch request sent from a new voted root candidate */
 #define MDF_EVENT_MWIFI_ROOT_SWITCH_ACK         (MESH_EVENT_ROOT_SWITCH_ACK)    /**< Root switch acknowledgment responds the above request sent from current root */
-#define MDF_EVENT_MWIFI_ROOT_GOT_IP             (MESH_EVENT_ROOT_GOT_IP)        /**< Root obtains the IP address. It is posted by LwIP stack automatically */
-#define MDF_EVENT_MWIFI_ROOT_LOST_IP            (MESH_EVENT_ROOT_LOST_IP)       /**< Root loses the IP address. It is posted by LwIP stack automatically */
 #define MDF_EVENT_MWIFI_ROOT_ASKED_YIELD        (MESH_EVENT_ROOT_ASKED_YIELD)   /**< Root is asked yield by a more powerful existing root. */
 
 #define MDF_EVENT_MWIFI_SCAN_DONE               (MESH_EVENT_SCAN_DONE)          /**< if self-organized networking is disabled */
@@ -82,6 +80,8 @@ extern "C" {
                                                                                      router with the same SSID, this event will be posted and the new router information is attached. */
 
 #define MDF_EVENT_MWIFI_CHANNEL_NO_FOUND        (64)                            /**< The router's channel is not set. */
+#define MDF_EVENT_MWIFI_ROOT_GOT_IP             (64+1)
+#define MDF_EVENT_MWIFI_ROOT_LOST_IP            (64+2)
 
 /**
  * @brief  Mwifi initialization configuration
@@ -102,7 +102,7 @@ typedef struct {
      * @brief Mesh network capacity configuration
      */
     uint16_t capacity_num;      /**< Network capacity, defining max number of devices allowed in the MESH network */
-    uint8_t max_layer;          /**< Max number of allowed layers */
+    uint8_t max_layer_deprecated; /**< Deprecated, shouldn't use it */
     uint8_t max_connection;     /**< Max number of MESH softAP connections */
 
     /**
@@ -127,6 +127,9 @@ typedef struct {
     uint8_t xon_qsize;          /**< Number of MESH buffer queues */
     bool retransmit_enable;     /**< Enable a source node to retransmit data to the node from which it failed to receive ACK */
     bool data_drop_enable;      /**< If a root is changed, enable the new root to drop the previous packet */
+
+    uint16_t max_layer;         /**< Max number of allowed layers */
+    uint8_t topology;           /**< Topology of mesh network, can be tree or chain */
 } mwifi_init_config_t;
 
 #ifndef CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE
@@ -145,7 +148,7 @@ typedef struct {
         /**< .root_conflicts_enable =*/ CONFIG_MWIFI_ROOT_CONFLICTS_ENABLE, \
         /**< .root_healing_ms       =*/ CONFIG_MWIFI_ROOT_HEALING_MS, \
         /**< .capacity_num          =*/ CONFIG_MWIFI_CAPACITY_NUM, \
-        /**< .max_layer             =*/ CONFIG_MWIFI_MAX_LAYER, \
+        /**< .max_layer_deprecated  =*/ 0, \
         /**< .max_connection        =*/ CONFIG_MWIFI_MAX_CONNECTION, \
         /**< .assoc_expire_ms       =*/ CONFIG_MWIFI_ASSOC_EXPIRE_MS, \
         /**< .beacon_interval_ms    =*/ CONFIG_MWIFI_BEACON_INTERVAL_MS, \
@@ -159,6 +162,8 @@ typedef struct {
         /**< .xon_qsize             =*/ CONFIG_MWIFI_XON_QSIZE, \
         /**< .retransmit_enable     =*/ CONFIG_MWIFI_RETRANSMIT_ENABLE, \
         /**< .data_drop_enable      =*/ CONFIG_MWIFI_DATA_DROP_ENABLE, \
+        /**< .max_layer             =*/ CONFIG_MWIFI_MAX_LAYER, \
+        /**< .topology              =*/ CONFIG_MWIFI_TOPOLOGY, \
     }
 
 /**

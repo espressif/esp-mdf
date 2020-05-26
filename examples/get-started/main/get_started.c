@@ -162,8 +162,8 @@ static mdf_err_t wifi_init()
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));

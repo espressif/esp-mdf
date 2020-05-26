@@ -539,7 +539,7 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
 
     if (ret != MDF_OK) {
         MDF_LOGW("<%s> Initialize the upgrade status", mdf_err_to_name(ret));
-        mlink_httpd_resp(req, HTTPD_500, "Initialize the upgrade status");
+        mlink_httpd_resp(req, HTTPD_500, esp_err_to_name(ret));
         goto EXIT;
     }
 

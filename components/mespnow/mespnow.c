@@ -14,7 +14,7 @@
 
 #include "esp_wifi.h"
 #include "esp_now.h"
-#include "rom/crc.h"
+#include "esp32/rom/crc.h"
 
 #include "mdf_common.h"
 #include "mespnow.h"

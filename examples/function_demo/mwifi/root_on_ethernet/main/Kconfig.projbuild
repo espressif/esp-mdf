@@ -32,98 +32,141 @@ config SERVER_PORT
         help
             Server port.
     
-    menu "Eth-helper"
+    menu "ethernet-config"
     
-        choice PHY_MODEL
-            prompt "Ethernet PHY Device"
-            default PHY_TLK110
+        choice EXAMPLE_USE_ETHERNET
+            prompt "Ethernet Type"
+            default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
+            default EXAMPLE_USE_DM9051 if !IDF_TARGET_ESP32
             help
-                Select the PHY driver to use for the example.
-            config PHY_IP101
-                bool "IP101"
+                Select which kind of Ethernet will be used in the example.
+
+            config EXAMPLE_USE_INTERNAL_ETHERNET
+                depends on IDF_TARGET_ESP32
+                select ETH_USE_ESP32_EMAC
+                bool "Internal EMAC"
                 help
-                    IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
-                    Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
-            config PHY_TLK110
-                bool "TLK110"
+                    Select internal Ethernet MAC controller.
+
+            config EXAMPLE_USE_DM9051
+                bool "DM9051 Module"
+                select ETH_USE_SPI_ETHERNET
+                select ETH_SPI_ETHERNET_DM9051
                 help
-                    TLK110 is an Industrial 10/100Mbps Ethernet Physical Layer Transceiver.
-                    Goto http://www.ti.com/product/TLK110 for information about it.
-            config PHY_LAN8720
-                bool "LAN8720"
-                help
-                    LAN8720 is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
-                    Goto https://www.microchip.com/LAN8720A for more information about it.
+                    Select external SPI-Ethernet module (DM9051).
+
         endchoice
-    
-        config PHY_ADDRESS
-            int "Ethernet PHY Address"
-            default 31
-            range 0 31
-            help
-                PHY Address of your PHY device. It dependens on your schematic design.
-    
-        choice PHY_CLOCK_MODE
-            prompt "Ethernet PHY Clock Mode"
-            default PHY_CLOCK_GPIO0_IN
-            help
-                Select external (input on GPIO0) or internal (output on GPIO0, GPIO16 or GPIO17) RMII clock.
-            config PHY_CLOCK_GPIO0_IN
-                bool "GPIO0 Input"
+
+        if EXAMPLE_USE_INTERNAL_ETHERNET
+            choice EXAMPLE_ETH_PHY_MODEL
+                prompt "Ethernet PHY Device"
+                default EXAMPLE_ETH_PHY_IP101
                 help
-                    Input of 50MHz RMII clock on GPIO0.
-            config PHY_CLOCK_GPIO0_OUT
-                bool "GPIO0 Output"
+                    Select the Ethernet PHY device to use in the example.
+
+                config EXAMPLE_ETH_PHY_IP101
+                    bool "IP101"
+                    help
+                        IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
+                        Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
+
+                config EXAMPLE_ETH_PHY_RTL8201
+                    bool "RTL8201/SR8201"
+                    help
+                        RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
+                        Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
+
+                config EXAMPLE_ETH_PHY_LAN8720
+                    bool "LAN8720"
+                    help
+                        LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
+                        Goto https://www.microchip.com/LAN8720A for more information about it.
+
+                config EXAMPLE_ETH_PHY_DP83848
+                    bool "DP83848"
+                    help
+                        DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
+                        Goto http://www.ti.com/product/DP83848J for more information about it.
+            endchoice
+
+            config EXAMPLE_ETH_MDC_GPIO
+                int "SMI MDC GPIO number"
+                default 23
                 help
-                    Output the internal 50MHz RMII clock on GPIO0.
-            config PHY_CLOCK_GPIO16_OUT
-                bool "GPIO16 Output"
+                    Set the GPIO number used by SMI MDC.
+
+            config EXAMPLE_ETH_MDIO_GPIO
+                int "SMI MDIO GPIO number"
+                default 18
                 help
-                    Output the internal 50MHz RMII clock on GPIO16.
-            config PHY_CLOCK_GPIO17_OUT
-                bool "GPIO17 Output (inverted)"
-                help
-                    Output the internal 50MHz RMII clock on GPIO17 (inverted signal).
-        endchoice
-    
-        config PHY_CLOCK_MODE
-            int
-            default 0 if PHY_CLOCK_GPIO0_IN
-            default 1 if PHY_CLOCK_GPIO0_OUT
-            default 2 if PHY_CLOCK_GPIO16_OUT
-            default 3 if PHY_CLOCK_GPIO17_OUT
-    
-        config PHY_USE_POWER_PIN
-            bool "Use PHY Power (enable / disable) pin"
-            default n
-            help
-                Use a GPIO "power pin" to power the PHY on/off during operation.
-                When using GPIO0 to input RMII clock, the reset process will be interfered by this clock.
-                So we need another GPIO to control the switch on / off of the RMII clock.
-    
-        if PHY_USE_POWER_PIN
-            config PHY_POWER_PIN
-                int "PHY Power GPIO"
-                default 17
-                range 0 33
-                depends on PHY_USE_POWER_PIN
-                help
-                    GPIO number to use for powering on/off the PHY.
+                    Set the GPIO number used by SMI MDIO.
         endif
-    
-        config PHY_SMI_MDC_PIN
-            int "SMI MDC Pin Number"
-            default 23
-            range 0 33
+
+        if EXAMPLE_USE_DM9051
+            config EXAMPLE_DM9051_SPI_HOST
+                int "SPI Host Number"
+                range 0 2
+                default 1
+                help
+                    Set the SPI host used to communicate with the SPI Ethernet Controller.
+
+            config EXAMPLE_DM9051_SCLK_GPIO
+                int "SPI SCLK GPIO number"
+                range 0 33
+                default 19
+                help
+                    Set the GPIO number used by SPI SCLK.
+
+            config EXAMPLE_DM9051_MOSI_GPIO
+                int "SPI MOSI GPIO number"
+                range 0 33
+                default 23
+                help
+                    Set the GPIO number used by SPI MOSI.
+
+            config EXAMPLE_DM9051_MISO_GPIO
+                int "SPI MISO GPIO number"
+                range 0 33
+                default 25
+                help
+                    Set the GPIO number used by SPI MISO.
+
+            config EXAMPLE_DM9051_CS_GPIO
+                int "SPI CS GPIO number"
+                range 0 33
+                default 22
+                help
+                    Set the GPIO number used by SPI CS.
+
+            config EXAMPLE_DM9051_SPI_CLOCK_MHZ
+                int "SPI clock speed (MHz)"
+                range 5 80
+                default 20
+                help
+                    Set the clock speed (MHz) of SPI interface.
+
+            config EXAMPLE_DM9051_INT_GPIO
+                int "Interrupt GPIO number"
+                default 4
+                help
+                    Set the GPIO number used by DM9051 interrupt.
+        endif
+
+        config EXAMPLE_ETH_PHY_RST_GPIO
+            int "PHY Reset GPIO number"
+            default 5
             help
-                GPIO number used for SMI clock signal.
-    
-        config PHY_SMI_MDIO_PIN
-            int "SMI MDIO Pin Number"
-            default 18
-            range 0 33
+                Set the GPIO number used to reset PHY chip.
+                Set to -1 to disable PHY chip hardware reset.
+
+        config EXAMPLE_ETH_PHY_ADDR
+            int "PHY Address"
+            range 0 31 if EXAMPLE_USE_INTERNAL_ETHERNET
+            range 1 1 if !EXAMPLE_USE_INTERNAL_ETHERNET
+            default 1
             help
-                GPIO number used for SMI data signal.
+                Set PHY address according your board schematic.
+
     
     endmenu
 

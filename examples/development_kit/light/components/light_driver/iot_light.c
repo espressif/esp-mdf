@@ -344,7 +344,7 @@ esp_err_t iot_light_delete(light_handle_t light_handle)
         }
     }
 
-    ledc_fade_func_uninstall(0);
+    ledc_fade_func_uninstall();
     g_fade_installed = false;
     iot_timer_stop(&(light->hw_timer));
 FREE_MEM:
