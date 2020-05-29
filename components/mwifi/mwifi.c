@@ -99,7 +99,7 @@ static void mwifi_waive_root_timercb(TimerHandle_t timer)
     static int s_waive_rssi_count = 0; /**< Avoid the effects of sudden changes in signal strength */
 
     if (esp_mesh_is_root() && esp_mesh_get_total_node_num() > 1
-            && mwifi_get_parent_rssi() < -30) {
+            && mwifi_get_parent_rssi() < CONFIG_MWIFI_WAIVE_ROOT_RSSI) {
         s_waive_rssi_count++;
     } else {
         s_waive_rssi_count = 0;
