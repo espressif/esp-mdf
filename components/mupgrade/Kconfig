@@ -2,7 +2,7 @@ menu "MDF Mupgrade"
 
     config MUPGRADE_RETRY_COUNT
         int "Number of times the firmware failed to retry"
-        default 10
+        default 20
         help
             Number of times the firmware failed to retry
 
