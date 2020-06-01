@@ -25,7 +25,7 @@ extern "C" {
 /**
  * @brief Send coap message.
  *
- * @param  url   Destination url sent
+ * @param  coap_url   Destination url sent
  * @param  data  Pointer to a sends data
  * @param  size  sends data size.
  *
@@ -33,7 +33,7 @@ extern "C" {
  *     - MDF_FAIL
  *     - MDF_OK
  */
-mdf_err_t aliyun_coap_send_app(char *url, uint8_t *data, size_t size);
+mdf_err_t aliyun_coap_send_app(const char *coap_url, const uint8_t *data, const size_t size);
 
 /**
  * @brief coap service init.

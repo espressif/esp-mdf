@@ -32,9 +32,9 @@
 #include "light_driver.h"
 #include "light_handle.h"
 
-#include "aliyun_kv.h"
 #include "aliyun_gateway.h"
 #include "aliyun_subdevice.h"
+#include "aliyun_kv.h"
 
 #define LIGHT_TID                     (1)
 #define LIGHT_NAME                    "light"
@@ -44,6 +44,7 @@
 
 static const char *TAG = "maliyun_example";
 static bool g_need_enrollee = false;
+esp_netif_t *sta_netif;
 
 static mdf_err_t maliyun_linkkit_propery_set_cb(const char *params, int request_len)
 {
@@ -218,7 +219,7 @@ static void aliyun_user_task(void *arg)
         light_driver_set_rgb(0, 0, 255);
         MDF_LOGI("aliyun_subdevice_add_to_gateway ok");
 
-        if (g_need_enrollee = true) {
+        if (g_need_enrollee == true) {
             ret = aliyun_subdevice_match_enrollee();
             MDF_LOGI("aliyun_subdevice_match_enrollee , ret:%d", ret);
 
@@ -266,6 +267,11 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("MDF_EVENT_PARENT_CONNECTED");
             MDF_LOGI("free heap size:%u", esp_get_free_heap_size());
+
+            if (esp_mesh_is_root()) {
+                esp_netif_dhcpc_start(sta_netif);
+            }
+
             user_task_init();
             aliyun_subdevice_init();
             break;
@@ -390,6 +396,10 @@ void app_main()
      *          3.Initialize espnow(ESP-NOW is a kind of connectionless WiFi communication protocol)
      */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
+
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    MDF_ERROR_ASSERT(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
 

@@ -15,7 +15,7 @@
 #ifndef __ALIYUN_LIST_H__
 #define __ALIYUN_LIST_H__
 
-#include <rom/queue.h>
+#include <sys/queue.h>
 #include "aliyun_defs.h"
 #include "mdf_err.h"
 

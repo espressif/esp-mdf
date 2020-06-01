@@ -46,4 +46,10 @@ set(COMPONENT_PRIV_REQUIRES mcommon mwifi mlink mupgrade)
 # requirements can't depend on config
 set(COMPONENT_REQUIRES mbedtls app_update nvs_flash esp_http_client json mqtt coap)
 
-register_component()
+idf_component_register(SRCS ${COMPONENT_SRCS}
+                    INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
+                    PRIV_INCLUDE_DIRS ${COMPONENT_PRIV_INCLUDEDIRS}
+                    PRIV_REQUIRES ${COMPONENT_PRIV_REQUIRES}
+                    REQUIRES ${COMPONENT_REQUIRES}
+                    EMBED_TXTFILES ${COMPONENT_EMBED_TXTFILES}
+                    )

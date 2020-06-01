@@ -9,5 +9,5 @@ COMPONENT_OBJS := light_example.o
 endif
 
 ifdef CONFIG_LIGHT_EXAMPLE_ALIYUN
-COMPONENT_OBJS := light_example.o
+COMPONENT_OBJS := aliyun_light_example.o
 endif

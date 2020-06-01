@@ -16,10 +16,10 @@
 #include "aliyun_url.h"
 
 const char ALIYUN_URL_SYS_AWSS_EVENT_CONNECTAP_NOTIFY[]          = "/sys/awss/event/connectap/notify";
-const char ALIYUN_URL_SYS_AWSS_DEVICE_CONNECTAP_INFO_GET[]       = "/sys/awss/device/connectap/info/get";
+//const char ALIYUN_URL_SYS_AWSS_DEVICE_CONNECTAP_INFO_GET[]       = "/sys/awss/device/connectap/info/get";
 
-const char ALIYUN_URL_SYS_DEVICE_INFO_NOTIFY[]                   = "/sys/device/info/notify";
-const char ALIYUN_URL_SYS_DEVICE_INFO_GET[]                      = "/sys/device/info/get";
+// const char ALIYUN_URL_SYS_DEVICE_INFO_NOTIFY[]                   = "sys/device/info/notify";
+//const char ALIYUN_URL_SYS_DEVICE_INFO_GET[]                      = "sys/device/info/get";
 
 // ap 配网使用, 设备发送与接收.
 const char ALIYUN_URL_URL_AWSS_DEV_AP_SWITCHAP[]                 = "/sys/awss/device/softap/switchap";

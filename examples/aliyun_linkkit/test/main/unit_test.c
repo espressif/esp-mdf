@@ -17,49 +17,73 @@ static const char TAG[] = "UNIT_TEST";
 static EventGroupHandle_t g_user_event;
 #define NETWORK_CONNECTED BIT0
 
-static esp_err_t event_handler(void* ctx, system_event_t* event)
+static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-    switch (event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        MDF_LOGI("wifi sta mode is running");
-        MDF_ERROR_ASSERT(esp_wifi_connect());
-        break;
+    if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                MDF_LOGI("wifi sta mode is running");
+                MDF_ERROR_ASSERT(esp_wifi_connect());
+                break;
 
-    case SYSTEM_EVENT_STA_STOP:
-        MDF_LOGI("wifi sta mode is stoped");
-        break;
+            case WIFI_EVENT_STA_STOP:
+                MDF_LOGI("wifi sta mode is stoped");
+                break;
 
-    case SYSTEM_EVENT_STA_GOT_IP:
-        MDF_LOGI("wifi sta got ip");
-        MDF_LOGI("net address: %s", ip4addr_ntoa(&(event->event_info.got_ip.ip_info.ip)));
-        MDF_LOGI("net mask: %s", ip4addr_ntoa(&(event->event_info.got_ip.ip_info.netmask)));
-        MDF_LOGI("net gateway: %s", ip4addr_ntoa(&(event->event_info.got_ip.ip_info.gw)));
-        xEventGroupSetBits(g_user_event, NETWORK_CONNECTED);
-        break;
+            default:
+                MDF_LOGD("WIFI_EVENT (%d)", event_id);
+                break;
+        }
 
-    case SYSTEM_EVENT_STA_LOST_IP:
-        MDF_LOGI("wifi sta lost ip");
-        xEventGroupClearBits(g_user_event, NETWORK_CONNECTED);
-        break;
+    } else if (event_base == IP_EVENT) {
+        switch (event_id) {
+            case IP_EVENT_STA_GOT_IP: {
+                ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+                MDF_LOGI("wifi sta got ip");
+                MDF_LOGI("net address: " IPSTR, IP2STR(&(event->ip_info.ip)));
+                MDF_LOGI("net mask: " IPSTR, IP2STR(&(event->ip_info.netmask)));
+                MDF_LOGI("net gateway: " IPSTR, IP2STR(&(event->ip_info.gw)));
+                xEventGroupSetBits(g_user_event, NETWORK_CONNECTED);
+                break;
+            }
 
-    default:
-        break;
+            case IP_EVENT_STA_LOST_IP:
+                MDF_LOGI("wifi sta lost ip");
+                xEventGroupClearBits(g_user_event, NETWORK_CONNECTED);
+                break;
+
+            default:
+                MDF_LOGD("IP_EVENT (%d)", event_id);
+                break;
+
+        }
+
+    } else {
+        MDF_LOGE("Unsupportted event base(%s)", event_base);
     }
-
-    return ESP_OK;
 }
 
 static mdf_err_t wifi_init()
 {
     mdf_err_t ret = nvs_flash_init();
+
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         MDF_ERROR_ASSERT(nvs_flash_erase());
         ret = nvs_flash_init();
     }
+
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(event_handler, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    MDF_ERROR_ASSERT(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    MDF_ERROR_ASSERT(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+
+    if (!esp_netif_create_default_wifi_sta()) {
+        MDF_LOGE("Create default wifi sta netif failed");
+        return MDF_FAIL;
+    }
+
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     MDF_ERROR_ASSERT(esp_wifi_init(&init_cfg));
     wifi_config_t cfg = {
@@ -80,6 +104,7 @@ void app_main()
     g_user_event = xEventGroupCreate();
     ESP_ERROR_CHECK(wifi_init());
     EventBits_t bits = xEventGroupWaitBits(g_user_event, NETWORK_CONNECTED, pdFALSE, pdFALSE, pdMS_TO_TICKS(10 * 1000));
+
     if ((bits & NETWORK_CONNECTED) != NETWORK_CONNECTED) {
         MDF_LOGE("Can not connected Wi-Fi");
         assert(false);

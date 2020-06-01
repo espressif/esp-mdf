@@ -22,10 +22,11 @@ extern "C" {
 #endif /**< _cplusplus */
 
 extern const char ALIYUN_URL_SYS_AWSS_EVENT_CONNECTAP_NOTIFY[];
-extern const char ALIYUN_URL_SYS_AWSS_DEVICE_CONNECTAP_INFO_GET[];
+// extern const char ALIYUN_URL_SYS_AWSS_DEVICE_CONNECTAP_INFO_GET[];
+#define ALIYUN_URL_SYS_AWSS_DEVICE_CONNECTAP_INFO_GET       "sys/awss/device/connectap/info/get"
 
-extern const char ALIYUN_URL_SYS_DEVICE_INFO_NOTIFY[];
-extern const char ALIYUN_URL_SYS_DEVICE_INFO_GET[];
+#define ALIYUN_URL_SYS_DEVICE_INFO_NOTIFY                    "sys/device/info/notify"
+#define ALIYUN_URL_SYS_DEVICE_INFO_GET                       "sys/device/info/get"
 
 extern const char ALIYUN_URL_DEV_CORE_SERVICE_DEV[];
 
