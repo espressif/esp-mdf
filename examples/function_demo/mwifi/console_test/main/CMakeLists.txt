@@ -1,9 +1,4 @@
-
-set(COMPONENT_SRCS "./mwifi_test.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS "")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES mcommon mespnow mwifi mdebug)
-
-register_component()
+idf_component_register(SRCS "./mwifi_test.c"
+                    INCLUDE_DIRS ""
+                    REQUIRES mcommon mespnow mwifi mdebug
+)

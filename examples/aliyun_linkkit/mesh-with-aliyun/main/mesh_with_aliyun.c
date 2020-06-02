@@ -35,6 +35,7 @@ static const char identifier_freeheap[] = "FreeHeap";
 static const char identifier_periodic[] = "Periodic";
 static TaskHandle_t g_usertask_handle = NULL;
 static bool g_gateway_is_ok = false;
+static esp_netif_t *netif_sta = NULL;
 
 /* thing model */
 static mdf_err_t device_post_property(); // Device post property to cloud
@@ -66,8 +67,10 @@ static mdf_err_t wifi_init()
 
     MDF_ERROR_ASSERT(ret);
 
-    tcpip_adapter_init();
-    MDF_ERROR_ASSERT(esp_event_loop_init(NULL, NULL));
+    MDF_ERROR_ASSERT(esp_netif_init());
+    MDF_ERROR_ASSERT(esp_event_loop_create_default());
+    MDF_ERROR_ASSERT(esp_netif_create_default_wifi_mesh_netifs(&netif_sta, NULL));
+
     MDF_ERROR_ASSERT(esp_wifi_init(&cfg));
     MDF_ERROR_ASSERT(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     MDF_ERROR_ASSERT(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -89,7 +92,7 @@ void user_task(void *args)
     MDF_LOGI("device_name: %s", subdevice_meta.device_name);
 
     /* thing model */
-    ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_POST_PROPERTY_REPLY, device_post_property_cb))
+    ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_POST_PROPERTY_REPLY, device_post_property_cb));
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_PROPERTY_SET, device_property_set_cb)); // thing model of setting property callback
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_SERVICE_INVOKE, device_service_invoke_cb));
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_POST_EVENT_REPLY, device_post_event_cb));
@@ -171,6 +174,11 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_PARENT_CONNECTED:
             MDF_LOGI("Parent is connected on station interface");
+
+            if (esp_mesh_is_root()) {
+                esp_netif_dhcpc_start(netif_sta);
+            }
+
             aliyun_subdevice_init();
             user_task_init();
             break;

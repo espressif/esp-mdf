@@ -1,7 +1,5 @@
 
-set(COMPONENT_SRCS "get_started.c")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES aliyun_sdk mcommon mwifi)
-
-register_component()
+idf_component_register(SRCS "./get_started.c"
+                    INCLUDE_DIRS ""
+                    REQUIRES "aliyun_sdk" "mcommon" "mwifi"
+)

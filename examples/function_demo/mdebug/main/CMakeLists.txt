@@ -1,9 +1,4 @@
-
-set(COMPONENT_SRCS "mdebug_example.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES mcommon mwifi mlink mdebug)
-
-register_component()
+idf_component_register(SRCS "./mdebug_example.c"
+                    INCLUDE_DIRS "."
+                    REQUIRES mcommon mwifi mlink mdebug
+)
