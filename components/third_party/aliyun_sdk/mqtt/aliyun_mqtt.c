@@ -139,6 +139,7 @@ static mdf_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             mqtt_buf->payload_len = event->data_len;
 
             if (aliyun_platform_mqtt_write(mqtt_buf, 0) != MDF_OK) {
+                MDF_FREE(mqtt_buf);
                 MDF_LOGW("MQTT message queue is full, this msg has been dropped");
             }
 
