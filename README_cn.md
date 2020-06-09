@@ -2,12 +2,14 @@
 
 ## 注意事项
 
-该版本的 MDF 基于 IDF master 分支，不建议用在产品开发上，如果寻求稳定版 MDF，建议使用 release/v1.0 分支。
-
-### TODO List
-
-1. 适配 ESP32-S2
-1. 适配 aliyun-sdk
+1. 该版本的 MDF 基于 IDF master 分支，不建议用在产品开发上，如果寻求稳定版 MDF，建议使用 release/v1.0 分支。
+1. MDF master 分支已支持 ESP32S2。但以下示例暂时无法在 ESP32S2 上使用，后续将会逐步为 ESP32S2 适配
+    - function_demo/mconfig
+    - development_kit/buddy
+    - development_kit/button
+    - development_kit/light
+    - development_kit/sense
+    - wireless_debug
 
 [![Documentation Status](https://readthedocs.com/projects/espressif-esp-mdf-zh-cn/badge/?version=latest)](https://docs.espressif.com/projects/esp-mdf/zh_CN/latest/?badge=latest)
 

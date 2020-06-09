@@ -6,12 +6,14 @@ ESP-MDF, or Espressif Mesh Development Framework, is a development framework for
 
 ## Matters need attention
 
-This version of MDF is based on the IDF master branch and is not recommended for product development. If you need a stable version of MDF, please use branch release/v1.0.
-
-### TODO List
-
-1. Adapt MDF to ESP32-S2
-1. Adapt aliyun-sdk to IDF master branch
+1. This version of MDF is based on the IDF master branch and is not recommended for product development. If you need a stable version of MDF, please use branch release/v1.0.
+1. ESP-MDF master branch already supports ESP32S2, but some example can not build and run on ESP32S2 now. We will support these in the future. They are:
+    - function_demo/mconfig
+    - development_kit/buddy
+    - development_kit/button
+    - development_kit/light
+    - development_kit/sense
+    - wireless_debug
 
 ## Overview
 
