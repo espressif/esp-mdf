@@ -83,12 +83,17 @@ before_script:
     - make print_flash_cmd | tail -n 1 > build/download.config
     #- idf.py defconfig
     - idf.py build
+    - if [ "$ESP32S2" ]; then
+    -   idf.py set-target esp32s2
+    -   idf.py build
+    - fi
 
 build_example_get_started:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "get-started"
     EXAMPLE_PATH: "examples/get-started"
+    ESP32S2: "true"
 
 build_example_mconfig:
   <<: *build_template
@@ -101,42 +106,49 @@ build_example_mupgrade:
   variables:
     ARTIFACTS_NAME: "mupgrade"
     EXAMPLE_PATH: "examples/function_demo/mupgrade"
+    ESP32S2: "true"
 
 build_example_mwifi_router:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/router"
+    ESP32S2: "true"
 
 build_example_mwifi_norouter:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/no_router"
+    ESP32S2: "true"
 
 build_example_mwifi_console_test:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/console_test"
+    ESP32S2: "true"
 
 build_example_mwifi_mqtt_example:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/mqtt_example"
+    ESP32S2: "true"
 
 build_example_mwifi_ethernet_example:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mwifi"
     EXAMPLE_PATH: "examples/function_demo/mwifi/root_on_ethernet"
+    ESP32S2: "true"
 
 build_example_mcommon:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mcommon"
     EXAMPLE_PATH: "examples/function_demo/mcommon"
+    ESP32S2: "true"
 
 build_example_light:
   <<: *build_template
@@ -161,12 +173,14 @@ build_example_aliyun_getstarted:
   variables:
     ARTIFACTS_NAME: "aliyun_getstarted"
     EXAMPLE_PATH: "examples/aliyun_linkkit/get-started"
+    ESP32S2: "true"
 
 build_example_mesh_with_aliyun:
   <<: *build_template
   variables:
     ARTIFACTS_NAME: "mesh_with_aliyun"
     EXAMPLE_PATH: "examples/aliyun_linkkit/mesh-with-aliyun"
+    ESP32S2: "true"
 
 push_master_to_github:
   stage: deploy
