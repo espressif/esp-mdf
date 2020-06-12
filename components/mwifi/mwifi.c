@@ -179,9 +179,9 @@ static void esp_mesh_event_cb(mesh_event_t event)
             /**
                  * @brief The root node cannot find the router and only reports the disconnection.
                  */
-            if (s_disconnected_count++ > 30) {
+            if (s_disconnected_count++ > 100) {
                 s_disconnected_count = 0;
-                mdf_event_loop_send(MDF_EVENT_MWIFI_NO_PARENT_FOUND, NULL);
+                mdf_event_loop_send(MDF_EVENT_MWIFI_EXCEPTION, NULL);
 
 #ifdef CONFIG_MWIFI_WAIVE_ROOT
 

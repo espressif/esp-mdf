@@ -82,6 +82,7 @@ extern "C" {
                                                                                      router with the same SSID, this event will be posted and the new router information is attached. */
 
 #define MDF_EVENT_MWIFI_CHANNEL_NO_FOUND        (64)                            /**< The router's channel is not set. */
+#define MDF_EVENT_MWIFI_EXCEPTION               (64+3)                          /**< Some abnormal situations happen, eg. disconnected too many times */	
 
 /**
  * @brief  Mwifi initialization configuration
