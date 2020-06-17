@@ -188,8 +188,6 @@ mdf_err_t mdebug_log_init()
         g_log_config->log_uart_enable = true;
     }
 
-    mdebug_log_set_config(g_log_config);
-
     /**< Register espnow log redirect function */
     esp_log_set_vprintf(mdebug_log_vprintf);
 
