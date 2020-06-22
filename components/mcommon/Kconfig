@@ -33,6 +33,20 @@ menu "MDF Mcommon"
         help
             Config MDF event task stack size.
 
+    choice MDF_MEM_ALLOCATION_LOCATION
+        prompt "The memory location allocated by MDF_MALLOC MDF_CALLOC and MDF_REALLOC"
+        help 
+            choice where to allocate memory, can be SPIRAM or default
+
+        config MDF_MEM_ALLOCATION_DEFAULT
+            bool "default allocation strategy"
+        config MDF_MEM_ALLOCATION_SPIRAM
+            depends on ESP32S2_SPIRAM_SUPPORT || ESP32_SPIRAM_SUPPORT
+            bool "allocate memory in SPIRAM"
+
+    endchoice
+        
+
     config MDF_MEM_DEBUG
         bool "Memory debug"
         default y
