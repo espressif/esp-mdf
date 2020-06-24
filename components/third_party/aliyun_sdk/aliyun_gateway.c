@@ -462,7 +462,7 @@ static mdf_err_t aliyun_gateway_subdevice_process(int type, const uint8_t *src_a
         break;
 
         case ALIYUN_SUBDEVICE_HEARTBEAT: {
-            MDF_LOGD("ALIYUN_SUBDEVICE_HEARTBEAT");
+            MDF_LOGD("ALIYUN_SUBDEVICE_HEARTBEAT from" MACSTR, MAC2STR(src_addr));
             aliyun_device_meta_t sub_meta = { 0 };
             int status = MDF_OK;
             ret = aliyun_list_select_meta(src_addr, &sub_meta);
