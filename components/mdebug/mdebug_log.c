@@ -119,11 +119,11 @@ static ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
 
     vsnprintf((char *)log_data->data, log_size, fmt, vp);
 
+    g_log_queue_buffer_size += log_size;
     if (xQueueSend(g_log_queue, &log_data, 0) == pdFALSE) {
         free(log_data);
+        g_log_queue_buffer_size -= log_size;
         goto EXIT;
-    } else {
-        g_log_queue_buffer_size += log_size;
     }
 
 EXIT:
