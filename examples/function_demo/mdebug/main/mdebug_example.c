@@ -293,9 +293,8 @@ void app_main()
     *      1. Initialize console module
     */
     MDF_ERROR_ASSERT(mdebug_console_init());
-    MDF_ERROR_ASSERT(mdebug_espnow_init());
+    MDF_ERROR_ASSERT(mdebug_log_set_config(&log_config));
     mdebug_cmd_register_common();
-    mdebug_log_set_config(&log_config);
 
     /**
      * @brief Register a console command that outputs system information
