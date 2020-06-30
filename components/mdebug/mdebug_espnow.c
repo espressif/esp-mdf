@@ -157,7 +157,6 @@ mdf_err_t mdebug_espnow_init()
     mdf_err_t ret             = MDF_OK;
     uint8_t channel           = 1;
     wifi_second_chan_t second = 0;
-    mdebug_log_config_t log_config = {0};
 
     ret = mespnow_init();
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "mespnow_init");
@@ -176,10 +175,6 @@ mdf_err_t mdebug_espnow_init()
                                 NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY - 1,
                                 &g_espnow_send_task_handle, CONFIG_MDF_TASK_PINNED_TO_CORE);
     }
-
-    mdebug_log_get_config(&log_config);
-    log_config.log_espnow_enable = true;
-    mdebug_log_set_config(&log_config);
 
     return ESP_OK;
 }
