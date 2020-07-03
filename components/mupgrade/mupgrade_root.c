@@ -456,6 +456,8 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
                 /**
                  * @brief Send firmware data to unfinished devide.
                  */
+                uint64_t start_us = esp_timer_get_time();
+
                 if ((MWIFI_ADDR_IS_ANY(addrs_list) || MWIFI_ADDR_IS_BROADCAST(addrs_list))
                         && result->successed_num < 2 && addrs_num == 1) {
                     MDF_LOGD("seq: %d, size: %d, addrs_num: %d", packet->seq, packet->size, addrs_num);
@@ -473,6 +475,9 @@ mdf_err_t mupgrade_firmware_send(const uint8_t *addrs_list, size_t addrs_num,
                     ret = mwifi_root_write(result->requested_addr, result->requested_num, &type,
                                            packet, sizeof(mupgrade_packet_t), true);
                 }
+
+                uint64_t wait = (esp_timer_get_time() - start_us) * CONFIG_MUPGRADE_FLOW_CONTROL_LEVEL / 10;
+                vTaskDelay(pdMS_TO_TICKS(wait / 1000)); // flow control for sending data in ota
 
                 MDF_ERROR_CONTINUE(ret != ESP_OK, "<%s> Mwifi root write", mdf_err_to_name(ret));
             }
