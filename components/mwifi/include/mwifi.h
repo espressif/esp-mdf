@@ -82,7 +82,7 @@ extern "C" {
 #define MDF_EVENT_MWIFI_CHANNEL_NO_FOUND        (64)                            /**< The router's channel is not set. */
 #define MDF_EVENT_MWIFI_ROOT_GOT_IP             (64+1)
 #define MDF_EVENT_MWIFI_ROOT_LOST_IP            (64+2)
-#define MDF_EVENT_MWIFI_EXCEPTION               (64+3)                          /**< Some abnormal situations happen, eg. disconnected too many times */	
+#define MDF_EVENT_MWIFI_EXCEPTION               (64+3)                          /**< Some abnormal situations happen, eg. disconnected too many times */
 
 /**
  * @brief  Mwifi initialization configuration
@@ -165,6 +165,12 @@ typedef struct {
         /**< .data_drop_enable      =*/ CONFIG_MWIFI_DATA_DROP_ENABLE, \
         /**< .max_layer             =*/ CONFIG_MWIFI_MAX_LAYER, \
         /**< .topology              =*/ CONFIG_MWIFI_TOPOLOGY, \
+    }
+
+#define MWIFI_RSSI_THRESHOUD_DEFAULT() { \
+        /*!< .high  =*/	 CONFIG_MWIFI_RSSI_THRESHOUD_HIGH, \
+        /*!< medium =*/	 CONFIG_MWIFI_RSSI_THRESHOUD_MEDIUM, \
+        /*!< low    =*/  CONFIG_MWIFI_RSSI_THRESHOUD_LOW, \
     }
 
 /**
