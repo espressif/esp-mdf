@@ -294,12 +294,14 @@ void mwifi_print_config()
     mesh_attempts_t attempts           = {0};
     int beacon_interval                = 0;
     mesh_switch_parent_t switch_parent = {0};
+    mesh_rssi_threshold_t rssi_threshoud = {0};
     const char *bool_str[]             = {"false", "true"};
     const char *mesh_type_str[]        = {"idle", "root", "node", "leaf", "root_sta"};
 
     ESP_ERROR_CHECK(esp_mesh_get_config(&cfg));
     ESP_ERROR_CHECK(esp_mesh_get_attempts(&attempts));
     ESP_ERROR_CHECK(esp_mesh_get_switch_parent_paras(&switch_parent));
+    ESP_ERROR_CHECK(esp_mesh_get_rssi_threshold(&rssi_threshoud));
 
     MDF_LOGI("**************** Root config ****************");
     MDF_LOGI("vote_percentage       : %0.2f", esp_mesh_get_vote_percentage());
@@ -326,6 +328,9 @@ void mwifi_print_config()
     MDF_LOGI("cnx_rssi              : %d", switch_parent.cnx_rssi);
     MDF_LOGI("select_rssi           : %d", switch_parent.select_rssi);
     MDF_LOGI("switch_rssi           : %d", switch_parent.switch_rssi);
+    MDF_LOGI("rssi_threshoud_high   : %d", rssi_threshoud.high);
+    MDF_LOGI("rssi_threshoud_medium : %d", rssi_threshoud.medium);
+    MDF_LOGI("rssi_threshoud_low    : %d", rssi_threshoud.low);
 
     MDF_LOGI("**************** Transmission ****************");
     MDF_LOGI("xon_qsize             : %d", esp_mesh_get_xon_qsize());
@@ -358,6 +363,7 @@ mdf_err_t mwifi_start()
     mwifi_init_config_t *init_config   = g_init_config;
     mesh_attempts_t attempts           = {0};
     mesh_switch_parent_t switch_parent = {0};
+    mesh_rssi_threshold_t rssi_threshoud = MWIFI_RSSI_THRESHOUD_DEFAULT();
 
     /** Mesh initialization
      *  - Check whether Wi-Fi is started.
@@ -469,6 +475,8 @@ mdf_err_t mwifi_start()
     } else {
         ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(WIFI_AUTH_OPEN));
     }
+
+    ESP_ERROR_CHECK(esp_mesh_set_rssi_threshold(&rssi_threshoud));
 
 #ifndef CONFIG_MWIFI_MESH_IE_ENABLE
     mesh_config.crypto_funcs = NULL;
