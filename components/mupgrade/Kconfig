@@ -6,6 +6,13 @@ menu "MDF Mupgrade"
         help
             Number of times the firmware failed to retry
 
+    config MUPGRADE_FLOW_CONTROL_LEVEL
+        int "flow control level for root send firmware"
+        default 5
+        range 0 10
+        help
+            level of flow control in mesh ota, 10 is the max
+
     config MUPGRADE_WAIT_RESPONSE_TIMEOUT
         int "Timeout waiting for a response (ms)"
         default 3000
