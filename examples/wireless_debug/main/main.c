@@ -82,6 +82,10 @@ void app_main()
 {
     mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
     wifi_config_t wifi_config = {0x0};
+    mdebug_log_config_t log_config = {
+        .log_uart_enable = true;
+        .log_espnow_enable = true;
+    };
 
     /**
      * @brief Set the log level for serial port printing.
@@ -99,7 +103,7 @@ void app_main()
     MDF_ERROR_ASSERT(wifi_init());
     MDF_ERROR_ASSERT(mespnow_init());
     MDF_ERROR_ASSERT(mwifi_init(&init_config));
-    MDF_ERROR_ASSERT(mdebug_espnow_init());
+    MDF_ERROR_ASSERT(mdebug_log_set_config(&log_config));
 
     /**
      * @brief Add debug function, you can use serial command and wireless debugging.

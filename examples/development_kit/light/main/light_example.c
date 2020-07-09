@@ -21,7 +21,7 @@
 #include "mconfig_blufi.h"
 #include "mconfig_chain.h"
 #include "mdebug_console.h"
-#include "mdebug_espnow.h"
+#include "mdebug_log.h"
 
 #include "light_driver.h"
 #include "light_handle.h"
@@ -594,7 +594,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MCONFIG_BLUFI_FINISH:
             g_config_from_blufi_flag = true;
-            __attribute__ ((fallthrough));
+            __attribute__((fallthrough));
 
         case MDF_EVENT_MCONFIG_CHAIN_FINISH:
             light_driver_breath_start(0, 255, 0); /**< green blink */
@@ -677,6 +677,10 @@ void app_main()
     uint8_t sta_mac[6]              = {0};
     mwifi_config_t ap_config        = {0x0};
     mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
+    mdebug_log_config_t log_config = {
+        .log_uart_enable = true,
+        .log_espnow_enable = true,
+    };
 
     /**
      * NOTE:
@@ -744,7 +748,7 @@ void app_main()
      *      1. Initialize console module
      */
     MDF_ERROR_ASSERT(mdebug_console_init());
-    MDF_ERROR_ASSERT(mdebug_espnow_init());
+    MDF_ERROR_ASSERT(mdebug_log_set_config(&log_config));
     mdebug_cmd_register_common();
 
     /**

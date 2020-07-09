@@ -40,6 +40,11 @@ mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
 {
     mdf_err_t ret = MDF_OK;
 
+    if (!g_log_config) {
+        g_log_config = MDF_CALLOC(1, sizeof(mdebug_log_config_t));
+        MDF_ERROR_CHECK(!g_log_config, MDF_ERR_NO_MEM, "");
+    }
+
     if (config) {
         if (config->log_flash_enable) { /**< Set log flash enable */
             mdebug_flash_init();
@@ -59,8 +64,8 @@ mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
             mdebug_log_deinit();
         }
 
-        ret = mdf_info_save(MDEBUG_LOG_STORE_KEY, config, sizeof(mdebug_log_config_t));
         memcpy(g_log_config, config, sizeof(mdebug_log_config_t));
+        ret = mdf_info_save(MDEBUG_LOG_STORE_KEY, config, sizeof(mdebug_log_config_t));
     } else {
         ret = mdf_info_erase(MDEBUG_LOG_STORE_KEY);
     }
@@ -120,6 +125,7 @@ static ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
     vsnprintf((char *)log_data->data, log_size, fmt, vp);
 
     g_log_queue_buffer_size += log_size;
+
     if (xQueueSend(g_log_queue, &log_data, 0) == pdFALSE) {
         free(log_data);
         g_log_queue_buffer_size -= log_size;

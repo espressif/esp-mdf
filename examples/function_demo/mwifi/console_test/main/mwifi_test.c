@@ -16,7 +16,7 @@
 #include "mdf_common.h"
 #include "mespnow.h"
 #include "mdebug_console.h"
-#include "mdebug_espnow.h"
+#include "mdebug_log.h"
 
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
@@ -807,6 +807,10 @@ void app_main()
 {
     mwifi_config_t ap_config = {0};
     mwifi_init_config_t networking_config = MWIFI_INIT_CONFIG_DEFAULT();
+    mdebug_log_config_t log_config = {
+        .log_uart_enable = true,
+        .log_espnow_enable = true,
+    };
 
     /**
     * @brief Set the log level for serial port printing.
@@ -834,7 +838,7 @@ void app_main()
      *      1. Initialize console module
      */
     MDF_ERROR_ASSERT(mdebug_console_init());
-    MDF_ERROR_ASSERT(mdebug_espnow_init());
+    MDF_ERROR_ASSERT(mdebug_log_set_config(&log_config));
     mdebug_cmd_register_common();
 
     /**
