@@ -175,6 +175,7 @@ typedef enum {
     MWIFI_MESH_ROOT,    /**< the only sink of the mesh network. Has the ability to access external IP network */
     MWIFI_MESH_NODE,    /**< intermediate device. Has the ability to forward packets over the mesh network */
     MWIFI_MESH_LEAF,    /**< has no forwarding ability */
+    MWIFI_MESH_STA,     /**< connect to router with a standlone Wi-Fi station mode, no network expansion capability*/	
 } node_type_t;
 
 typedef uint8_t mwifi_node_type_t;
