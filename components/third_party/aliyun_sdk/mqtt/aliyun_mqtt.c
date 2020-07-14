@@ -14,6 +14,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 
 #include "mqtt_client.h"
 
@@ -26,6 +27,7 @@ static const char *TAG = "aliyun_mqtt";
 static esp_mqtt_client_handle_t g_mqtt_client = NULL;
 
 static bool g_mqtt_connet_flag = false;
+static xTimerHandle g_mqtt_disconnect_timer = NULL;
 
 mdf_err_t aliyun_mqtt_get_connet_status(void)
 {
@@ -71,6 +73,12 @@ int aliyun_mqtt_subscribe(const char *topic, aliyun_mqtt_qos_t qos)
     return esp_mqtt_client_subscribe(g_mqtt_client, topic, qos);
 }
 
+static void mqtt_disconnected_callback(TimerHandle_t xTimer)
+{
+    MDF_LOGI("cloud_connect_status: false");
+    aliyun_platform_set_cloud_connect_status(false);
+}
+
 static mdf_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
     switch (event->event_id) {
@@ -80,13 +88,28 @@ static mdf_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 
         case MQTT_EVENT_CONNECTED:
             MDF_LOGI("MQTT_EVENT_CONNECTED");
+
+            if (g_mqtt_disconnect_timer && xTimerIsTimerActive(g_mqtt_disconnect_timer)) {
+                if (!xTimerStop(g_mqtt_disconnect_timer, 0)) {
+                    MDF_LOGE("xTimer operation failed");
+                }
+            }
+
             aliyun_mqtt_set_connet_status(true);
             break;
 
         case MQTT_EVENT_DISCONNECTED:
             MDF_LOGI("MQTT_EVENT_DISCONNECTED");
             aliyun_mqtt_set_connet_status(false);
-            aliyun_platform_set_cloud_connect_status(false);
+
+            if (!g_mqtt_disconnect_timer) {
+                aliyun_platform_set_cloud_connect_status(false);
+            } else if (!xTimerIsTimerActive(g_mqtt_disconnect_timer)) {
+                if (!xTimerStart(g_mqtt_disconnect_timer, 0)) {
+                    MDF_LOGE("xTimer operation failed");
+                }
+            }
+
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
@@ -187,6 +210,14 @@ mdf_err_t aliyun_mqtt_connect(aliyun_mqtt_config_t *mqtt_config)
 
     g_mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
     MDF_ERROR_CHECK(g_mqtt_client == NULL, MDF_FAIL, " esp_mqtt_client_init  Error");
+
+    int delay = CONFIG_ALIYUN_DISCONNECT_DELAY_NOTIFY;
+
+    if (delay) {
+        g_mqtt_disconnect_timer = xTimerCreate("disconnect_timer", pdMS_TO_TICKS(CONFIG_ALIYUN_DISCONNECT_DELAY_NOTIFY * 1000),
+                                               false, NULL, mqtt_disconnected_callback);
+        MDF_ERROR_CHECK(g_mqtt_disconnect_timer == NULL, MDF_FAIL, "create disconnect timer failed");
+    }
 
     return esp_mqtt_client_start(g_mqtt_client);
 }

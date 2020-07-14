@@ -52,6 +52,15 @@ menuconfig ALIYUN_IOT_NEW_SDK
         help
             aliyun sdk task priority, include aliyun_gateway_write, aliyun_gateway_read and aliyun_subdevice_task.
 
+    config ALIYUN_DISCONNECT_DELAY_NOTIFY
+    depends on ALIYUN_IOT_NEW_SDK
+        int "disconnect_delay_notify"
+        range 0 120
+        default 60
+        help 
+            when mqtt is disconnected, it will start software timer use this value(seconds), if mqtt is reconnected 
+            before software timer triger, it won't send toDS=false to subdevice.
+
 menu "aliyun sdk mqtt config"
 depends on ALIYUN_IOT_NEW_SDK
 
