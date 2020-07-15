@@ -300,6 +300,7 @@ void app_main()
     *      1. Initialize console module
     */
     MDF_ERROR_ASSERT(mdebug_console_init());
+    MDF_ERROR_ASSERT(mdebug_log_init());
     MDF_ERROR_ASSERT(mdebug_log_set_config(&log_config));
     mdebug_cmd_register_common();
 
