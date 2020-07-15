@@ -162,6 +162,12 @@ typedef struct {
         /**< .data_drop_enable      =*/ CONFIG_MWIFI_DATA_DROP_ENABLE, \
     }
 
+#define MWIFI_RSSI_THRESHOUD_DEFAULT() { \
+        /*!< .high  =*/	 CONFIG_MWIFI_RSSI_THRESHOUD_HIGH, \
+        /*!< medium =*/	 CONFIG_MWIFI_RSSI_THRESHOUD_MEDIUM, \
+        /*!< low    =*/  CONFIG_MWIFI_RSSI_THRESHOUD_LOW, \
+    }
+
 /**
  * @brief Device type
  */

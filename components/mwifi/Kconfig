@@ -149,6 +149,21 @@ menu "MDF Mwifi"
                 When the RSSI between the root and the router is lower than this value,
                 the reselection root is triggered.
 
+        config MWIFI_RSSI_THRESHOUD_HIGH
+            int "high level of the rssi_threshoud for three level"
+            range -85 -55
+            default -78
+
+        config MWIFI_RSSI_THRESHOUD_MEDIUM
+            int "medium level of the rssi_threshoud for three level"
+            range -85 -55
+            default -82
+
+        config MWIFI_RSSI_THRESHOUD_LOW
+            int "low level of the rssi_threshoud for three level"
+            range -85 -55
+            default -85
+
     endmenu
 
     menu "Transmission config"
