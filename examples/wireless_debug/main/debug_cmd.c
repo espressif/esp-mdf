@@ -131,16 +131,19 @@ static int log_receiver_func(int argc, char **argv)
     if (log_receiver_args.add->count) {
         ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, self_mac));
         asprintf(&command_str, "log -s " MACSTR, MAC2STR(self_mac));
+        mdebug_espnow_write(dest_addr, command_str, strlen(command_str), MDEBUG_ESPNOW_CONSOLE, portMAX_DELAY);
+        MDF_FREE(command_str);
     } else if (log_receiver_args.remove->count) {
         asprintf(&command_str, "log -s 00:00:00:00:00:00");
+        mdebug_espnow_write(dest_addr, command_str, strlen(command_str), MDEBUG_ESPNOW_CONSOLE, portMAX_DELAY);
+        MDF_FREE(command_str);
     }
 
     if (log_receiver_args.tag->count && log_receiver_args.level->count) {
         asprintf(&command_str, "log -t %s -l %s", log_receiver_args.tag->sval[0], log_receiver_args.level->sval[0]);
+        mdebug_espnow_write(dest_addr, command_str, strlen(command_str), MDEBUG_ESPNOW_CONSOLE, portMAX_DELAY);
+        MDF_FREE(command_str);
     }
-
-    mdebug_espnow_write(dest_addr, command_str, strlen(command_str), MDEBUG_ESPNOW_CONSOLE, portMAX_DELAY);
-    MDF_FREE(command_str);
 
     return MDF_OK;
 }
@@ -362,14 +365,15 @@ static esp_err_t wifi_scan_func(int argc, char **argv)
     mesh_assoc_t assoc = {0x0};
     uint16_t ap_number = 0;
     uint8_t bssid[6]   = {0x0};
-    wifi_config_t wifi_config      = {0x0};
+    uint8_t channel                = 1;
+    wifi_second_chan_t second      = 0;
     wifi_ap_record_t ap_record     = {0x0};
     wifi_scan_config_t scan_config = {
         .show_hidden = true,
         .scan_type   = WIFI_SCAN_TYPE_ACTIVE,
     };
 
-    esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_config);
+    ESP_ERROR_CHECK(esp_wifi_get_channel(&channel, &second));
     ESP_ERROR_CHECK(esp_wifi_disconnect());
 
     if (wifi_scan_args.passive->count) {
@@ -473,11 +477,8 @@ static esp_err_t wifi_scan_func(int argc, char **argv)
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     }
 
-    if (strlen((char *)wifi_config.sta.ssid)) {
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-        ESP_ERROR_CHECK(esp_wifi_connect());
-    } else if (wifi_config.sta.channel) {
-        ESP_ERROR_CHECK(esp_wifi_set_channel(wifi_config.sta.channel, WIFI_SECOND_CHAN_NONE));
+    if (channel > 0 && channel < 13) {
+        ESP_ERROR_CHECK(esp_wifi_set_channel(channel, second));
     }
 
     return ESP_OK;
