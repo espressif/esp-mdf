@@ -285,7 +285,6 @@ static mdf_err_t mupgrade_request_status(uint8_t *progress_array, mupgrade_resul
                 memcpy(result->successed_addr + (result->successed_num - 1) * MWIFI_ADDR_LEN,
                        q_data->src_addr, MWIFI_ADDR_LEN);
             } else {
-
                 /**< Update upgrade progress. */
                 for (int i = 0; i < MUPGRADE_PACKET_MAX_NUM / 8; i++) {
                     progress_array[i] &= response_status->progress_array[i];
