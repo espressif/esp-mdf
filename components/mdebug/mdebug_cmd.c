@@ -18,6 +18,7 @@
 
 #include "mdf_common.h"
 #include "mdebug.h"
+#include "mupgrade.h"
 
 #define MDEBUG_LOG_MAX_SIZE   (MESPNOW_PAYLOAD_LEN * 2 - 2)  /**< Set log length size */
 
@@ -254,6 +255,28 @@ static void register_reset()
 }
 
 /**
+ * @brief  A function which implements reset command.
+ */
+static int fallback_func(int argc, char **argv)
+{
+    return mupgrade_version_fallback();
+}
+
+/**
+ * @brief  Register fallback command.
+ */
+static void register_fallback()
+{
+    const esp_console_cmd_t cmd = {
+        .command = "fallback",
+        .help = "Upgrade error back to previous version",
+        .hint = NULL,
+        .func = &fallback_func,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+
+/**
  * @brief  A function which implements heap command.
  */
 static int heap_func(int argc, char **argv)
@@ -448,6 +471,7 @@ void mdebug_cmd_register_common()
     register_heap();
     register_restart();
     register_reset();
+    register_fallback();
     register_log();
     register_coredump();
 }

@@ -17,8 +17,7 @@
 #include "mdf_common.h"
 #include "mwifi.h"
 #include "mespnow.h"
-#include "mdebug_espnow.h"
-#include "mdebug_console.h"
+#include "mdebug.h"
 
 #include "sdcard.h"
 #include "debug_recv.h"
@@ -85,8 +84,8 @@ void app_main()
     mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
     wifi_config_t wifi_config = {0x0};
     mdebug_log_config_t log_config = {
-        .log_uart_enable = true;
-        .log_espnow_enable = true;
+        .log_uart_enable = true,
+        .log_espnow_enable = true,
     };
 
     /**
