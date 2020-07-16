@@ -41,8 +41,7 @@ static mdf_err_t mupgrade_status(const mupgrade_status_t *status, size_t size)
 
     /**< If g_upgrade_config->status has been created and
          once again upgrade the same name bin, just return MDF_OK */
-    if (!memcmp(g_upgrade_config->status.name, status->name,
-                sizeof(g_upgrade_config->status.name))
+    if (!strcmp(g_upgrade_config->status.name, status->name)
             && g_upgrade_config->status.total_size == status->total_size) {
         ret = MDF_OK;
         goto EXIT;
@@ -197,8 +196,8 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
     static uint32_t s_next_written_percentage = CONFIG_MUPGRADE_STATUS_REPORT_INTERVAL;
     uint32_t written_percentage = g_upgrade_config->status.written_size * 100 / g_upgrade_config->status.total_size;
 
-    MDF_LOGD("packet_seq: %d, packet_size: %d, written_size: %d, progress: %03d%%",
-             packet->seq, packet->size, g_upgrade_config->status.written_size, written_percentage);
+    MDF_LOGD("packet_seq: %d, packet_size: %d, written_size: %d, progress: %03d%%, next_percentage: %03d%%",
+             packet->seq, packet->size, g_upgrade_config->status.written_size, written_percentage, s_next_written_percentage);
 
     if (written_percentage == s_next_written_percentage) {
         MDF_LOGD("Save the data of upgrade status to flash");
@@ -209,6 +208,8 @@ static mdf_err_t mupgrade_write(const mupgrade_packet_t *packet, size_t size)
 
         /**< Send MDF_EVENT_MUPGRADE_STATUS event to the event handler */
         mdf_event_loop_send(MDF_EVENT_MUPGRADE_STATUS, (void *)written_percentage);
+    } else if (written_percentage > s_next_written_percentage) {
+        s_next_written_percentage = (written_percentage / CONFIG_MUPGRADE_STATUS_REPORT_INTERVAL + 1) * CONFIG_MUPGRADE_STATUS_REPORT_INTERVAL;
     }
 
     if (g_upgrade_config->status.written_size == g_upgrade_config->status.total_size) {
