@@ -182,6 +182,12 @@ build_example_mesh_with_aliyun:
     EXAMPLE_PATH: "examples/aliyun_linkkit/mesh-with-aliyun"
     ESP32S2: "true"
 
+build_example_wireless_debug:
+  <<: *build_template
+  variables:
+    ARTIFACTS_NAME: "wireless_debug"
+    EXAMPLE_PATH: "examples/wireless_debug"
+
 push_master_to_github:
   stage: deploy
   only:
