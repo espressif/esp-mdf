@@ -40,10 +40,7 @@ mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
 {
     mdf_err_t ret = MDF_OK;
 
-    if (!g_log_config) {
-        g_log_config = MDF_CALLOC(1, sizeof(mdebug_log_config_t));
-        MDF_ERROR_CHECK(!g_log_config, MDF_ERR_NO_MEM, "");
-    }
+    mdebug_log_init();
 
     if (config) {
         if (config->log_flash_enable) { /**< Set log flash enable */
@@ -56,12 +53,6 @@ mdf_err_t mdebug_log_set_config(const mdebug_log_config_t *config)
             mdebug_espnow_init();
         } else {
             mdebug_espnow_deinit();
-        }
-
-        if (config->log_uart_enable) { /**< Set log uart enable */
-            mdebug_log_init();
-        } else {
-            mdebug_log_deinit();
         }
 
         memcpy(g_log_config, config, sizeof(mdebug_log_config_t));
@@ -183,12 +174,16 @@ static void mdebug_log_send_task(void *arg)
 
 mdf_err_t mdebug_log_init()
 {
-    if (g_log_config) {
-        return MDF_OK;
+    static bool log_init_flag = false;
+
+    if (log_init_flag) {
+        return 0;
     }
 
-    g_log_config = MDF_CALLOC(1, sizeof(mdebug_log_config_t));
-    MDF_ERROR_CHECK(!g_log_config, MDF_ERR_NO_MEM, "");
+    if (!g_log_config) {
+        g_log_config = MDF_CALLOC(1, sizeof(mdebug_log_config_t));
+        MDF_ERROR_CHECK(!g_log_config, MDF_ERR_NO_MEM, "");
+    }
 
     if (mdebug_log_get_config(g_log_config) != MDF_OK) {
         g_log_config->log_uart_enable = true;
@@ -208,7 +203,9 @@ mdf_err_t mdebug_log_init()
                                 &g_log_send_task_handle, CONFIG_MDF_TASK_PINNED_TO_CORE);
     }
 
-    MDF_LOGI("Mdebug log initialized successfully");
+    MDF_LOGW("Mdebug log initialized successfully");
+    log_init_flag = true;
+
     return ESP_OK;
 }
 
