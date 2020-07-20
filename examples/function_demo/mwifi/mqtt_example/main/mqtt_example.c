@@ -30,8 +30,8 @@ void root_write_task(void *arg)
 
     MDF_LOGI("Root write task is running");
 
-    while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
-        if (!mesh_mqtt_is_connect()) {
+    while (esp_mesh_is_root()) {
+        if (!mwifi_get_root_status()) {
             vTaskDelay(500 / portTICK_RATE_MS);
             continue;
         }
@@ -61,8 +61,8 @@ void root_read_task(void *arg)
 
     MDF_LOGI("Root read task is running");
 
-    while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
-        if (!mesh_mqtt_is_connect()) {
+    while (esp_mesh_is_root()) {
+        if (!mwifi_get_root_status()) {
             vTaskDelay(500 / portTICK_RATE_MS);
             continue;
         }
@@ -272,32 +272,29 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             mesh_mqtt_start(CONFIG_MQTT_URL);
 
-            break;
-        }
-
-        case MDF_EVENT_CUSTOM_MQTT_CONNECT:
-            MDF_LOGI("MQTT connect");
-            mdf_err_t err = mesh_mqtt_update_topo();
-
-            if (err != MDF_OK) {
-                MDF_LOGE("Update topo failed");
-            }
-
-            err = mesh_mqtt_subscribe();
-
-            if (err != MDF_OK) {
-                MDF_LOGE("Subscribe failed");
-            }
-
-            mwifi_post_root_status(true);
-
             xTaskCreate(root_write_task, "root_write", 4 * 1024,
                         NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
             xTaskCreate(root_read_task, "root_read", 4 * 1024,
                         NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
+
+            break;
+        }
+
+        case MDF_EVENT_CUSTOM_MQTT_CONNECTED:
+            MDF_LOGI("MQTT connect");
+            mdf_err_t err = mesh_mqtt_subscribe();
+            if (err != MDF_OK) {
+                MDF_LOGE("Subscribe failed");
+            }
+            err = mesh_mqtt_update_topo();
+            if (err != MDF_OK) {
+                MDF_LOGE("Update topo failed");
+            }
+            
+            mwifi_post_root_status(true);
             break;
 
-        case MDF_EVENT_CUSTOM_MQTT_DISCONNECT:
+        case MDF_EVENT_CUSTOM_MQTT_DISCONNECTED:
             MDF_LOGI("MQTT disconnected");
             mwifi_post_root_status(false);
             break;

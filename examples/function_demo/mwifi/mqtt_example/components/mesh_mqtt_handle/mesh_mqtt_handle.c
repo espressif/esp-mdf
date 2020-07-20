@@ -171,13 +171,13 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         case MQTT_EVENT_CONNECTED:
             MDF_LOGD("MQTT_EVENT_CONNECTED");
             g_mesh_mqtt.is_connected = true;
-            mdf_event_loop_send(MDF_EVENT_CUSTOM_MQTT_CONNECT, NULL);
+            mdf_event_loop_send(MDF_EVENT_CUSTOM_MQTT_CONNECTED, NULL);
             break;
 
         case MQTT_EVENT_DISCONNECTED:
             MDF_LOGD("MQTT_EVENT_DISCONNECTED");
             g_mesh_mqtt.is_connected = false;
-            mdf_event_loop_send(MDF_EVENT_CUSTOM_MQTT_DISCONNECT, NULL);
+            mdf_event_loop_send(MDF_EVENT_CUSTOM_MQTT_DISCONNECTED, NULL);
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
