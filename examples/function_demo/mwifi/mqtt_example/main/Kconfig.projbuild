@@ -2,13 +2,13 @@ menu "Example Configuration"
 
 config ROUTER_SSID
     string "Router SSID"
-        default "esp-liyin"
+        default "my-ssid"
         help
             Router SSID.
 
 config ROUTER_PASSWORD
     string "Router password"
-        default "espressif"
+        default "my-password"
         help
             Router password.
 
