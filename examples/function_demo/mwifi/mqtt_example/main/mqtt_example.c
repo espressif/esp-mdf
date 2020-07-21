@@ -62,7 +62,7 @@ void root_read_task(void *arg)
 
     MDF_LOGI("Root read task is running");
 
-    while (esp_mesh_is_root() == MESH_ROOT) {
+    while (esp_mesh_is_root()) {
         if (!mwifi_get_root_status()) {
             vTaskDelay(500 / portTICK_RATE_MS);
             continue;
