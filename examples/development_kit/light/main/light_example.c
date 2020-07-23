@@ -824,7 +824,9 @@ void app_main()
     MDF_ERROR_ASSERT(mlink_set_handle("show_layer", light_show_layer));
     MDF_ERROR_ASSERT(mlink_set_handle("get_tsf_time", light_get_tsf_time));
 
+#ifndef CONFIG_LIGHT_BLE_GATEWAY
     MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
+#endif
     /**
      * @brief Initialize and start esp-mesh network according to network configuration information.
      */
