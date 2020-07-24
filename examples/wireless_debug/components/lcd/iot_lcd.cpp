@@ -59,9 +59,9 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 #define SWAPBYTES(i) ((i>>8) | (i<<8))
-static const char* TAG = "LCD";
+static const char *TAG = "LCD";
 
-CEspLcd::CEspLcd(lcd_conf_t* lcd_conf, int height, int width, bool dma_en, int dma_word_size, int dma_chan) : Adafruit_GFX(width, height)
+CEspLcd::CEspLcd(lcd_conf_t *lcd_conf, int height, int width, bool dma_en, int dma_word_size, int dma_chan) : Adafruit_GFX(width, height)
 {
     m_height = height;
     m_width  = width;
@@ -135,7 +135,7 @@ void CEspLcd::transmitData(uint16_t data, int32_t repeats)
     lcd_send_uint16_r(spi_wr, data, repeats, &dc);
     xSemaphoreGiveRecursive(spi_mux);
 }
-void CEspLcd::transmitData(uint8_t* data, int length)
+void CEspLcd::transmitData(uint8_t *data, int length)
 {
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     lcd_data(spi_wr, (uint8_t *)data, length, &dc);
@@ -151,7 +151,7 @@ void CEspLcd::transmitCmd(uint8_t cmd)
 void CEspLcd::transmitCmdData(uint8_t cmd, const uint8_t data, uint8_t numDataByte)
 {
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
-    lcd_cmd(spi_wr, (const uint8_t) cmd, &dc);
+    lcd_cmd(spi_wr, cmd, &dc);
     lcd_data(spi_wr, &data, 1, &dc);
     xSemaphoreGiveRecursive(spi_mux);
 }
@@ -169,20 +169,22 @@ void CEspLcd::drawPixel(int16_t x, int16_t y, uint16_t color)
     if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) {
         return;
     }
+
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x + 1, y + 1);
     transmitData((uint16_t) SWAPBYTES(color));
     xSemaphoreGiveRecursive(spi_mux);
 }
 
-void CEspLcd::_fastSendBuf(const uint16_t* buf, int point_num, bool swap)
+void CEspLcd::_fastSendBuf(const uint16_t *buf, int point_num, bool swap)
 {
     if ((point_num * sizeof(uint16_t)) <= (16 * sizeof(uint32_t))) {
-        transmitData((uint8_t*) buf, sizeof(uint16_t) * point_num);
+        transmitData((uint8_t *) buf, sizeof(uint16_t) * point_num);
     } else {
         int gap_point = dma_buf_size;
-        uint16_t* data_buf = (uint16_t*) malloc(gap_point * sizeof(uint16_t));
+        uint16_t *data_buf = (uint16_t *) malloc(gap_point * sizeof(uint16_t));
         int offset = 0;
+
         while (point_num > 0) {
             int trans_points = point_num > gap_point ? gap_point : point_num;
 
@@ -191,12 +193,14 @@ void CEspLcd::_fastSendBuf(const uint16_t* buf, int point_num, bool swap)
                     data_buf[i] = SWAPBYTES(buf[i + offset]);
                 }
             } else {
-                memcpy((uint8_t*) data_buf, (uint8_t*) (buf + offset), trans_points * sizeof(uint16_t));
+                memcpy((uint8_t *) data_buf, (uint8_t *)(buf + offset), trans_points * sizeof(uint16_t));
             }
-            transmitData((uint8_t*) (data_buf), trans_points * sizeof(uint16_t));
+
+            transmitData((uint8_t *)(data_buf), trans_points * sizeof(uint16_t));
             offset += trans_points;
             point_num -= trans_points;
         }
+
         free(data_buf);
         data_buf = NULL;
     }
@@ -208,17 +212,20 @@ void CEspLcd::_fastSendRep(uint16_t val, int rep_num)
     int gap_point = dma_buf_size;
     gap_point = (gap_point > point_num ? point_num : gap_point);
 
-    uint16_t* data_buf = (uint16_t*) malloc(gap_point * sizeof(uint16_t));
+    uint16_t *data_buf = (uint16_t *) malloc(gap_point * sizeof(uint16_t));
     int offset = 0;
+
     while (point_num > 0) {
         for (int i = 0; i < gap_point; i++) {
             data_buf[i] = val;
         }
+
         int trans_points = point_num > gap_point ? gap_point : point_num;
-        transmitData((uint8_t*) (data_buf), sizeof(uint16_t) * trans_points);
+        transmitData((uint8_t *)(data_buf), sizeof(uint16_t) * trans_points);
         offset += trans_points;
         point_num -= trans_points;
     }
+
     free(data_buf);
     data_buf = NULL;
 }
@@ -227,6 +234,7 @@ void CEspLcd::drawBitmap(int16_t x, int16_t y, const uint16_t *bitmap, int16_t w
 {
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x + w - 1, y + h - 1);
+
     if (dma_mode) {
         _fastSendBuf(bitmap, w * h);
     } else {
@@ -234,33 +242,39 @@ void CEspLcd::drawBitmap(int16_t x, int16_t y, const uint16_t *bitmap, int16_t w
             transmitData(SWAPBYTES(bitmap[i]), 1);
         }
     }
+
     xSemaphoreGiveRecursive(spi_mux);
 }
 
-esp_err_t CEspLcd::drawBitmapFromFlashPartition(int16_t x, int16_t y, int16_t w, int16_t h, esp_partition_t* data_partition, int data_offset, int malloc_pixal_size, bool swap_bytes_en)
+esp_err_t CEspLcd::drawBitmapFromFlashPartition(int16_t x, int16_t y, int16_t w, int16_t h, esp_partition_t *data_partition, int data_offset, int malloc_pixal_size, bool swap_bytes_en)
 {
     if (data_partition == NULL) {
         ESP_LOGE(TAG, "Partition error, null!");
         return ESP_FAIL;
     }
+
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
-    uint16_t* recv_buf = (uint16_t*) calloc(malloc_pixal_size, sizeof(uint16_t));
+    uint16_t *recv_buf = (uint16_t *) calloc(malloc_pixal_size, sizeof(uint16_t));
     setAddrWindow(x, y, x + w - 1, y + h - 1);
 
     int offset = 0;
     int point_num = w * h;
+
     while (point_num) {
         int len = malloc_pixal_size > point_num ? point_num : malloc_pixal_size;
-        esp_partition_read(data_partition, data_offset + offset * sizeof(uint16_t), (uint8_t*) recv_buf, len * sizeof(uint16_t));
+        esp_partition_read(data_partition, data_offset + offset * sizeof(uint16_t), (uint8_t *) recv_buf, len * sizeof(uint16_t));
+
         if (swap_bytes_en) {
             for (int i = 0; i < len; i++) {
                 recv_buf[i] = SWAPBYTES(recv_buf[i]);
             }
         }
-        transmitData((uint8_t*) recv_buf, len * sizeof(uint16_t));
+
+        transmitData((uint8_t *) recv_buf, len * sizeof(uint16_t));
         offset += len;
         point_num -= len;
     }
+
     free(recv_buf);
     recv_buf = NULL;
     xSemaphoreGiveRecursive(spi_mux);
@@ -272,11 +286,13 @@ void CEspLcd::drawBitmapFont(int16_t x, int16_t y, uint8_t w, uint8_t h, const u
     //Saves some memory and SWAPBYTES as compared to above API
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x + w - 1, y + h - 1);
+
     if (dma_mode) {
         _fastSendBuf(bitmap, w * h, false);
     } else {
-        transmitData((uint8_t*) bitmap, sizeof(uint16_t) * w * h);
+        transmitData((uint8_t *) bitmap, sizeof(uint16_t) * w * h);
     }
+
     xSemaphoreGiveRecursive(spi_mux);
 }
 
@@ -286,16 +302,20 @@ void CEspLcd::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
     if ((x >= _width) || (y >= _height)) {
         return;
     }
+
     if ((y + h - 1) >= _height) {
         h = _height - y;
     }
+
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x, y + h - 1);
+
     if (dma_mode) {
         _fastSendRep(SWAPBYTES(color), h);
     } else {
         transmitData(SWAPBYTES(color), h);
     }
+
     xSemaphoreGiveRecursive(spi_mux);
 }
 
@@ -305,16 +325,20 @@ void CEspLcd::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
     if ((x >= _width) || (y >= _height)) {
         return;
     }
+
     if ((x + w - 1) >= _width) {
         w = _width - x;
     }
+
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x + w - 1, y);
+
     if (dma_mode) {
         _fastSendRep(SWAPBYTES(color), w);
     } else {
         transmitData(SWAPBYTES(color), w);
     }
+
     xSemaphoreGiveRecursive(spi_mux);
 }
 
@@ -329,19 +353,24 @@ void CEspLcd::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t colo
     if ((x >= _width) || (y >= _height)) {
         return;
     }
+
     if ((x + w - 1) >= _width) {
         w = _width - x;
     }
+
     if ((y + h - 1) >= _height) {
         h = _height - y;
     }
+
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x + w - 1, y + h - 1);
+
     if (dma_mode) {
         _fastSendRep(SWAPBYTES(color), h * w);
     } else {
         transmitData(SWAPBYTES(color), h * w);
     }
+
     xSemaphoreGiveRecursive(spi_mux);
 }
 
@@ -362,28 +391,33 @@ void CEspLcd::setRotation(uint8_t m)
 {
     uint8_t data = 0;
     rotation = m % 4;  //Can't be more than 3
+
     switch (rotation) {
-    case 0:
-        data = MADCTL_MX | MADCTL_BGR;
-        _width = m_width;
-        _height = m_height;
-        break;
-    case 1:
-        data = MADCTL_MV | MADCTL_BGR;
-        _width = m_height;
-        _height = m_width;
-        break;
-    case 2:
-        data = MADCTL_MY | MADCTL_BGR;
-        _width = m_width;
-        _height = m_height;
-        break;
-    case 3:
-        data = MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR;
-        _width = m_height;
-        _height = m_width;
-        break;
+        case 0:
+            data = MADCTL_MX | MADCTL_BGR;
+            _width = m_width;
+            _height = m_height;
+            break;
+
+        case 1:
+            data = MADCTL_MV | MADCTL_BGR;
+            _width = m_height;
+            _height = m_width;
+            break;
+
+        case 2:
+            data = MADCTL_MY | MADCTL_BGR;
+            _width = m_width;
+            _height = m_height;
+            break;
+
+        case 3:
+            data = MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR;
+            _width = m_height;
+            _height = m_width;
+            break;
     }
+
     transmitCmdData(LCD_MADCTL, data, 1);
 }
 
@@ -412,6 +446,7 @@ int CEspLcd::drawFloatSevSeg(float floatNumber, uint8_t decimal, uint16_t poX, u
     for (unsigned char i = 0; i < decimal; ++i) {
         rounding /= 10.0;
     }
+
     floatNumber += rounding;
     temp = (long)floatNumber;
     xPlus = drawNumberSevSeg(temp, poX, poY, size);
@@ -427,6 +462,7 @@ int CEspLcd::drawFloatSevSeg(float floatNumber, uint8_t decimal, uint16_t poX, u
     }
 
     decy = floatNumber - temp;
+
     for (unsigned char i = 0; i < decimal; i++) {
         decy *= 10;                                         /* For the next decimal*/
         temp = decy;                                        /* Get the decimal     */
@@ -435,6 +471,7 @@ int CEspLcd::drawFloatSevSeg(float floatNumber, uint8_t decimal, uint16_t poX, u
         sumX += xPlus;
         decy -= temp;
     }
+
     return sumX;
 }
 
@@ -443,6 +480,7 @@ int CEspLcd::drawUnicodeSevSeg(uint16_t uniCode, uint16_t x, uint16_t y, uint8_t
     if (size) {
         uniCode -= 32;
     }
+
     uint16_t width = 0;
     uint16_t height = 0;
     const uint8_t *flash_address = 0;
@@ -460,13 +498,15 @@ int CEspLcd::drawUnicodeSevSeg(uint16_t uniCode, uint16_t x, uint16_t y, uint8_t
 
     xSemaphoreTakeRecursive(spi_mux, portMAX_DELAY);
     setAddrWindow(x, y, x + w * 8 - 1, y + height - 1);
-    uint16_t* data_buf = (uint16_t*) malloc(dma_buf_size * sizeof(uint16_t));
+    uint16_t *data_buf = (uint16_t *) malloc(dma_buf_size * sizeof(uint16_t));
     int point_num = w * height * 8;
     int idx = 0;
     int trans_points = point_num > dma_buf_size ? dma_buf_size : point_num;
+
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < w; j++) {
             line = *(flash_address + w * i + j);
+
             for (int m = 0; m < 8; m++) {
                 if ((line >> (7 - m)) & 0x1) {
                     data_buf[idx++] = SWAPBYTES(textcolor);
@@ -475,7 +515,7 @@ int CEspLcd::drawUnicodeSevSeg(uint16_t uniCode, uint16_t x, uint16_t y, uint8_t
                 }
 
                 if (idx >= trans_points) {
-                    transmitData((uint8_t*) (data_buf), trans_points * sizeof(uint16_t));
+                    transmitData((uint8_t *)(data_buf), trans_points * sizeof(uint16_t));
                     point_num -= trans_points;
                     idx = 0;
                     trans_points = point_num > dma_buf_size ? dma_buf_size : point_num;
@@ -484,6 +524,7 @@ int CEspLcd::drawUnicodeSevSeg(uint16_t uniCode, uint16_t x, uint16_t y, uint8_t
             }
         }
     }
+
     free(data_buf);
     data_buf = NULL;
     xSemaphoreGiveRecursive(spi_mux);
@@ -493,23 +534,27 @@ int CEspLcd::drawUnicodeSevSeg(uint16_t uniCode, uint16_t x, uint16_t y, uint8_t
 int CEspLcd::drawStringSevSeg(const char *string, uint16_t poX, uint16_t poY, uint8_t size)
 {
     uint16_t sumX = 0;
+
     while (*string) {
         uint16_t xPlus = drawUnicodeSevSeg(*string, poX, poY, size);
         sumX += xPlus;
         string++;
         poX += xPlus;                                     /* Move cursor right*/
     }
+
     return sumX;
 }
 
 int CEspLcd::drawNumberSevSeg(int long_num, uint16_t poX, uint16_t poY, uint8_t size)
 {
-    char tmp[10];
+    char tmp[16];
+
     if (long_num < 0) {
         snprintf(tmp, sizeof(tmp), "%d", long_num);
     } else {
         snprintf(tmp, sizeof(tmp), "%u", long_num);
     }
+
     return drawStringSevSeg(tmp, poX, poY, size);
 }
 
@@ -519,12 +564,12 @@ int CEspLcd::write_char(uint8_t c)
         if (c == '\n') {                       // Newline?
             cursor_x  = 0;                     // Reset x to zero,
             cursor_y += textsize * 8;          // advance y one line
-        }
-        else if (c != '\r') {                  // Ignore carriage returns
+        } else if (c != '\r') {                // Ignore carriage returns
             if (wrap && ((cursor_x + textsize * 6) > _width)) { // Off right?
                 cursor_x  = 0;                 // Reset x to zero,
                 cursor_y += textsize * 8;      // advance y one line
             }
+
             drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize);
             cursor_x += textsize * 6;          // Advance x one char
         }
@@ -534,9 +579,9 @@ int CEspLcd::write_char(uint8_t c)
         if (c == '\n') {
             cursor_x  = 0;
             cursor_y += (int16_t)textsize * (uint8_t)gfxFont->yAdvance;
-        }
-        else if (c != '\r') {
+        } else if (c != '\r') {
             uint8_t first = gfxFont->first;
+
             if ((c >= first) && (c <= (uint8_t)gfxFont->last)) {
 
                 GFXglyph *glyph = &(((GFXglyph *)gfxFont->glyph))[c - first];
@@ -545,16 +590,20 @@ int CEspLcd::write_char(uint8_t c)
 
                 if ((w > 0) && (h > 0)) {                // Is there an associated bitmap?
                     int16_t xo = (int8_t)glyph->xOffset; // sic
+
                     if (wrap && ((cursor_x + textsize * (xo + w)) > _width)) {
                         cursor_x  = 0;
                         cursor_y += (int16_t)textsize * (uint8_t)gfxFont->yAdvance;
                     }
+
                     drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize);
                 }
+
                 cursor_x += (uint8_t)glyph->xAdvance * (int16_t)textsize;
             }
         }
     }
+
     return cursor_x;
 }
 
@@ -562,22 +611,26 @@ int CEspLcd::drawString(const char *string, uint16_t x, uint16_t y)
 {
     uint16_t xPlus = x;
     setCursor(xPlus, y);
+
     while (*string) {
-        xPlus = write_char(*string);        // write_char string char-by-char                 
+        xPlus = write_char(*string);        // write_char string char-by-char
         setCursor(xPlus, y);       // increment cursor
         string++;                      // Move cursor right
     }
+
     return xPlus;
 }
 
 int CEspLcd::drawNumber(int long_num, uint16_t poX, uint16_t poY)
 {
-    char tmp[10];
+    char tmp[16];
+
     if (long_num < 0) {
         snprintf(tmp, sizeof(tmp), "%d", long_num);
     } else {
         snprintf(tmp, sizeof(tmp), "%u", long_num);
     }
+
     return drawString(tmp, poX, poY);
 }
 
@@ -598,7 +651,7 @@ int CEspLcd::drawFloat(float floatNumber, uint8_t decimal, uint16_t poX, uint16_
     for (unsigned char i = 0; i < decimal; ++i) {
         rounding /= 10.0;
     }
-    
+
     floatNumber += rounding;
     temp         = (long)floatNumber;
     xPlus        = drawNumber(temp, poX, poY);
@@ -612,6 +665,7 @@ int CEspLcd::drawFloat(float floatNumber, uint8_t decimal, uint16_t poX, uint16_
     }
 
     decy = floatNumber - temp;
+
     for (unsigned char i = 0; i < decimal; i++) {
         decy *= 10;                                         /* For the next decimal*/
         temp  = decy;                                        /* Get the decimal     */
@@ -619,32 +673,40 @@ int CEspLcd::drawFloat(float floatNumber, uint8_t decimal, uint16_t poX, uint16_
         poX   = xPlus;                                       /* Move cursor right   */
         decy -= temp;
     }
+
     return poX;
 }
 
 size_t CEspLcd::printf(const char *format, ...)
 {
     char loc_buf[64];
-    char * temp = loc_buf;
+    char *temp = loc_buf;
     va_list arg;
     va_list copy;
     va_start(arg, format);
     va_copy(copy, arg);
     size_t len = vsnprintf(NULL, 0, format, arg);
     va_end(copy);
-    if(len >= sizeof(loc_buf)) {
-        temp = new char[len+1];
-        if(temp == NULL) {
+
+    if (len >= sizeof(loc_buf)) {
+        temp = new char[len + 1];
+
+        if (temp == NULL) {
             return 0;
         }
     }
-    len = vsnprintf(temp, len+1, format, arg);
+
+    len = vsnprintf(temp, len + 1, format, arg);
+
     for (int i = 0; i < len; i++) {
         write_char((uint8_t)temp[i]);
     }
+
     va_end(arg);
-    if(len > 64){
+
+    if (len > 64) {
         delete[] temp;
     }
+
     return len;
 }
