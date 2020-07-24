@@ -150,7 +150,6 @@ static void console_handle_task(void *arg)
         if (err == ESP_ERR_NOT_FOUND) {
             MDF_LOGW("Unrecognized command");
         } else if (err == ESP_ERR_INVALID_ARG) {
-            MDF_LOGW("Invalid argument");
             // command was empty
         } else if (err == ESP_OK && ret != ESP_OK) {
             MDF_LOGW("<%s> Command returned non-zero error", esp_err_to_name(ret));
