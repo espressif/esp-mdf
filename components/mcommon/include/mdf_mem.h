@@ -36,30 +36,30 @@ extern "C" {
 #ifdef CONFIG_MDF_MEM_ALLOCATION_DEFAULT
 inline void *mdf_heap_malloc(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT);
+    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 }
 inline void *mdf_heap_calloc(size_t n, size_t size)
 {
-    return heap_caps_calloc(n, size, MALLOC_CAP_DEFAULT);
+    return heap_caps_calloc(n, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 }
 inline void *mdf_heap_realloc(void *ptr, size_t size)
 {
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT);
+    return heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 }
 #endif
 
 #ifdef CONFIG_MDF_MEM_ALLOCATION_SPIRAM
 inline void *mdf_heap_malloc(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 }
 inline void *mdf_heap_calloc(size_t n, size_t size)
 {
-    return heap_caps_calloc(n, size, MALLOC_CAP_SPIRAM);
+    return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 }
 inline void *mdf_heap_realloc(void *ptr, size_t size)
 {
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_SPIRAM);
+    return heap_caps_realloc_prefer(ptr, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 }
 #endif
 
