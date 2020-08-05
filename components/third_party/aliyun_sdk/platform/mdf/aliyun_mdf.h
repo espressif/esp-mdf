@@ -52,7 +52,7 @@ mdf_err_t aliyun_mdf_gateway_read(uint8_t *src_addr, aliyun_msg_type_t *type,
 mdf_err_t aliyun_mdf_subdevice_write(aliyun_msg_type_t type, const void *data, size_t size);
 
 mdf_err_t aliyun_mdf_subdevice_read(aliyun_msg_type_t *type,
-                                    uint8_t **data, size_t *size, TickType_t wait_ticks);
+                                    void **data, size_t *size, TickType_t wait_ticks);
 
 int aliyun_mdf_get_routing_table_size(void);
 

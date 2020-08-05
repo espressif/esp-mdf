@@ -98,13 +98,13 @@ mdf_err_t aliyun_mdf_subdevice_write(aliyun_msg_type_t type, const void *data, s
 }
 
 mdf_err_t aliyun_mdf_subdevice_read(aliyun_msg_type_t *type,
-                                    uint8_t **data, size_t *size, uint32_t wait_ticks)
+                                    void **data, size_t *size, uint32_t wait_ticks)
 {
     mdf_err_t ret = MDF_OK;
     mwifi_data_type_t data_type = { 0 };
     uint8_t src_addr[6] = { 0 };
 
-    ret = mwifi_read(src_addr, &data_type, data, size, wait_ticks);
+    ret = mwifi_read(src_addr, &data_type, (uint8_t **)data, size, wait_ticks);
 
     if (ret == MDF_OK) {
         *type = data_type.custom;
