@@ -527,7 +527,7 @@ static void device_print_system_info(xTimerHandle timer)
     status.mesh_layer = esp_mesh_get_layer();
     status.node_total_number = esp_mesh_get_total_node_num();
     status.parent_rssi = mwifi_get_parent_rssi();
-    status.login_status = aliyun_subdevice_get_login_status();
+    status.login_status = (aliyun_subdevice_get_login_status() == MDF_OK);
 
     ESP_LOGI("SYS", "%s, free heap: %u, connect:%d, layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR ", node num: %d, parent rssi: %d, login_status:%d",
              status.format_time, status.free_heap, status.root_status, status.mesh_layer, MAC2STR(status.mac), MAC2STR(status.parent_bssid.addr),

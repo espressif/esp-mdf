@@ -704,6 +704,7 @@ static mdf_err_t aliyun_gateway_process(int type, uint8_t *src_addr, aliyun_buff
 static void aliyun_gateway_read_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
+    bool is_login = false;
 
     uint8_t src_addr[ALIYUN_SUBDEVICE_ADDRS_MAXLEN] = { 0 };
     uint8_t gateway_addr[ALIYUN_SUBDEVICE_ADDRS_MAXLEN] = { 0 };
@@ -737,15 +738,17 @@ static void aliyun_gateway_read_task(void *arg)
         memset(buffer->payload, 0, CONFIG_ALIYUN_PAYLOAD_SIZE + 1);
 
         if (aliyun_mqtt_get_connet_status() != MDF_OK) { // if mqtt is disconnect, then ignore all data from subdevice
+            is_login = false;
             buffer->payload_len = CONFIG_ALIYUN_PAYLOAD_SIZE;
             aliyun_platform_gateway_read(src_addr, &type, buffer->payload, &buffer->payload_len, CONFIG_ALIYUN_READ_TIMROUT_MS / portTICK_RATE_MS);
             continue;
         }
 
-        if (!aliyun_platform_get_cloud_connect_status()) {
+        if (!aliyun_platform_get_cloud_connect_status() || !is_login) {
             aliyun_subscribe_gateway_all_topic(&gateway_meta, buffer);
             aliyun_list_update_subdevice_reconnet();
             aliyun_platform_set_cloud_connect_status(true);
+            is_login = true;
         }
 
         buffer->payload_len = CONFIG_ALIYUN_PAYLOAD_SIZE;
