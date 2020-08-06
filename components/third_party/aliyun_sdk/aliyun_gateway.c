@@ -305,6 +305,7 @@ static mdf_err_t aliyun_gateway_loop_process_unfinished(const aliyun_device_meta
 
                 ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_FINISH, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
                 MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_list_update_status error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
+                subdevice->no_subscribe = false;
                 break;
 
             case ALIYUN_LIST_LOGIN_FAIL:
