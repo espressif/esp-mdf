@@ -193,7 +193,7 @@ static void mlink_notice_udp_task(void *arg)
         memset(udp_server_buf, 0, MLINK_NOTICE_UDP_BUF_SIZE);
 
         if (xQueueReceive(g_notice_udp_queue, &q_data, MLINK_NOTICE_UDP_RECV_TIMEROUT_MS / portTICK_RATE_MS)) {
-            strncpy(message_tmp, q_data->message, sizeof(message_tmp));
+            strncpy(message_tmp, q_data->message, sizeof(message_tmp) - 1);
             broadcast_msg_buf  = MDF_MALLOC(MLINK_NOTICE_UDP_QUEUE_NUM * 13 + 64);
             broadcast_msg_size = sprintf(broadcast_msg_buf, "mac=%02x%02x%02x%02x%02x%02x", MAC2STR(q_data->mac));
             MDF_FREE(q_data);

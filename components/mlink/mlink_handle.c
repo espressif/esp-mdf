@@ -842,7 +842,10 @@ mdf_err_t mlink_ble_ibeacon_set_config(mlink_handle_data_t *handle_data)
         memcpy(ibeacon_adv_data->proximity_uuid, uuid, sizeof(ibeacon_adv_data->proximity_uuid));
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
     strncpy(config.name, device_name, sizeof(config.name) - 1);
+#pragma GCC diagnostic pop
     config.custom_size = sizeof(mlink_ble_ibeacon_t);
 
     ret = mlink_ble_set_config(&config);
