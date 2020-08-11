@@ -710,7 +710,8 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
             if (subnet_num) {
                 /**< Get nodes in the subnet of a specific child */
                 subnet_addr = MDF_REALLOC_RETRY(NULL, subnet_num * sizeof(mesh_addr_t));
-                ESP_ERROR_CHECK(esp_mesh_get_subnet_nodes_list(child_addr, subnet_addr, subnet_num));
+                ret = esp_mesh_get_subnet_nodes_list(child_addr, subnet_addr, subnet_num);
+                MDF_ERROR_GOTO(ret != ESP_OK, MEM_FREE, "<%s> Get the subnet_node_list of nodes in the subnet of a specific child" MACSTR, mdf_err_to_name(ret), MAC2STR(child_addr->addr));
             }
 
             for (int j = 0; j < subnet_num && addrs_num > 0; ++j) {
@@ -722,6 +723,7 @@ static mdf_err_t mwifi_transmit_write(mesh_addr_t *addrs_list, size_t addrs_num,
                 }
             }
 
+MEM_FREE:
             MDF_FREE(subnet_addr);
         }
 
