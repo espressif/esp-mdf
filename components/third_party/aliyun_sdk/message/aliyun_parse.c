@@ -449,6 +449,11 @@ mdf_err_t aliyun_parse_thing_ntp_response(const char *data, size_t data_len)
     MDF_ERROR_GOTO(pSub == NULL, JSON_EXIT, "cJSON code Error");
     int64_t serverSendTime = (int64_t)pSub->valuedouble;
 
+    if(deviceRecvTime - deviceSendTime > 60*1000) {
+        MDF_LOGW("time difference is too large, ignore it");
+        goto JSON_EXIT;
+    }
+
     int64_t accurateTime = (deviceRecvTime - deviceSendTime + serverSendTime + serverRecvTime) / 2;
     ret = aliyun_platform_set_utc_ms(accurateTime);
     MDF_ERROR_GOTO(ret != MDF_OK, JSON_EXIT, "aliyun_platform_set_utc_ms Error");
