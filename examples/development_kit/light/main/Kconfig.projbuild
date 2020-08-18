@@ -113,7 +113,7 @@ menu "Example Configuration"
         config LIGHT_RESTART_COUNT_RESET
             int "Reset the number of times the device has been powered off continuously to enter the configured network mode"
             range 3 10
-            default 3
+            default 5
             help
                 Reset the number of times the device has been powered off continuously to enter the configured network mode.
         
