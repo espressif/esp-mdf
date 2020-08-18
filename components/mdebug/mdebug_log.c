@@ -113,7 +113,7 @@ static ssize_t mdebug_log_vprintf(const char *fmt, va_list vp)
         log_data->type |= MDEBUG_LOG_TYPE_FLASH;
     }
 
-    vsnprintf((char *)log_data->data, log_size, fmt, vp);
+    vsnprintf((char *)log_data->data, log_size + 1, fmt, vp);
 
     g_log_queue_buffer_size += log_size;
 
@@ -142,7 +142,7 @@ static void mdebug_log_send_task(void *arg)
                                     log_data->size, MDEBUG_ESPNOW_LOG, pdMS_TO_TICKS(MDEBUG_LOG_TIMEOUT_MS));
             }
 
-            if (log_data->type & MDEBUG_LOG_TYPE_FLASH && log_data->size > 14) { /**< Valid data only after the data reaches 14 */
+            if (log_data->type & MDEBUG_LOG_TYPE_FLASH && log_data->size > 0) { /**< Valid data only after the data reaches 14 */
                 /**
                  * @brief Clear color related characters.
                  */
@@ -153,14 +153,21 @@ static void mdebug_log_send_task(void *arg)
                  * @brief Remove the header and tail that appear in the string in the log
                  *
                  */
-                if (log_data->data[0] == 0x1b) {
+                if (log_data->data[0] == '\033' && log_data->size > 7) {
                     data = log_data->data + 7;
-                    size = log_data->size - 12;
+                    size = log_data->size - 7;
+
+                    char *p = strstr(data, LOG_RESET_COLOR);
+
+                    if (p != NULL) {
+                        *p++ = '\n';
+                        size = p - data;
+                    }
                 }
 
                 MDEBUG_PRINTF("src_size: %d, size: %d, strlen: %d, data: %02x, data: %.*s\n",
-                              log_data->size, size, strlen(data),  data[0], size, data);
-                mdebug_flash_write(data, size);  /**< Write log data to flash */
+                              log_data->size, size, strlen(data), data[0], size, data);
+                mdebug_flash_write(data, size); /**< Write log data to flash */
             }
 
             g_log_queue_buffer_size -= log_data->size;
