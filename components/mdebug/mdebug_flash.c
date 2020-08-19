@@ -104,6 +104,7 @@ mdf_err_t mdebug_flash_write(const char *data, size_t size)
     mdf_err_t ret        = MDF_OK;
     struct tm timeinfo   = {0};
     char strtime_buf[32] = {0};
+    static bool flag_timestamp = true;
 
     MDF_PARAM_CHECK(data);
     MDF_PARAM_CHECK(size > 0);
@@ -111,11 +112,6 @@ mdf_err_t mdebug_flash_write(const char *data, size_t size)
     if (!g_mdebug_flash_init_flag) {
         return MDF_FAIL;
     }
-
-    /**< Get the current timestamp */
-    time(&now);
-    localtime_r(&now, &timeinfo);
-    strftime(strtime_buf, 32, "\n[%Y-%m-%d %H:%M:%S] ", &timeinfo);
 
     /**
      * @brief Get the address of the pointer to the next file and clear the file to be written
@@ -144,12 +140,21 @@ mdf_err_t mdebug_flash_write(const char *data, size_t size)
     MDEBUG_PRINTF("esp_partition_write, addr: %d, offset: %d, log_index: %d, size: %d\n",
                   g_log_info[g_log_index].addr, g_log_info[g_log_index].size, g_log_index, size);
 
-    /**
-     * @brief Change the write file address, then wirte timestamp data
-     */
-    ret = esp_partition_write(g_log_part, g_log_info[g_log_index].addr + g_log_info[g_log_index].size, strtime_buf, strlen(strtime_buf));
-    MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_partition_write");
-    g_log_info[g_log_index].size += strlen(strtime_buf);
+    if (flag_timestamp) {
+        flag_timestamp = false;
+
+        /**< Get the current timestamp */
+        time(&now);
+        localtime_r(&now, &timeinfo);
+        strftime(strtime_buf, 32, "[%Y-%m-%d %H:%M:%S] ", &timeinfo);
+
+        /**
+         * @brief Change the write file address, then wirte timestamp data
+         */
+        ret = esp_partition_write(g_log_part, g_log_info[g_log_index].addr + g_log_info[g_log_index].size, strtime_buf, strlen(strtime_buf));
+        MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_partition_write");
+        g_log_info[g_log_index].size += strlen(strtime_buf);
+    }
 
     /**
      * @brief Change the write file address, then wirte log data after the timestamp.
@@ -165,6 +170,10 @@ mdf_err_t mdebug_flash_write(const char *data, size_t size)
      *
      */
     mdf_info_save(MDEBUG_FLASH_STORE_KEY, g_log_info, sizeof(flash_log_info_t) * MDEBUG_FLASH_FILE_MAX_NUM);
+
+    if (data[size - 1] == '\n') {
+        flag_timestamp = true;
+    }
 
     return MDF_OK;
 }
