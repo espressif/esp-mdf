@@ -23,9 +23,13 @@
 #include "cJSON.h"
 
 #define DEVICE_VERSION CONFIG_DEVICE_VERSION
+#define SSID CONFIG_ROUTER_SSID
+#define PASSWORD CONFIG_ROUTER_PASSWORD
 #define POWER_SWITCH_1 (0)
 #define POWER_SWITCH_2 (2)
 #define POWER_SWITCH_3 (4)
+
+#define SUBDEVICE_ONLINE_BIT BIT0
 
 static const char *TAG = "aliyu_mesh";
 
@@ -34,12 +38,13 @@ static xTimerHandle g_print_timer;
 static const char identifier_freeheap[] = "FreeHeap";
 static const char identifier_periodic[] = "Periodic";
 static TaskHandle_t g_usertask_handle = NULL;
-static bool g_gateway_is_ok = false;
 static esp_netif_t *netif_sta = NULL;
+static bool is_added = false;
+static EventGroupHandle_t g_events = NULL;
 
 /* thing model */
 static mdf_err_t device_post_property(); // Device post property to cloud
-static mdf_err_t device_post_event(); // Device post event to cloud
+static mdf_err_t device_post_event(int32_t count); // Device post event to cloud
 static mdf_err_t device_post_property_cb(uint32_t msg_id, int code, const char *data); // Cloud reply for post property callback
 static mdf_err_t device_post_event_cb(uint32_t msg_id, int code, const char *data); // Device post event to cloud
 static mdf_err_t device_property_set_cb(uint32_t msg_id, const char *params, size_t request_len); // Cloud set property callback
@@ -52,6 +57,10 @@ static mdf_err_t device_delete_info_cb(uint32_t msg_id, int code, const char *da
 static mdf_err_t device_get_config_cb(uint32_t msg_id, int code, const char *data); // Cloud reply get configuration callback
 static mdf_err_t device_config_push_cb(uint32_t msg_id, const char *data); // Cloud push configuration callback
 static mdf_err_t device_update_delete_info(char flag); //Device update or delete deviceinfo
+
+/* state  */
+static mdf_err_t device_add_reply_cb(aliyun_device_reply_t *reply);
+static mdf_err_t device_delete_reply_cb(aliyun_device_reply_t *reply);
 
 static void device_print_system_info(xTimerHandle timer);
 
@@ -85,11 +94,10 @@ void user_task(void *args)
 {
     MDF_LOGI("user task for aliyun is running");
 
-    aliyun_device_meta_t subdevice_meta = { 0 };
+    g_events = xEventGroupCreate();
+    assert(g_events);
 
-    aliyun_get_meta(&subdevice_meta);
-    MDF_LOGI("product_key: %s", subdevice_meta.product_key);
-    MDF_LOGI("device_name: %s", subdevice_meta.device_name);
+    aliyun_subdevice_init();
 
     /* thing model */
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_POST_PROPERTY_REPLY, device_post_property_cb));
@@ -105,22 +113,16 @@ void user_task(void *args)
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_CONFIG_PUSH, device_config_push_cb));
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_GET_CONFIG_REPLY, device_get_config_cb));
 
-    while (mwifi_is_connected()) {
-        //while (mwifi_get_root_status() != true) {
-        //    vTaskDelay(pdMS_TO_TICKS(1000));
-        //    MDF_LOGI("Retry get root status");
-        //}
+    /* other callback */
+    ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_GATEWAY_ADD_SUBDEVICE_REPLY, device_add_reply_cb));
+    ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_GATEWAY_DELETE_SUBDEVICE_REPLY, device_delete_reply_cb));
 
-        if (esp_mesh_is_root() != true) {
-            TickType_t delay = (esp_random() % 30) * 1000 + 2;
-            vTaskDelay(pdMS_TO_TICKS(delay));
+    while (1) {
+        EventBits_t bits = xEventGroupWaitBits(g_events, SUBDEVICE_ONLINE_BIT, false, false, portMAX_DELAY);
+
+        if ((bits & SUBDEVICE_ONLINE_BIT) != SUBDEVICE_ONLINE_BIT) {
+            continue;
         }
-
-        while (aliyun_subdevice_add_to_gateway(&subdevice_meta, 20 * 1000) != MDF_OK) {
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }
-
-        MDF_LOGI("aliyun subdevice add to gateway success");
 
         mdf_err_t err = aliyun_subdevice_request_ntp();
         MDF_LOGI("Device request ntp, ret=%d", err);
@@ -136,11 +138,12 @@ void user_task(void *args)
         vTaskDelay(pdMS_TO_TICKS(500));
         aliyun_subdevice_get_config();
 
-        while (!aliyun_subdevice_get_login_status()) {
-            vTaskDelay(pdMS_TO_TICKS(3 * 1000));
-        }
+        int32_t i = 0;
 
-        MDF_LOGE("aliyun subdevice connect error");
+        while ((xEventGroupGetBits(g_events) & SUBDEVICE_ONLINE_BIT) == SUBDEVICE_ONLINE_BIT) {
+            vTaskDelay(pdMS_TO_TICKS(60 * 1000));
+            device_post_event(i++);
+        }
     }
 
     MDF_LOGW("User task is exiting");
@@ -148,12 +151,6 @@ void user_task(void *args)
     vTaskDelete(NULL);
 }
 
-void user_task_init()
-{
-    if (g_usertask_handle == NULL) {
-        xTaskCreate(user_task, "user task", 8 * 1024, NULL, 5, &g_usertask_handle);
-    }
-}
 
 /**
  * @brief All module events will be sent to this task in esp-mdf
@@ -177,15 +174,19 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             if (esp_mesh_is_root()) {
                 esp_netif_dhcpc_start(netif_sta);
+            } else {
+                aliyun_subdevice_parent_connected();
             }
 
-            aliyun_subdevice_init();
-            user_task_init();
             break;
 
         case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
             MDF_LOGI("Parent is disconnected on station interface");
-            mwifi_post_root_status(false);
+
+            if (!esp_mesh_is_root()) {
+                aliyun_subdevice_parent_disconnected();
+            }
+
             break;
 
         case MDF_EVENT_MWIFI_ROOT_GOT_IP:
@@ -209,12 +210,8 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
         case MDF_EVENT_MWIFI_TODS_STATE: {
             mesh_event_info_t *info = ctx;
-
-            if (info->toDS_state == true) {
-                g_gateway_is_ok = true;
-            } else {
-                g_gateway_is_ok = false;
-            }
+            MDF_LOGI("toDS=%d", info->toDS_state);
+            aliyun_subdevice_update_tods(info->toDS_state);
 
             break;
         }
@@ -229,6 +226,25 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
             break;
         }
 
+        case MDF_EVENT_MWIFI_NETWORK_STATE: {
+            mesh_event_network_state_t *network_state = (mesh_event_network_state_t *)ctx;
+            MDF_LOGI("mesh network is rootless: %d", network_state->is_rootless);
+            aliyun_subdevice_set_rootless(network_state->is_rootless);
+            break;
+        }
+
+        case ALIYUN_EVENT_ONLINE: {
+            MDF_LOGW("aliyun subdevice is online.");
+            xEventGroupSetBits(g_events, SUBDEVICE_ONLINE_BIT);
+            break;
+        }
+
+        case ALIYUN_EVENT_OFFLINE: {
+            MDF_LOGW("aliyun subdevice is offline.");
+            xEventGroupClearBits(g_events, SUBDEVICE_ONLINE_BIT);
+            break;
+        }
+
         default:
             break;
     }
@@ -238,7 +254,7 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
 void app_main()
 {
-    esp_log_level_set("mwifi", ESP_LOG_WARN);
+    esp_log_level_set("mwifi", ESP_LOG_INFO);
 
     gpio_config_t gpio_cfg = { 0 };
     gpio_cfg.intr_type = GPIO_INTR_DISABLE;
@@ -249,13 +265,10 @@ void app_main()
 
     mwifi_init_config_t cfg = MWIFI_INIT_CONFIG_DEFAULT();
     mwifi_config_t config = {
-#ifdef CONFIG_DEVICE_TYPE_ROOT
-        .router_ssid = CONFIG_ROUTER_SSID,
-        .router_password = CONFIG_ROUTER_PASSWORD,
-#endif
+        .router_ssid = SSID,
+        .router_password = PASSWORD,
         .channel = CONFIG_MESH_CHANNEL,
         .mesh_id = CONFIG_MESH_ID,
-        .mesh_type = CONFIG_DEVICE_TYPE,
     };
     /* Initialize wifi mesh. */
     MDF_ERROR_ASSERT(mdf_event_loop_init(event_loop_cb));
@@ -263,6 +276,8 @@ void app_main()
     MDF_ERROR_ASSERT(mwifi_init(&cfg));
     MDF_ERROR_ASSERT(mwifi_set_config(&config));
     MDF_ERROR_ASSERT(mwifi_start());
+
+    xTaskCreate(user_task, "user task", 8 * 1024, NULL, 5, &g_usertask_handle);
 
     g_print_timer = xTimerCreate("print info", pdMS_TO_TICKS(1000 * 10), true, NULL, device_print_system_info);
     assert(g_print_timer != NULL);
@@ -487,6 +502,19 @@ _exit:
     return ret;
 }
 
+static mdf_err_t device_add_reply_cb(aliyun_device_reply_t *reply)
+{
+    MDF_LOGI("this is subdevice add reply callback (%s, %s, %d)", reply->device_name, reply->product_key, reply->status);
+    is_added = true;
+    return MDF_OK;
+}
+
+static mdf_err_t device_delete_reply_cb(aliyun_device_reply_t *reply)
+{
+    MDF_LOGI("this is subdevice delete reply callback (%s, %s, %d)", reply->device_name, reply->product_key, reply->status);
+    return MDF_OK;
+}
+
 static void device_print_system_info(xTimerHandle timer)
 {
     static struct {
@@ -496,7 +524,7 @@ static void device_print_system_info(xTimerHandle timer)
         char format_time[32];
         int mesh_layer;
         int node_total_number;
-        mdf_err_t login_status;
+        bool is_online;
         int32_t count;
         bool root_status;
         uint8_t primary;
@@ -527,11 +555,11 @@ static void device_print_system_info(xTimerHandle timer)
     status.mesh_layer = esp_mesh_get_layer();
     status.node_total_number = esp_mesh_get_total_node_num();
     status.parent_rssi = mwifi_get_parent_rssi();
-    status.login_status = (aliyun_subdevice_get_login_status() == MDF_OK);
+    status.is_online = aliyun_subdevice_is_online();
 
     ESP_LOGI("SYS", "%s, free heap: %u, connect:%d, layer: %d, self mac: " MACSTR ", parent bssid: " MACSTR ", node num: %d, parent rssi: %d, login_status:%d",
              status.format_time, status.free_heap, status.root_status, status.mesh_layer, MAC2STR(status.mac), MAC2STR(status.parent_bssid.addr),
-             status.node_total_number, status.parent_rssi, status.login_status);
+             status.node_total_number, status.parent_rssi, status.is_online);
     ESP_LOGI("SYS", "root mac: " MACSTR ", Minimum free heap: %u", MAC2STR(status.root_mac), status.minimum_free_head);
 
     if (status.count % 10 == 9) {
@@ -540,7 +568,6 @@ static void device_print_system_info(xTimerHandle timer)
 
     if (status.count % 50 == 0) {
         mdf_mem_print_heap();
-        device_post_event(status.count);
     }
 
     status.count++;

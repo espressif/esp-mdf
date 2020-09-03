@@ -29,6 +29,8 @@ static bool gateway_connect_status = false;
 static QueueHandle_t g_idf_gateway_read_queue = NULL;
 static QueueHandle_t g_idf_gateway_write_queue = NULL;
 
+ESP_EVENT_DEFINE_BASE(ALIYUN_EVENT_BASE);
+
 typedef struct {
     esp_ota_handle_t handle; /**< OTA handle */
     const esp_partition_t *partition; /**< Pointer to partition structure obtained using
@@ -233,4 +235,10 @@ mdf_err_t aliyun_idf_ota_stop(void)
     esp_restart();
 
     return MDF_OK;
+}
+
+mdf_err_t aliyun_idf_event_post(uint32_t event_id, void *ctx)
+{
+    printf("event_id: %d\n", event_id);
+    return esp_event_post(ALIYUN_EVENT_BASE, event_id, NULL, 0, 0);
 }

@@ -18,6 +18,7 @@
 #include "aliyun_defs.h"
 #include "freertos/FreeRTOS.h"
 #include "mdf_err.h"
+#include "mdf_event_loop.h"
 
 #define ALIYUN_MDF_PROTOCL (2)
 
@@ -63,6 +64,8 @@ mdf_err_t aliyun_mdf_ota_start(char *ota_version, size_t ota_size);
 mdf_err_t aliyun_mdf_ota_write(uint8_t *buffer, size_t length);
 
 mdf_err_t aliyun_mdf_ota_stop(void);
+
+mdf_err_t aliyun_mdf_event_loop_send(mdf_event_loop_t event_id, void *ctx);
 
 #ifdef __cplusplus
 }
