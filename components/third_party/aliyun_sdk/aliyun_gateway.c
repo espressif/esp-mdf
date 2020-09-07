@@ -16,6 +16,7 @@
 #include "esp_mesh.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "mdf_mem.h"
 #include "aliyun_gateway.h"
 
@@ -42,6 +43,7 @@ static const char *TAG = "aliyun_gateway";
 
 static TaskHandle_t g_aliyun_gateway_read_task_handle = NULL;
 static TaskHandle_t g_aliyun_gateway_write_task_handle = NULL;
+static SemaphoreHandle_t g_refresh_device_list_sepr = NULL;
 
 const char ntp_response_template[] = "{\"deviceSendTime\":%lld,\"serverRecvTime\":%lld,\"serverSendTime\":%lld}";
 
@@ -158,6 +160,20 @@ static mdf_err_t aliyun_gateway_thing_sub_combine_login(const aliyun_device_meta
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "aliyun_publish_sub_topo_add error");
 
     return MDF_OK;
+}
+
+static mdf_err_t aliyun_gateway_refresh_subdevice_internal(void)
+{
+    int table_size = aliyun_platform_get_routing_table_size() + ROUTING_TABLE_MARGIN;
+
+    uint8_t *routing_table = MDF_MALLOC(table_size * ALIYUN_SUBDEVICE_ADDRS_MAXLEN);
+    aliyun_platform_get_routing_table(routing_table, &table_size);
+    MDF_LOGI("aliyun_platform_get_routing_table_size:%d", table_size);
+
+    mdf_err_t ret = aliyun_list_select_refresh(routing_table, table_size);
+
+    MDF_FREE(routing_table);
+    return ret;
 }
 
 mdf_err_t aliyun_gateway_thing_sub_combine_logout(const aliyun_device_meta_t *gateway_meta, const aliyun_device_meta_t *sub_meta, aliyun_buffer_t *buffer)
@@ -702,6 +718,11 @@ static mdf_err_t aliyun_gateway_process(int type, uint8_t *src_addr, aliyun_buff
     return MDF_OK;
 }
 
+static void delay_refresh_handler(xTimerHandle xtimer)
+{
+    xSemaphoreGive(g_refresh_device_list_sepr);
+}
+
 static void aliyun_gateway_read_task(void *arg)
 {
     mdf_err_t ret = MDF_OK;
@@ -716,6 +737,7 @@ static void aliyun_gateway_read_task(void *arg)
     aliyun_buffer_t *buffer = MDF_MALLOC(sizeof(aliyun_buffer_t) + CONFIG_ALIYUN_TOPIC_SIZE + CONFIG_ALIYUN_PAYLOAD_SIZE + 2);
     buffer->topic = (char *)buffer->data;
     buffer->payload = buffer->data + CONFIG_ALIYUN_TOPIC_SIZE + 1;
+    xTimerHandle delay_refresh_timer = xTimerCreate("delay_refresh", pdMS_TO_TICKS(1000), false, NULL, delay_refresh_handler);
 
     MDF_LOGI("aliyun_gateway_read_task is running");
 
@@ -761,6 +783,20 @@ static void aliyun_gateway_read_task(void *arg)
             aliyun_gateway_loop_process(&gateway_meta, buffer);
         } else {
             MDF_LOGE("aliyun_platform_gateway_read error, ret: 0x%x", ret);
+        }
+
+        if (xSemaphoreTake(g_refresh_device_list_sepr, 0) == pdTRUE) {
+            ret = aliyun_gateway_refresh_subdevice_internal();
+
+            if (ret == MDF_ERR_INVALID_STATE) {
+                MDF_LOGD("need delay refresh");
+
+                if (xTimerIsTimerActive(delay_refresh_timer)) {
+                    xTimerReset(delay_refresh_timer, 0);
+                } else {
+                    xTimerStart(delay_refresh_timer, 0);
+                }
+            }
         }
     }
 
@@ -830,14 +866,11 @@ mdf_err_t aliyun_gateway_deinit(void)
 
 mdf_err_t aliyun_gateway_refresh_subdevice(void)
 {
-    int table_size = aliyun_platform_get_routing_table_size() + ROUTING_TABLE_MARGIN;
+    if (!g_refresh_device_list_sepr) {
+        g_refresh_device_list_sepr = xSemaphoreCreateCounting(10, 0);
+        assert(g_refresh_device_list_sepr);
+    }
 
-    uint8_t *routing_table = MDF_MALLOC(table_size * ALIYUN_SUBDEVICE_ADDRS_MAXLEN);
-    aliyun_platform_get_routing_table(routing_table, &table_size);
-    MDF_LOGI("aliyun_platform_get_routing_table_size:%d", table_size);
-
-    aliyun_list_select_refresh(routing_table, table_size);
-
-    MDF_FREE(routing_table);
-    return MDF_OK;
+    xSemaphoreGive(g_refresh_device_list_sepr);
+    return ESP_OK;
 }

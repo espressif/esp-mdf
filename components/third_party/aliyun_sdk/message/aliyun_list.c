@@ -245,6 +245,7 @@ mdf_err_t aliyun_list_select_refresh(uint8_t *routing_table, size_t table_size)
 
     aliyun_list_mutex_lock();
     sub_info_list_t *it, *tmp;
+    mdf_err_t ret = MDF_OK;
     SLIST_FOREACH_SAFE(it, &g_info_list, next, tmp) {
         bool exist_flag = false;
 
@@ -255,20 +256,24 @@ mdf_err_t aliyun_list_select_refresh(uint8_t *routing_table, size_t table_size)
             }
         }
 
-        if (!exist_flag) {
+        if (!exist_flag) { // doesn't exist in mesh network, means this device is leave, need logout for it
             if (it->status == ALIYUN_LIST_FINISH) {
                 MDF_LOGD("aliyun_list_select_refresh product_key:%s, device_name:%s", it->meta.product_key, it->meta.device_name);
                 it->status = ALIYUN_LIST_LOGOUT_START;
+            } else if (ALIYUN_LIST_TOPO_ADD_START <= it->status && it->status < ALIYUN_LIST_FINISH) {
+                ret = MDF_ERR_INVALID_STATE;
             }
-        } else {
+        } else { //exist in mesh network
             if (it->status == ALIYUN_LIST_DELETE_WAIT) {
                 it->status = ALIYUN_LIST_TOPO_ADD_START;
                 it->no_subscribe = true;
+            } else if (ALIYUN_LIST_DELETE_WAIT > it->status && it->status > ALIYUN_LIST_FINISH) {
+                ret = MDF_ERR_INVALID_STATE;
             }
         }
     }
     aliyun_list_mutex_unlock();
-    return MDF_OK;
+    return ret;
 }
 
 mdf_err_t aliyun_list_get_by_timeout(sub_info_list_t **sub_list, size_t sub_list_sz, int *num)
