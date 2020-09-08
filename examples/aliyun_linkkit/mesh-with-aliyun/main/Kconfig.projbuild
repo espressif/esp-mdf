@@ -4,23 +4,6 @@ config DEVICE_VERSION
     string "Device version"
     default "1.0.0"
 
-choice DEVICE_TYPE
-    bool "Configure the device type"
-    default DEVICE_TYPE_NODE
-    help
-        Configure the device type
-
-    config DEVICE_TYPE_ROOT
-       bool "Root device"
-    config DEVICE_TYPE_NODE
-       bool "Non-Root device"
-endchoice
-
-config DEVICE_TYPE
-    int
-    default 1 if DEVICE_TYPE_ROOT
-    default 2 if DEVICE_TYPE_NODE
-
 config MESH_ID
     string "Mesh ID"
     default "123456"
@@ -36,12 +19,10 @@ config MESH_CHANNEL
         Mesh network channel.
 
 config ROUTER_SSID
-    depends on DEVICE_TYPE_ROOT
     string "Router ssid"
     default "myssid"
 
 config ROUTER_PASSWORD
-    depends on DEVICE_TYPE_ROOT
     string "Router password"
     default "mypassword"
 

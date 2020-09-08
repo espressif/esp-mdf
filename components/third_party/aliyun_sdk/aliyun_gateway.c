@@ -312,11 +312,12 @@ static mdf_err_t aliyun_gateway_loop_process_unfinished(const aliyun_device_meta
                 if (subdevice->no_subscribe != true) {
                     ret = aliyun_subscribe_subdevice_all_topic(&subdevice->meta, buffer);
                     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Subdevice subscribe error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-                    ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_OK);
+                }
 
-                    if (ret != MDF_OK) {
-                        MDF_LOGW("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
-                    }
+                ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_OK);
+
+                if (ret != MDF_OK) {
+                    MDF_LOGW("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
                 }
 
                 ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_FINISH, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);

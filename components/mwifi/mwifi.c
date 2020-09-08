@@ -16,6 +16,7 @@
 #include "miniz.h"
 
 #define MWIFI_WAIVE_ROOT_INTERVAL  3 /**< When the root rssi is weak, MWIFI_WAIVE_ROOT_INTERVAL minutes will initiate a re root node selection */
+#define MWIFI_EVET_INFO_SIZE 3
 
 typedef struct {
     uint32_t magic;                   /**< Filter duplicate packets */
@@ -165,7 +166,8 @@ static void esp_mesh_event_cb(void *arg, esp_event_base_t event_base, int32_t ev
 {
     MDF_LOGD("esp_mesh_event_cb event_id: %d", event_id);
     static int s_disconnected_count = 0;
-    static mesh_event_info_t s_evet_info = { {0} };
+    static mesh_event_info_t s_evet_info[MWIFI_EVET_INFO_SIZE] = { 0 };
+    static int evet_info_index = 0;
 
     switch (event_id) {
         case MESH_EVENT_PARENT_CONNECTED: {
@@ -260,15 +262,17 @@ static void esp_mesh_event_cb(void *arg, esp_event_base_t event_base, int32_t ev
         case MESH_EVENT_NETWORK_STATE: {
             mesh_event_network_state_t *network_state = (mesh_event_network_state_t *)event_data;
             g_rootless_flag = network_state->is_rootless;
-
             MDF_LOGI("Network state: %s", g_rootless_flag ? "root_less" : "root_connect");
 
+            memcpy(&s_evet_info[evet_info_index], event_data, sizeof(mesh_event_info_t));
+
             if (g_rootless_flag) {
-                g_toDs_status_flag = s_evet_info.toDS_state = MESH_TODS_UNREACHABLE;
-                mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info);
+                g_toDs_status_flag = s_evet_info[evet_info_index].toDS_state = MESH_TODS_UNREACHABLE;
+                mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info[evet_info_index]);
             }
 
-            memcpy(&s_evet_info, event_data, sizeof(mesh_event_info_t));
+            evet_info_index = (evet_info_index + 1) % MWIFI_EVET_INFO_SIZE;
+
             break;
         }
 
@@ -278,10 +282,11 @@ static void esp_mesh_event_cb(void *arg, esp_event_base_t event_base, int32_t ev
 
     /**< Send event to the event handler */
     if (event_data != NULL) {
-        memcpy(&s_evet_info, event_data, sizeof(mesh_event_info_t));
+        memcpy(&s_evet_info[evet_info_index], event_data, sizeof(mesh_event_info_t));
     }
 
-    mdf_event_loop_send(event_id, &s_evet_info);
+    mdf_event_loop_send(event_id, &s_evet_info[evet_info_index]);
+    evet_info_index = (evet_info_index + 1) % MWIFI_EVET_INFO_SIZE;
 }
 
 mdf_err_t mwifi_init(const mwifi_init_config_t *config)

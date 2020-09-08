@@ -14,6 +14,7 @@
 
 #include "mdf_common.h"
 #include "mupgrade.h"
+#include "mdf_event_loop.h"
 #include "mwifi.h"
 
 #include "aliyun_list.h"
@@ -178,4 +179,9 @@ mdf_err_t aliyun_mdf_ota_stop(void)
     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "mupgrade_result_free Error");
 
     return MDF_OK;
+}
+
+mdf_err_t aliyun_mdf_event_loop_send(mdf_event_loop_t event_id, void *ctx)
+{
+    return mdf_event_loop_send(event_id, ctx);
 }

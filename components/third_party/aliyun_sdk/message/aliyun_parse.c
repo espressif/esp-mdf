@@ -449,7 +449,7 @@ mdf_err_t aliyun_parse_thing_ntp_response(const char *data, size_t data_len)
     MDF_ERROR_GOTO(pSub == NULL, JSON_EXIT, "cJSON code Error");
     int64_t serverSendTime = (int64_t)pSub->valuedouble;
 
-    if(deviceRecvTime - deviceSendTime > 60*1000) {
+    if (deviceRecvTime - deviceSendTime > 60 * 1000) {
         MDF_LOGW("time difference is too large, ignore it");
         goto JSON_EXIT;
     }

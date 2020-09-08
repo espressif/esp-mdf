@@ -19,6 +19,7 @@
 #include "esp_system.h"
 #include "mdf_common.h"
 #include "mwifi.h"
+#include "esp_event.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -37,6 +38,8 @@
 #define POWER_SWITCH_3 (4)
 
 #define NETWORK_CONNECTED BIT0
+#define ALIYUN_ONLINE BIT1
+#define ALIYUN_OFFLINE BIT2
 
 static const char company[] = "ESPRESSIF";
 static EventGroupHandle_t g_user_event;
@@ -65,6 +68,8 @@ static void device_print_system_info(xTimerHandle timer);
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
+    static int retry_connect_count = 0;
+
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
             case WIFI_EVENT_STA_START:
@@ -75,6 +80,23 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
             case WIFI_EVENT_STA_STOP:
                 MDF_LOGI("wifi sta mode is stoped");
                 break;
+
+            case WIFI_EVENT_STA_CONNECTED: {
+                MDF_LOGI("wifi is connected");
+                retry_connect_count = 0;
+                break;
+            }
+
+            case WIFI_EVENT_STA_DISCONNECTED: {
+                wifi_event_sta_disconnected_t *ctx = (wifi_event_sta_disconnected_t *)event_data;
+                MDF_LOGI("wifi is disconnected, reason: %d", ctx->reason);
+
+                if (retry_connect_count++ < 5) {
+                    MDF_ERROR_ASSERT(esp_wifi_connect());
+                }
+
+                break;
+            }
 
             default:
                 MDF_LOGD("WIFI_EVENT (%d)", event_id);
@@ -107,6 +129,20 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 
         }
 
+    } else if (event_base == ALIYUN_EVENT_BASE) {
+        switch (event_id) {
+            case ALIYUN_EVENT_ONLINE:
+                MDF_LOGI("subdevice is online");
+                xEventGroupClearBits(g_user_event, ALIYUN_OFFLINE);
+                xEventGroupSetBits(g_user_event, ALIYUN_ONLINE);
+                break;
+
+            case ALIYUN_EVENT_OFFLINE:
+                MDF_LOGI("subdevice is offline");
+                xEventGroupClearBits(g_user_event, ALIYUN_ONLINE);
+                xEventGroupSetBits(g_user_event, ALIYUN_OFFLINE);
+                break;
+        }
     } else {
         MDF_LOGE("Unsupportted event base(%s)", event_base);
     }
@@ -167,6 +203,8 @@ void app_main()
     assert(g_print_timer != NULL);
     xTimerStart(g_print_timer, 0);
 
+    ESP_ERROR_CHECK(esp_event_handler_register(ALIYUN_EVENT_BASE, ESP_EVENT_ANY_ID, event_handler, NULL));
+
     /* thing model */
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_POST_PROPERTY_REPLY, device_post_property_cb));
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_PROPERTY_SET, device_property_set_cb)); // thing model of setting property callback
@@ -181,22 +219,34 @@ void app_main()
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_CONFIG_PUSH, device_config_push_cb));
     ESP_ERROR_CHECK(aliyun_subdevice_set_callback(ALIYUN_MQTT_GET_CONFIG_REPLY, device_get_config_cb));
 
-    aliyun_device_meta_t self_meta = { 0 };
-    aliyun_get_meta(&self_meta);
-    MDF_LOGI("product_key: %s", self_meta.product_key);
-    MDF_LOGI("device_name: %s", self_meta.device_name);
+    while (1) {
+        EventBits_t bits = xEventGroupWaitBits(g_user_event, ALIYUN_ONLINE, pdFAIL, pdFALSE, portMAX_DELAY);
 
-    while (aliyun_subdevice_add_to_gateway(&self_meta, 20 * 1000) != MDF_OK) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        if ((bits & ALIYUN_ONLINE) != ALIYUN_ONLINE) {
+            continue;
+        }
+
+        mdf_err_t err = aliyun_subdevice_request_ntp();
+        MDF_LOGI("Device request ntp, ret=%d", err);
+        ESP_ERROR_CHECK(aliyun_subdevice_inform_version(DEVICE_VERSION));
+        ESP_ERROR_CHECK(device_update_delete_info('d'));
+        ESP_ERROR_CHECK(device_update_delete_info('u'));
+        ESP_ERROR_CHECK(device_post_property());
+        ESP_ERROR_CHECK(aliyun_subdevice_get_config());
+
+        int count = 0;
+
+        while (1) {
+            bits = xEventGroupWaitBits(g_user_event, ALIYUN_OFFLINE, pdFALSE, pdFALSE, pdMS_TO_TICKS(1000 * 10));
+
+            if ((bits & ALIYUN_OFFLINE) == ALIYUN_OFFLINE) {
+                break;
+            }
+
+            device_post_event(count++);
+        }
+
     }
-
-    mdf_err_t err = aliyun_subdevice_request_ntp();
-    MDF_LOGI("Device request ntp, ret=%d", err);
-    ESP_ERROR_CHECK(aliyun_subdevice_inform_version(DEVICE_VERSION));
-    ESP_ERROR_CHECK(device_update_delete_info('d'));
-    ESP_ERROR_CHECK(device_update_delete_info('u'));
-    ESP_ERROR_CHECK(device_post_property());
-    ESP_ERROR_CHECK(aliyun_subdevice_get_config());
 }
 
 static mdf_err_t device_post_property()
@@ -433,7 +483,6 @@ static void device_print_system_info(xTimerHandle timer)
 
     if (count % 10 == 9) {
         mdf_mem_print_record();
-        device_post_event(count);
     }
 
     if (count % 50 == 0) {
