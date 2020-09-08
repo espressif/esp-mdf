@@ -33,6 +33,51 @@ extern "C" {
 mdf_err_t aliyun_subdevice_get_login_status(void);
 
 /**
+ * @brief device get online status
+ *
+ * @return
+ *  - true: device is online
+ *  - false: device is offline
+ */
+bool aliyun_subdevice_is_online(void);
+
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
+/**
+ * @brief Set subdevice that current mesh network root is loss.
+ *
+ * @attention This function must called in MDF_EVENT_MWIFI_NETWORK_STATE event and pass is_rootless param to it.
+ *
+ * @param Rootless mesh network is rootless or not.
+ */
+void aliyun_subdevice_set_rootless(bool rootless);
+
+/**
+ * @brief Update toDS state for subdevice
+ *
+ * @attention This function must called in MDF_EVENT_TODS_STATE event and pass toDS_state param to it.
+ *
+ * @param state Current toDS state.
+ *
+ */
+void aliyun_subdevice_update_tods(mesh_event_toDS_state_t state);
+
+/**
+ * @brief Tell subdevcie that current parent is disconnected.
+ *
+ * @attention This function must called by node in MDF_EVENT_MWIFI_PARENT_DISCONNECTED
+ *
+ */
+void aliyun_subdevice_parent_disconnected();
+
+/**
+ * @brief Tell subdevice that current param is connected.
+ *
+ * @attention This function must called by node in MDF_EVENT_MWIFI_PARENT_CONNECTED
+ */
+void aliyun_subdevice_parent_connected();
+#endif
+
+/**
  * @brief  device add itself to the gateway
  *
  * @param  meta       Pointer to device info meta.
@@ -42,7 +87,7 @@ mdf_err_t aliyun_subdevice_get_login_status(void);
  *    - MDF_OK
  *    - MDF_FAIL
  */
-mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta, uint32_t timeout_ms);
+mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta);
 
 /**
  * @brief  device delete itself from the gateway
@@ -54,7 +99,7 @@ mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta, uint
  *    - MDF_OK
  *    - MDF_FAIL
  */
-mdf_err_t aliyun_subdevice_delete_from_gateway(const aliyun_device_meta_t *meta, uint32_t timeout_ms);
+mdf_err_t aliyun_subdevice_delete_from_gateway(const aliyun_device_meta_t *meta);
 
 /**
  * @brief  device send enroll token to cloud
@@ -365,6 +410,10 @@ typedef mdf_err_t (*aliyun_subdevice_get_dsltemplate_reply_cb_t)(uint32_t msg_id
 typedef mdf_err_t (*aliyun_subdevice_get_desired_property_reply_cb_t)(uint32_t msg_id, int code, const char *data);
 
 typedef mdf_err_t (*aliyun_subdevice_delete_desired_property_reply_cb_t)(uint32_t msg_id, int code, const char *data);
+
+typedef mdf_err_t (*aliyun_subdevice_add_reply_cb_t)(aliyun_device_reply_t *reply);
+
+typedef mdf_err_t (*aliyun_subdevice_delete_reply_cb_t)(aliyun_device_reply_t *reply);
 
 #ifdef __cplusplus
 }

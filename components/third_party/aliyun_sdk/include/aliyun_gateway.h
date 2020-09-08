@@ -42,6 +42,7 @@ mdf_err_t aliyun_gateway_init(void);
  */
 mdf_err_t aliyun_gateway_deinit(void);
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
 /**
  * @brief  aliyun geteway refresh subdevice
  *
@@ -50,6 +51,7 @@ mdf_err_t aliyun_gateway_deinit(void);
  *    - MDF_FAIL
  */
 mdf_err_t aliyun_gateway_refresh_subdevice(void);
+#endif
 
 #ifdef __cplusplus
 }

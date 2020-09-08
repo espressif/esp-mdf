@@ -48,6 +48,8 @@ mdf_err_t aliyun_idf_ota_write(uint8_t *buffer, size_t length);
 
 mdf_err_t aliyun_idf_ota_stop(void);
 
+mdf_err_t aliyun_idf_event_post(uint32_t event_id, void *ctx);
+
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */

@@ -30,18 +30,25 @@
 #include "aliyun_mqtt.h"
 #include "aliyun_platform.h"
 #include "aliyun_subdevice.h"
+#include "aliyun_kv.h"
+
 
 #define HEART_BEAT_INTERVAL (60)
 
 #define GATEWAY_ADD_SUBDEVICE_REPLY BIT0
 #define GATEWAY_DEL_SUBDEVICE_REPLY BIT1
+#define SUBDEVICE_ADD_GATEWAY_TIMEOUT (10*1000*1000) // us
+#define SUBDEVICE_ADD_GATEWAY_ERROR_TIMEOUT (1*1000*1000) // us
 
 static const char *TAG = "aliyun_subdevice";
-static QueueHandle_t g_subdevice_add_queue;
-static QueueHandle_t g_subdevice_del_queue;
 static TaskHandle_t g_aliyun_subdevice_task_handle = NULL;
 static aliyun_answer_status_t g_subdevice_to_gateway_status = ALIYUN_ANSWER_STATUS_FAIL;
 static bool g_network_config_flag = false;
+static bool g_subdevice_is_added = false;
+static bool g_parent_is_conneced = false;
+static bool g_link_is_completed = true;
+static bool g_inform_link_loss = false;
+static bool g_is_online = false;
 
 static char *remove_identifier_prefix(char *identifier)
 {
@@ -58,6 +65,13 @@ static char *remove_identifier_prefix(char *identifier)
     return str;
 }
 
+static void subdevice_inform_link_loss()
+{
+    uint8_t dest_addr[6] = "\xff\xff\xff\xff\xff\xff";
+    uint32_t msg_id = aliyun_platform_get_msg_id();
+    aliyun_platform_gateway_write(dest_addr, ALIYUN_PARENT_OFFLINE, &msg_id, sizeof(msg_id));
+}
+
 bool aliyun_subdevice_get_network_config(void)
 {
     return g_network_config_flag;
@@ -68,13 +82,62 @@ void aliyun_subdevice_set_network_config(bool flag)
     g_network_config_flag = flag;
 }
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
+void aliyun_subdevice_set_rootless(bool rootless)
+{
+    if (rootless) {
+        g_subdevice_is_added = false;
+    }
+}
+
+void aliyun_subdevice_update_tods(mesh_event_toDS_state_t state)
+{
+    if (state == MESH_TODS_UNREACHABLE) {
+        if (g_is_online) {
+            aliyun_platform_event_loop_send(ALIYUN_EVENT_OFFLINE, NULL);
+            g_is_online = false;
+        }
+    }
+}
+
+void aliyun_subdevice_parent_connected()
+{
+    if (!g_parent_is_conneced) {
+        g_parent_is_conneced = true;
+    }
+}
+
+void aliyun_subdevice_parent_disconnected()
+{
+    if (g_parent_is_conneced) {
+        g_parent_is_conneced = false;
+        g_inform_link_loss = true;
+
+        if (g_is_online) {
+            aliyun_platform_event_loop_send(ALIYUN_EVENT_OFFLINE, NULL);
+            g_is_online = false;
+        }
+    }
+}
+#endif
+
 mdf_err_t aliyun_subdevice_get_login_status(void)
 {
     bool status = aliyun_platform_get_cloud_connect_status();
     return status && g_subdevice_to_gateway_status == ALIYUN_ANSWER_STATUS_SUCC ? MDF_OK : MDF_FAIL;
 }
 
-mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta, uint32_t timeout_ms)
+bool aliyun_subdevice_is_online(void)
+{
+    bool status = aliyun_platform_get_cloud_connect_status();
+#if CONFIG_ALIYUN_PLATFORM_MDF
+    return status && g_subdevice_is_added && g_parent_is_conneced && g_link_is_completed;
+#else
+    return status && g_subdevice_is_added;
+#endif
+}
+
+mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta)
 {
     if (!aliyun_platform_get_cloud_connect_status()) {
         return MDF_ERR_INVALID_STATE;
@@ -85,37 +148,20 @@ mdf_err_t aliyun_subdevice_add_to_gateway(const aliyun_device_meta_t *meta, uint
     mdf_err_t ret = MDF_FAIL;
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    xQueueReset(g_subdevice_add_queue);
     MDF_LOGI("Subdevice add itself to gateway, ProductKey=%s, DeviceName=%s, Mac=" MACSTR, meta->product_key, meta->device_name, MAC2STR(mac));
     ret = aliyun_platform_subdevice_write(ALIYUN_GATEWAY_ADD_SUBDEVICE, meta, sizeof(aliyun_device_meta_t));
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "aliyun_subdevice_login error");
-
-    if (xQueueReceive(g_subdevice_add_queue, &ret, pdMS_TO_TICKS(timeout_ms)) != pdPASS) {
-        MDF_LOGW("aliyun_subdevice_add_to_gateway timeout");
-        return MDF_ERR_TIMEOUT;
-    }
-
-    g_subdevice_to_gateway_status = (ret == MDF_OK) ? ALIYUN_ANSWER_STATUS_SUCC : ALIYUN_ANSWER_STATUS_FAIL;
     return ret;
 }
 
-mdf_err_t aliyun_subdevice_delete_from_gateway(const aliyun_device_meta_t *meta, uint32_t timeout_ms)
+mdf_err_t aliyun_subdevice_delete_from_gateway(const aliyun_device_meta_t *meta)
 {
     MDF_PARAM_CHECK(meta);
 
     mdf_err_t ret = MDF_FAIL;
-
-    xQueueReset(g_subdevice_del_queue);
     MDF_LOGI("Subdevice delete itself from gateway, ProductKey=%s, DeviceName=%s", meta->product_key, meta->device_name);
     ret = aliyun_platform_subdevice_write(ALIYUN_GATEWAY_DELETE_SUBDEVICE, meta, sizeof(aliyun_device_meta_t));
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "aliyun_subdevice_logout error");
-
-    if (xQueueReceive(g_subdevice_del_queue, &ret, pdMS_TO_TICKS(timeout_ms)) != pdPASS) {
-        MDF_LOGW("aliyun_subdevice_delete_from_gateway timeout");
-        return MDF_ERR_TIMEOUT;
-    }
-
-    g_subdevice_to_gateway_status = ret == MDF_OK ? ALIYUN_ANSWER_STATUS_SUCC : ALIYUN_ANSWER_STATUS_FAIL;
     return ret;
 }
 
@@ -660,7 +706,19 @@ mdf_err_t aliyun_subdevice_subscribe_callback(aliyun_msg_type_t type, const uint
             MDF_LOGD("ALIYUN_GATEWAY_ADD_SUBDEVICE_REPLY");
             aliyun_device_reply_t *reply_info = (aliyun_device_reply_t *)data;
             MDF_LOGI("product_key: %s, device_name: %s, status: %d", reply_info->product_key, reply_info->device_name, reply_info->status);
-            xQueueSend(g_subdevice_add_queue, &reply_info->status, 0);
+            g_subdevice_is_added = reply_info->status == MDF_OK ? true : false;
+
+            if (reply_info->status == MDF_OK) {
+                g_link_is_completed = true;
+                g_parent_is_conneced = true;
+                g_is_online = true;
+                aliyun_platform_event_loop_send(ALIYUN_EVENT_ONLINE, NULL);
+                aliyun_subdevice_add_reply_cb_t callback_fun = aliyun_subdevice_get_callback(type);
+
+                if (callback_fun != NULL) {
+                    ret = callback_fun(reply_info);
+                }
+            }
         }
         break;
 
@@ -668,7 +726,19 @@ mdf_err_t aliyun_subdevice_subscribe_callback(aliyun_msg_type_t type, const uint
             MDF_LOGD("ALIYUN_GATEWAY_DELETE_SUBDEVICE_REPLY");
             aliyun_device_reply_t *reply_info = (aliyun_device_reply_t *)data;
             MDF_LOGI("product_key: %s, device_name: %s, status: %d", reply_info->product_key, reply_info->device_name, reply_info->status);
-            xQueueSend(g_subdevice_del_queue, &reply_info->status, 0);
+
+            if (reply_info->status == MDF_OK) {
+                if (g_is_online) {
+                    aliyun_platform_event_loop_send(ALIYUN_EVENT_OFFLINE, NULL);
+                    g_is_online = false;
+                }
+
+                aliyun_subdevice_delete_reply_cb_t callback_fun = aliyun_subdevice_get_callback(type);
+
+                if (callback_fun != NULL) {
+                    ret = callback_fun(reply_info);
+                }
+            }
         }
         break;
 
@@ -678,6 +748,7 @@ mdf_err_t aliyun_subdevice_subscribe_callback(aliyun_msg_type_t type, const uint
 
             if (*(mdf_err_t *)data == MDF_FAIL) {
                 g_subdevice_to_gateway_status = ALIYUN_ANSWER_STATUS_FAIL;
+                g_subdevice_is_added = false;
             }
         }
         break;
@@ -1011,6 +1082,17 @@ mdf_err_t aliyun_subdevice_subscribe_callback(aliyun_msg_type_t type, const uint
         }
         break;
 
+        case ALIYUN_PARENT_OFFLINE: {
+            MDF_LOGD("ALIYUN_PARENT_OFFLINE");
+            g_link_is_completed = false;
+
+            if (g_is_online) {
+                aliyun_platform_event_loop_send(ALIYUN_EVENT_OFFLINE, NULL);
+                g_is_online = false;
+            }
+        }
+        break;
+
         default: {
             MDF_LOGW("aliyun_linkkit_check_cb_t type is null, type: %u", type);
         }
@@ -1084,25 +1166,39 @@ static void aliyun_subdevice_task(void *arg)
 
     aliyun_msg_type_t type = 0;
     int64_t heartbeat_interval = (esp_random() % 60 + HEART_BEAT_INTERVAL) * 1000000 + esp_timer_get_time();
+    int64_t subdevice_add_tick = 0;
+    int64_t subdevice_add_timeout = SUBDEVICE_ADD_GATEWAY_TIMEOUT;
+    bool random_delay_flag = true;
+
+    aliyun_device_meta_t subdevice_meta = { 0 };
+    aliyun_get_meta(&subdevice_meta);
+    MDF_LOGI("product_key: %s", subdevice_meta.product_key);
+    MDF_LOGI("device_name: %s", subdevice_meta.device_name);
 
     MDF_LOGI("aliyun_subdevice_task is running");
 
-    if (g_subdevice_add_queue == NULL) {
-        g_subdevice_add_queue = xQueueCreate(1, sizeof(int));
-        assert(g_subdevice_add_queue);
-    }
-
-    if (g_subdevice_del_queue == NULL) {
-        g_subdevice_del_queue = xQueueCreate(1, sizeof(int));
-        assert(g_subdevice_del_queue);
-    }
-
     while (g_aliyun_subdevice_task_handle != NULL) {
-        if (aliyun_platform_get_cloud_connect_status() == false) {
-            g_subdevice_to_gateway_status = ALIYUN_ANSWER_STATUS_FAIL;
-            MDF_LOGD("Gateway has not connected to cloud");
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            continue;
+        if (!g_subdevice_is_added && esp_timer_get_time() - subdevice_add_tick > subdevice_add_timeout) {
+            if (random_delay_flag) {
+                subdevice_add_tick = esp_timer_get_time() - SUBDEVICE_ADD_GATEWAY_TIMEOUT + (esp_random() % 30) * 1000 * 1000;
+                random_delay_flag = false;
+            } else {
+                if ((ret = aliyun_subdevice_add_to_gateway(&subdevice_meta)) == MDF_OK) {
+                    subdevice_add_timeout = SUBDEVICE_ADD_GATEWAY_TIMEOUT;
+                } else {
+                    MDF_LOGI("subdevice add to gateway error, reason: %s", mdf_err_to_name(ret));
+                    subdevice_add_timeout = SUBDEVICE_ADD_GATEWAY_ERROR_TIMEOUT;
+                }
+
+                subdevice_add_tick = esp_timer_get_time();
+            }
+        } else if (g_subdevice_is_added) {
+            random_delay_flag = true;
+        }
+
+        if (g_inform_link_loss) {
+            g_inform_link_loss = false;
+            subdevice_inform_link_loss();
         }
 
         ret = aliyun_platform_subdevice_read(&type, (void **)&payload, &length, CONFIG_ALIYUN_READ_TIMROUT_MS / portTICK_RATE_MS);
@@ -1113,7 +1209,7 @@ static void aliyun_subdevice_task(void *arg)
             aliyun_subdevice_loop_process();
             aliyun_subdevice_cyclic_process();
 
-            if (esp_timer_get_time() > heartbeat_interval) {
+            if (esp_timer_get_time() > heartbeat_interval && aliyun_platform_get_cloud_connect_status()) {
                 ret = aliyun_subdevice_heartbeat_to_gateway();
 
                 if (ret != MDF_OK) {
@@ -1127,16 +1223,6 @@ static void aliyun_subdevice_task(void *arg)
         }
 
         MDF_FREE(payload);
-    }
-
-    if (g_subdevice_add_queue != NULL) {
-        vQueueDelete(g_subdevice_add_queue);
-        g_subdevice_add_queue = NULL;
-    }
-
-    if (g_subdevice_del_queue != NULL) {
-        vQueueDelete(g_subdevice_del_queue);
-        g_subdevice_del_queue = NULL;
     }
 
     MDF_LOGW("aliyun_subdevice_task is exit");

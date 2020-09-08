@@ -57,6 +57,17 @@ extern "C" {
 
 #define ALIYUN_MESH_PROTOCOL_VERSION (0)
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
+#define ALIYUN_EVENT_BASE (0x7000)
+#define ALIYUN_EVENT_ONLINE (ALIYUN_EVENT_BASE + 0)
+#define ALIYUN_EVENT_OFFLINE (ALIYUN_EVENT_BASE + 1)
+#else
+#include "esp_event.h"
+ESP_EVENT_DECLARE_BASE(ALIYUN_EVENT_BASE);
+#define ALIYUN_EVENT_ONLINE (0)
+#define ALIYUN_EVENT_OFFLINE (1)
+#endif
+
 typedef struct {
     char product_key[ALIYUN_PRODUCT_KEY_MAXLEN];
     char device_name[ALIYUN_DEVICE_NAME_MAXLEN];
@@ -288,6 +299,8 @@ typedef enum {
 
     /**< Report log information. */
     ALIYUN_MQTT_PUBLISH_POST_LOG, /**< Uplink （Alink JSON） request topic. */
+
+    ALIYUN_PARENT_OFFLINE, /**< parent is offline. */
 
     ALIYUN_MSG_TYPE_MAX, /**< aliyun msg type max */
 } aliyun_msg_type_t;

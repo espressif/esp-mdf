@@ -43,7 +43,9 @@ static const char *TAG = "aliyun_gateway";
 
 static TaskHandle_t g_aliyun_gateway_read_task_handle = NULL;
 static TaskHandle_t g_aliyun_gateway_write_task_handle = NULL;
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
 static SemaphoreHandle_t g_refresh_device_list_sepr = NULL;
+#endif
 
 const char ntp_response_template[] = "{\"deviceSendTime\":%lld,\"serverRecvTime\":%lld,\"serverSendTime\":%lld}";
 
@@ -162,6 +164,7 @@ static mdf_err_t aliyun_gateway_thing_sub_combine_login(const aliyun_device_meta
     return MDF_OK;
 }
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
 static mdf_err_t aliyun_gateway_refresh_subdevice_internal(void)
 {
     int table_size = aliyun_platform_get_routing_table_size() + ROUTING_TABLE_MARGIN;
@@ -175,6 +178,7 @@ static mdf_err_t aliyun_gateway_refresh_subdevice_internal(void)
     MDF_FREE(routing_table);
     return ret;
 }
+#endif
 
 mdf_err_t aliyun_gateway_thing_sub_combine_logout(const aliyun_device_meta_t *gateway_meta, const aliyun_device_meta_t *sub_meta, aliyun_buffer_t *buffer)
 {
@@ -312,11 +316,12 @@ static mdf_err_t aliyun_gateway_loop_process_unfinished(const aliyun_device_meta
                 if (subdevice->no_subscribe != true) {
                     ret = aliyun_subscribe_subdevice_all_topic(&subdevice->meta, buffer);
                     MDF_ERROR_CHECK(ret != MDF_OK, MDF_FAIL, "Subdevice subscribe error, product_key:%s, device_name:%s", subdevice->meta.product_key, subdevice->meta.device_name);
-                    ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_OK);
+                }
 
-                    if (ret != MDF_OK) {
-                        MDF_LOGW("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
-                    }
+                ret = aliyun_gateway_add_subdevice_reply(&subdevice->meta, MDF_OK);
+
+                if (ret != MDF_OK) {
+                    MDF_LOGW("Gateway add reply error, product_key:%s, device_name:%s, reason:%s", subdevice->meta.product_key, subdevice->meta.device_name, mdf_err_to_name(ret));
                 }
 
                 ret = aliyun_list_update_status(&subdevice->meta, ALIYUN_LIST_FINISH, ALIYUN_SUB_STATUS_DEFAULT_TIMEOUT);
@@ -718,10 +723,12 @@ static mdf_err_t aliyun_gateway_process(int type, uint8_t *src_addr, aliyun_buff
     return MDF_OK;
 }
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
 static void delay_refresh_handler(xTimerHandle xtimer)
 {
     xSemaphoreGive(g_refresh_device_list_sepr);
 }
+#endif
 
 static void aliyun_gateway_read_task(void *arg)
 {
@@ -737,7 +744,10 @@ static void aliyun_gateway_read_task(void *arg)
     aliyun_buffer_t *buffer = MDF_MALLOC(sizeof(aliyun_buffer_t) + CONFIG_ALIYUN_TOPIC_SIZE + CONFIG_ALIYUN_PAYLOAD_SIZE + 2);
     buffer->topic = (char *)buffer->data;
     buffer->payload = buffer->data + CONFIG_ALIYUN_TOPIC_SIZE + 1;
+
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
     xTimerHandle delay_refresh_timer = xTimerCreate("delay_refresh", pdMS_TO_TICKS(1000), false, NULL, delay_refresh_handler);
+#endif
 
     MDF_LOGI("aliyun_gateway_read_task is running");
 
@@ -785,6 +795,8 @@ static void aliyun_gateway_read_task(void *arg)
             MDF_LOGE("aliyun_platform_gateway_read error, ret: 0x%x", ret);
         }
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
+
         if (xSemaphoreTake(g_refresh_device_list_sepr, 0) == pdTRUE) {
             ret = aliyun_gateway_refresh_subdevice_internal();
 
@@ -798,6 +810,8 @@ static void aliyun_gateway_read_task(void *arg)
                 }
             }
         }
+
+#endif
     }
 
     aliyun_mqtt_disconnet();
@@ -864,6 +878,7 @@ mdf_err_t aliyun_gateway_deinit(void)
     return MDF_OK;
 }
 
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
 mdf_err_t aliyun_gateway_refresh_subdevice(void)
 {
     if (!g_refresh_device_list_sepr) {
@@ -874,3 +889,4 @@ mdf_err_t aliyun_gateway_refresh_subdevice(void)
     xSemaphoreGive(g_refresh_device_list_sepr);
     return ESP_OK;
 }
+#endif
