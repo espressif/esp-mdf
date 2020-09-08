@@ -16,6 +16,7 @@
 #include "miniz.h"
 
 #define MWIFI_WAIVE_ROOT_INTERVAL  3 /**< When the root rssi is weak, MWIFI_WAIVE_ROOT_INTERVAL minutes will initiate a re root node selection */
+#define MWIFI_EVET_INFO_SIZE 3
 
 typedef struct {
     uint32_t magic;                   /**< Filter duplicate packets */
@@ -133,7 +134,8 @@ static void esp_mesh_event_cb(mesh_event_t event)
 {
     MDF_LOGD("esp_mesh_event_cb event.id: %d", event.id);
     static int s_disconnected_count = 0;
-    static mesh_event_info_t s_evet_info = {0};
+    static mesh_event_info_t s_evet_info[MWIFI_EVET_INFO_SIZE] = { 0 };
+    static int evet_info_index = 0;
 
     switch (event.id) {
         case MESH_EVENT_PARENT_CONNECTED:
@@ -242,12 +244,14 @@ static void esp_mesh_event_cb(mesh_event_t event)
 
             MDF_LOGI("Network state: %s", g_rootless_flag ? "root_less" : "root_connect");
 
+            memcpy(&s_evet_info[evet_info_index], &event.info, sizeof(mesh_event_info_t));
+
             if (g_rootless_flag) {
-                g_toDs_status_flag = s_evet_info.toDS_state = MESH_TODS_UNREACHABLE;
-                mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info);
+                g_toDs_status_flag = s_evet_info[evet_info_index].toDS_state = MESH_TODS_UNREACHABLE;
+                mdf_event_loop_send(MESH_EVENT_TODS_STATE, &s_evet_info[evet_info_index]);
             }
 
-            memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
+            evet_info_index = (evet_info_index + 1) % MWIFI_EVET_INFO_SIZE;
             break;
 
         default:
@@ -255,8 +259,9 @@ static void esp_mesh_event_cb(mesh_event_t event)
     }
 
     /**< Send event to the event handler */
-    memcpy(&s_evet_info, &event.info, sizeof(mesh_event_info_t));
-    mdf_event_loop_send(event.id, &s_evet_info);
+    memcpy(&s_evet_info[evet_info_index], &event.info, sizeof(mesh_event_info_t));
+    mdf_event_loop_send(event.id, &s_evet_info[evet_info_index]);
+    evet_info_index = (evet_info_index + 1) % MWIFI_EVET_INFO_SIZE;
 }
 
 mdf_err_t mwifi_init(const mwifi_init_config_t *config)

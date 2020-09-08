@@ -204,17 +204,7 @@ static void aliyun_user_task(void *arg)
     aliyun_subdevice_set_callback(ALIYUN_MQTT_PROPERTY_SET, service_property_set_cb);
     aliyun_subdevice_set_callback(ALIYUN_MQTT_CONFIG_PUSH, config_push_reply_cb);
 
-    aliyun_get_meta(&subdevice_meta);
-
-    MDF_LOGI("product_key:%s", subdevice_meta.product_key);
-    MDF_LOGI("device_name:%s", subdevice_meta.device_name);
-
     while (mwifi_is_connected()) {
-
-        while (aliyun_subdevice_add_to_gateway(&subdevice_meta, 20000) != MDF_OK) {
-            vTaskDelay(100 / portTICK_RATE_MS);
-        }
-
         light_driver_set_rgb(0, 0, 255);
         MDF_LOGI("aliyun_subdevice_add_to_gateway ok");
 

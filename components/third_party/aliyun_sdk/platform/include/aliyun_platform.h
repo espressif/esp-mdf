@@ -67,6 +67,8 @@ mdf_err_t aliyun_platform_mqtt_write(const aliyun_buffer_t *mqtt_buf, uint32_t w
 #define aliyun_platform_ota_start(ota_version, ota_size) aliyun_mdf_ota_start(ota_version, ota_size)
 #define aliyun_platform_ota_write(buffer, length) aliyun_mdf_ota_write(buffer, length)
 #define aliyun_platform_ota_stop() aliyun_mdf_ota_stop()
+#define aliyun_platform_event_loop_send(event_id, ctx) aliyun_mdf_event_loop_send(event_id, ctx)
+
 #else
 #define aliyun_platform_get_is_gateway() (true)
 #define aliyun_platform_set_cloud_connect_status(status) aliyun_idf_set_cloud_connect_status(status)
@@ -80,6 +82,7 @@ mdf_err_t aliyun_platform_mqtt_write(const aliyun_buffer_t *mqtt_buf, uint32_t w
 #define aliyun_platform_ota_start(ota_version, ota_size) aliyun_idf_ota_start(ota_version, ota_size)
 #define aliyun_platform_ota_write(buffer, length) aliyun_idf_ota_write(buffer, length)
 #define aliyun_platform_ota_stop() aliyun_idf_ota_stop()
+#define aliyun_platform_event_loop_send(event_id, ctx) aliyun_idf_event_post(event_id, ctx)
 #endif
 
 #ifdef __cplusplus
