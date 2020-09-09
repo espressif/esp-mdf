@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef __MLINK_TRIGGER_H__
+#define __MLINK_TRIGGER_H__
 
 #include "mdf_common.h"
 #include "mlink_json.h"
@@ -19,8 +21,9 @@
 #include "mlink_httpd.h"
 #include "mlink_handle.h"
 
-#ifndef __MLINK_TRIGGER_H__
-#define __MLINK_TRIGGER_H__
+#ifdef __cplusplus
+extern "C" {
+#endif /**< _cplusplus */
 
 /**
  * @brief The method of sending the package when the event is triggered
