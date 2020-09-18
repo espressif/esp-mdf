@@ -478,15 +478,16 @@ static mdf_err_t button_espnow_mode()
 
             mdf_event_loop_delay_send(MDF_EVENT_MLINK_SYSTEM_REBOOT, NULL, 15000 / portTICK_RATE_MS);
 
-            for (uint8_t channel = 0; channel < 13; channel++) {
+            for (uint8_t channel = 1; channel < 13; channel++) {
                 memset(dest_addr, 0x0, 6);
+                esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+                mespnow_add_peer(ESP_IF_WIFI_STA, espnow_config.parent_bssid, NULL);
 
-                for (int i = 0; i < 3; ++i) {
+                for (int i = 0; i < 5; ++i) {
                     mlink_espnow_write(dest_addr, 1, add_device, strlen(add_device),
                                        MLINK_ESPNOW_COMMUNICATE_UNICAST, portMAX_DELAY);
                 }
 
-                esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
             }
 
             MDF_FREE(add_device);
