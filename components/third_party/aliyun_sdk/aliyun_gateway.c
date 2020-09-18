@@ -16,7 +16,7 @@
 #include "esp_mesh.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h"
+#include "freertos/timers.h"
 #include "mdf_mem.h"
 #include "aliyun_gateway.h"
 
@@ -797,7 +797,7 @@ static void aliyun_gateway_read_task(void *arg)
 
 #ifdef CONFIG_ALIYUN_PLATFORM_MDF
 
-        if (xSemaphoreTake(g_refresh_device_list_sepr, 0) == pdTRUE) {
+        if (g_refresh_device_list_sepr && (xSemaphoreTake(g_refresh_device_list_sepr, 0) == pdTRUE)) {
             ret = aliyun_gateway_refresh_subdevice_internal();
 
             if (ret == MDF_ERR_INVALID_STATE) {
@@ -819,6 +819,13 @@ static void aliyun_gateway_read_task(void *arg)
 
     MDF_FREE(buffer);
     g_aliyun_gateway_read_task_handle = NULL;
+
+#ifdef CONFIG_ALIYUN_PLATFORM_MDF
+    if(g_refresh_device_list_sepr) {
+        vSemaphoreDelete(g_refresh_device_list_sepr);
+        g_refresh_device_list_sepr = NULL;
+    }
+#endif
 
     MDF_LOGW("aliyun_gateway_read_task is exit");
     vTaskDelete(NULL);

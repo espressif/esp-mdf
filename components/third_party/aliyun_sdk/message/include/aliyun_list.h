@@ -55,7 +55,7 @@ typedef struct sub_info_list {
     uint8_t ota_type;
     uint8_t refresh;
     bool no_subscribe;
-    uint32_t status;
+    aliyun_list_status_t status;
     uint32_t msg_id;
     int64_t timeout;
     SLIST_ENTRY(sub_info_list)
