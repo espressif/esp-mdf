@@ -831,7 +831,7 @@ static void aliyun_gateway_write_task(void *arg)
     MDF_LOGI("aliyun_gateway_write_task is running");
 
     while (g_aliyun_gateway_write_task_handle != NULL) {
-        if (aliyun_platform_mqtt_read(&mqtt_buf, portMAX_DELAY) == MDF_OK) {
+        if (aliyun_platform_mqtt_read(&mqtt_buf, pdMS_TO_TICKS(1000)) == MDF_OK) {
             mdf_err_t err = aliyun_parse_mqtt_data((char *)mqtt_buf->topic, mqtt_buf->topic_len, (char *)mqtt_buf->payload, mqtt_buf->payload_len);
 
             if (err != MDF_OK) {
