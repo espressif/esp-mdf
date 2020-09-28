@@ -38,11 +38,14 @@
 #include "aliyun_platform.h"
 
 #define ROUTING_TABLE_MARGIN (10)
+#define TASK_RUNNING 1
+#define TASK_STOP 0
 
 static const char *TAG = "aliyun_gateway";
 
-static TaskHandle_t g_aliyun_gateway_read_task_handle = NULL;
-static TaskHandle_t g_aliyun_gateway_write_task_handle = NULL;
+static int *g_aliyun_read_task_status = NULL;
+static int *g_aliyun_write_task_status = NULL;
+
 #ifdef CONFIG_ALIYUN_PLATFORM_MDF
 static SemaphoreHandle_t g_refresh_device_list_sepr = NULL;
 #endif
@@ -732,6 +735,7 @@ static void delay_refresh_handler(xTimerHandle xtimer)
 
 static void aliyun_gateway_read_task(void *arg)
 {
+    int *aliyun_gateway_read_task_status = (int *)arg;
     mdf_err_t ret = MDF_OK;
     bool is_login = false;
 
@@ -766,7 +770,7 @@ static void aliyun_gateway_read_task(void *arg)
 
     esp_log_level_set("mwifi", ESP_LOG_ERROR);
 
-    while (g_aliyun_gateway_read_task_handle != NULL) {
+    while (*aliyun_gateway_read_task_status == TASK_RUNNING) {
         memset(buffer->topic, 0, CONFIG_ALIYUN_TOPIC_SIZE + 1);
         memset(buffer->payload, 0, CONFIG_ALIYUN_PAYLOAD_SIZE + 1);
 
@@ -814,17 +818,19 @@ static void aliyun_gateway_read_task(void *arg)
 #endif
     }
 
+    MDF_FREE(aliyun_gateway_read_task_status);
     aliyun_mqtt_disconnet();
     aliyun_list_destroy();
 
     MDF_FREE(buffer);
-    g_aliyun_gateway_read_task_handle = NULL;
 
 #ifdef CONFIG_ALIYUN_PLATFORM_MDF
-    if(g_refresh_device_list_sepr) {
+
+    if (g_refresh_device_list_sepr) {
         vSemaphoreDelete(g_refresh_device_list_sepr);
         g_refresh_device_list_sepr = NULL;
     }
+
 #endif
 
     MDF_LOGW("aliyun_gateway_read_task is exit");
@@ -833,11 +839,12 @@ static void aliyun_gateway_read_task(void *arg)
 
 static void aliyun_gateway_write_task(void *arg)
 {
+    int *aliyun_gateway_write_task_status = (int *)arg;
     aliyun_buffer_t *mqtt_buf = NULL;
 
     MDF_LOGI("aliyun_gateway_write_task is running");
 
-    while (g_aliyun_gateway_write_task_handle != NULL) {
+    while (*aliyun_gateway_write_task_status == TASK_RUNNING) {
         if (aliyun_platform_mqtt_read(&mqtt_buf, pdMS_TO_TICKS(1000)) == MDF_OK) {
             mdf_err_t err = aliyun_parse_mqtt_data((char *)mqtt_buf->topic, mqtt_buf->topic_len, (char *)mqtt_buf->payload, mqtt_buf->payload_len);
 
@@ -849,7 +856,7 @@ static void aliyun_gateway_write_task(void *arg)
         }
     }
 
-    g_aliyun_gateway_write_task_handle = NULL;
+    MDF_FREE(aliyun_gateway_write_task_status);
     aliyun_platform_mqtt_deinit();
     MDF_LOGW("aliyun_gateway_write_task is exit");
     vTaskDelete(NULL);
@@ -859,14 +866,18 @@ mdf_err_t aliyun_gateway_init(void)
 {
     aliyun_platform_mqtt_init();
 
-    if (g_aliyun_gateway_read_task_handle == NULL) {
+    if (g_aliyun_read_task_status == NULL) {
+        g_aliyun_read_task_status = MDF_MALLOC(sizeof(int));
+        *g_aliyun_read_task_status = TASK_RUNNING;
         xTaskCreate(aliyun_gateway_read_task, "gateway_read", 5 * 1024,
-                    NULL, CONFIG_ALIYUN_TASK_DEFAULT_PRIOTY, &g_aliyun_gateway_read_task_handle);
+                    g_aliyun_read_task_status, CONFIG_ALIYUN_TASK_DEFAULT_PRIOTY, NULL);
     }
 
-    if (g_aliyun_gateway_write_task_handle == NULL) {
+    if (g_aliyun_write_task_status == NULL) {
+        g_aliyun_write_task_status = MDF_MALLOC(sizeof(int));
+        *g_aliyun_write_task_status = TASK_RUNNING;
         xTaskCreate(aliyun_gateway_write_task, "gateway_write", 4 * 1024,
-                    NULL, CONFIG_ALIYUN_TASK_DEFAULT_PRIOTY, &g_aliyun_gateway_write_task_handle);
+                    g_aliyun_write_task_status, CONFIG_ALIYUN_TASK_DEFAULT_PRIOTY, NULL);
     }
 
     return MDF_OK;
@@ -874,12 +885,14 @@ mdf_err_t aliyun_gateway_init(void)
 
 mdf_err_t aliyun_gateway_deinit(void)
 {
-    if (g_aliyun_gateway_read_task_handle != NULL) {
-        g_aliyun_gateway_read_task_handle = NULL;
+    if (g_aliyun_read_task_status != NULL) {
+        *g_aliyun_read_task_status = TASK_STOP;
+        g_aliyun_read_task_status = NULL;
     }
 
-    if (g_aliyun_gateway_write_task_handle != NULL) {
-        g_aliyun_gateway_write_task_handle = NULL;
+    if (g_aliyun_write_task_status != NULL) {
+        *g_aliyun_write_task_status = TASK_STOP;
+        g_aliyun_write_task_status = NULL;
     }
 
     return MDF_OK;
