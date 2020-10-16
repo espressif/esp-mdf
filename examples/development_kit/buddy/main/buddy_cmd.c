@@ -1021,18 +1021,16 @@ static int mesh_status_func(int argc, char **argv)
         wifi_second_chan_t second       = 0;
         mesh_addr_t parent_bssid        = {0};
         uint8_t sta_mac[MWIFI_ADDR_LEN] = {0};
-        mesh_assoc_t mesh_assoc         = {0x0};
         wifi_sta_list_t wifi_sta_list   = {0x0};
 
         esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
         esp_wifi_ap_get_sta_list(&wifi_sta_list);
         esp_wifi_get_channel(&primary, &second);
-        esp_wifi_vnd_mesh_get(&mesh_assoc);
         esp_mesh_get_parent_bssid(&parent_bssid);
 
         MDF_LOGI("mac: " MACSTR ", channel: %d, layer: %d, parent bssid: " MACSTR ", parent rssi: %d, node num: %d",
                  MAC2STR(sta_mac), primary, esp_mesh_get_layer(), MAC2STR(parent_bssid.addr),
-                 mesh_assoc.rssi, esp_mesh_get_total_node_num());
+                 mwifi_get_parent_rssi(), esp_mesh_get_total_node_num());
 
         for (int i = 0; i < wifi_sta_list.num; i++) {
             MDF_LOGI("Child mac: " MACSTR, MAC2STR(wifi_sta_list.sta[i].mac));
