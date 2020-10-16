@@ -310,6 +310,14 @@ static bool scan_mesh_device(uint8_t *bssid, int8_t *rssi)
 
             channel = channel % 13 + 1;
 
+            if (channel >= 11 && second == WIFI_SECOND_CHAN_ABOVE) {
+                second = WIFI_SECOND_CHAN_BELOW;
+            }
+
+            if (channel <= 3 && second == WIFI_SECOND_CHAN_BELOW) {
+                second = WIFI_SECOND_CHAN_ABOVE;
+            }
+
             if (esp_wifi_set_channel(channel, second) != ESP_OK) {
                 MDF_LOGW("esp_wifi_set_channel, channel: %d, second: %d", channel, second);
             }
