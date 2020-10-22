@@ -252,13 +252,11 @@ static void print_system_info_timercb(void *timer)
     uint8_t primary = 0;
     wifi_second_chan_t second = 0;
     uint8_t eth_mac[MWIFI_ADDR_LEN] = { 0 };
-    mesh_assoc_t mesh_assoc = { 0x0 };
     wifi_sta_list_t wifi_sta_list = { 0x0 };
 
     esp_read_mac(eth_mac, ESP_MAC_ETH);
     esp_wifi_ap_get_sta_list(&wifi_sta_list);
     esp_wifi_get_channel(&primary, &second);
-    esp_wifi_vnd_mesh_get(&mesh_assoc);
 
     if (esp_mesh_is_root() == true) {
         MDF_LOGI("System information, channel: %d, layer: %d, self mac: " MACSTR
