@@ -28,6 +28,7 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_wifi.h"
 
 #define SPP_PROFILE_NUM     1
 #define SPP_PROFILE_APP_IDX 0
@@ -517,6 +518,8 @@ mdf_err_t mlink_ble_init(const mlink_ble_config_t *config)
     }
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+
+    MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
 
     ret = esp_bt_controller_init(&bt_cfg);
     MDF_ERROR_CHECK(ret != ESP_GATT_OK, ret, "esp_bt_controller_init");
