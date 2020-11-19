@@ -264,7 +264,7 @@ Mconfig-Chain is a network configuration protocol for devices based on `ESP-NOW 
 
 Currently, there are three methods to configure a Wi-Fi network: BLE, sniffer, and softAP, all of which are designed for network configuration of a single device. For this reason, these methods are not applicable for an ESP-WIFI-MESH network, which usually involves network configuration of multiple devices.
 
-Mconfig-Chain is specifically designed for ESP-WIFI-MESH network configuration. It features a chained, transferable configuration process, which means that each device connected to the network can implement network configuration for other devices. Mconfig-Chain turns configuratoin process of a wide-range network into a simple and efficient process.
+Mconfig-Chain is specifically designed for ESP-WIFI-MESH network configuration. It features a chained, transferable configuration process, which means that each device connected to the network can implement network configuration for other devices. Mconfig-Chain turns configuration process of a wide-range network into a simple and efficient process.
 
 Mconfig-Chain splits devices into two types:
 
