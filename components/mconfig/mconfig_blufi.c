@@ -582,7 +582,7 @@ static mdf_err_t mconfig_blufi_adv_config()
     };
 
     esp_ble_adv_data_t scan_rsp_data = {
-        .set_scan_rsp        = g_blufi_cfg.custom_size || name_len > 10 ? true : false,
+        .set_scan_rsp        = name_len > 10 ? true : false,
         .include_name        = name_len > 10 ? false : true,
         .manufacturer_len    = sizeof(blufi_adv_manufacturer_data_t),
         .p_manufacturer_data = (uint8_t *) &manufacturer_data,
@@ -612,7 +612,7 @@ static mdf_err_t mconfig_blufi_adv_config()
         ret = esp_ble_gap_config_adv_data(&scan_req_data);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data");
     } else if (scan_rsp_data.set_scan_rsp) {
-        ret = esp_ble_gap_config_adv_data_raw(g_blufi_cfg.custom_data, g_blufi_cfg.custom_size);
+        ret = esp_ble_gap_config_scan_rsp_data_raw(g_blufi_cfg.custom_data, g_blufi_cfg.custom_size);
         MDF_ERROR_CHECK(ret != MDF_OK, ret, "esp_ble_gap_config_adv_data_raw");
     }
 
