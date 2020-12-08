@@ -34,7 +34,7 @@ menu "Example Configuration"
     config LIGHT_GPIO_COLD
         int "Light cold colors pin GPIO number"
         range 0 33
-        default 23
+        default 19
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
@@ -44,7 +44,7 @@ menu "Example Configuration"
     config LIGHT_GPIO_WARM
         int "Light warm color pin GPIO number"
         range 0 33
-        default 19
+        default 23
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
