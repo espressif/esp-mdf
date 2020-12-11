@@ -24,8 +24,8 @@
 #include "esp_log.h"
 
 #define LEDC_FADE_MARGIN (10)
-#define LEDC_VALUE_TO_DUTY(value) (value * ((1 << LEDC_TIMER_13_BIT) - 1) / UINT16_MAX)
-#define LEDC_DUTY_TO_VALUE(value) (value * UINT16_MAX / ((1 << LEDC_TIMER_13_BIT) - 1) )
+#define LEDC_TIMER_PRECISION (LEDC_TIMER_13_BIT)
+#define LEDC_VALUE_TO_DUTY(value) (value * ((1 << LEDC_TIMER_PRECISION)) / (UINT16_MAX))
 #define LEDC_FIXED_Q (8)
 #define FLOATINT_2_FIXED(X, Q) ((int)((X)*(0x1U << Q)))
 #define FIXED_2_FLOATING(X, Q) ((int)((X)/(0x1U << Q)))
@@ -237,9 +237,12 @@ static void gamma_table_create(uint16_t *gamma_table, float correction)
      * a = GAMMA_TABLE_SIZE
      */
     for (int i = 0; i < GAMMA_TABLE_SIZE; i++) {
-        value_tmp = (float)(i) / GAMMA_TABLE_SIZE;
+        value_tmp = (float)(i) / (GAMMA_TABLE_SIZE - 1);
         value_tmp = powf(value_tmp, 1.0f / correction);
         gamma_table[i] = (uint16_t)FLOATINT_2_FIXED((value_tmp * GAMMA_TABLE_SIZE), LEDC_FIXED_Q);
+    }
+    if(gamma_table[255] == 0) {
+        gamma_table[255] = __UINT16_MAX__;
     }
 }
 
@@ -249,8 +252,9 @@ static IRAM_ATTR uint32_t gamma_value_to_duty(int value)
     uint32_t tmp_r = GET_FIXED_DECIMAL_PART(value, LEDC_FIXED_Q);
 
     uint16_t cur = LEDC_VALUE_TO_DUTY(g_gamma_table[tmp_q]);
-    uint16_t next = LEDC_VALUE_TO_DUTY(g_gamma_table[tmp_q + 1]);
-    return (cur + (next - cur) * tmp_r / (0x1U << LEDC_FIXED_Q));
+    uint16_t next = tmp_q < (GAMMA_TABLE_SIZE - 1) ? LEDC_VALUE_TO_DUTY(g_gamma_table[tmp_q + 1]) : cur;
+    uint32_t tmp = (cur + (next - cur) * tmp_r / (0x1U << LEDC_FIXED_Q));
+    return tmp;
 }
 
 static IRAM_ATTR void fade_timercb(void *para)
@@ -300,7 +304,8 @@ static IRAM_ATTR void fade_timercb(void *para)
                                             gamma_value_to_duty(fade_data->cur),
                                             DUTY_SET_CYCLE - LEDC_FADE_MARGIN);
                 } else {
-                    iot_ledc_set_duty(g_light_config->speed_mode, channel, gamma_value_to_duty(fade_data->cur));
+                    iot_ledc_set_duty(g_light_config->speed_mode, channel, gamma_value_to_duty(fade_data->final));
+                    fade_data->cur = fade_data->final;
                 }
 
                 _iot_update_duty(g_light_config->speed_mode, channel);
@@ -340,7 +345,7 @@ mdf_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
         .speed_mode = speed_mode,
         .timer_num  = timer_num,
         .freq_hz    = freq_hz,
-        .duty_resolution = LEDC_TIMER_13_BIT,
+        .duty_resolution = LEDC_TIMER_PRECISION,
     };
 
     ret = ledc_timer_config(&ledc_time_config);
