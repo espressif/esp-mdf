@@ -25,6 +25,8 @@ extern "C" {
  *          - Register help commands
  *          - Initialize filesystem
  *          - Create console handle task
+ * 
+ * @attention Baudrate should not greater than 2030400 if console is enable
  *
  * @return
  *     - MDF_OK
