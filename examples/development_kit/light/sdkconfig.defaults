@@ -76,4 +76,4 @@ CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED=
 #
 # mesh light config
 #
-CONFIG_LIGHT_VERSION="1.4.3-master"
+CONFIG_LIGHT_VERSION="1.4.4-master"
