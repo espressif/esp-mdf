@@ -143,6 +143,9 @@ static esp_bd_addr_t g_spp_remote_bda     = {0x0};
 static esp_timer_handle_t g_connect_timer = NULL;
 static char *g_rsa_privkey                = NULL;
 static char *g_rsa_pubkey                 = NULL;
+#ifndef CONFIG_MCONFIG_DIRECT_CONNECT_ROUTER
+static bool is_mesh_running = false;
+#endif
 
 static mdf_err_t mconfig_ble_connect_timer_create(void);
 
@@ -443,6 +446,7 @@ static void blufi_mesh_event_handler(mesh_event_t event)
 
     switch (event.id) {
         case MESH_EVENT_STOPPED:
+            is_mesh_running = false;
             mconfig_chain_slave_channel_switch_enable();
             break;
 
@@ -659,6 +663,101 @@ static mdf_err_t mconfig_ble_connect_timer_create(void)
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "Start one-shot timer");
 
     return MDF_OK;
+}
+
+static void mconfig_async_wifi_mesh(void *arg)
+{
+    mdf_err_t ret;
+
+#ifndef CONFIG_MCONFIG_DIRECT_CONNECT_ROUTER
+    /* stop mesh first */
+    if (is_mesh_running) {
+        ret = esp_mesh_stop();
+        MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_stop", mdf_err_to_name(ret));
+
+        for (;;) {
+            vTaskDelay(pdMS_TO_TICKS(500));
+
+            if (! is_mesh_running) {
+                break;
+            }
+        }
+    }
+#endif
+
+    /**< Disable slave to switch wifi channel */
+    mconfig_chain_slave_channel_switch_disable();
+
+#ifdef CONFIG_MCONFIG_DIRECT_CONNECT_ROUTER
+    /**< Wi-Fi try to connect AP */
+    wifi_config_t sta_config = {0};
+
+    memcpy(sta_config.sta.ssid, g_recv_config->config.router_ssid, strlen(g_recv_config->config.router_ssid));
+    memcpy(sta_config.sta.bssid, g_recv_config->config.router_bssid, sizeof(g_recv_config->config.router_bssid));
+    memcpy(sta_config.sta.password, g_recv_config->config.router_password, strlen(g_recv_config->config.router_password));
+
+    ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+    MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Set the configuration of the ESP32 STA", mdf_err_to_name(ret));
+
+    esp_event_loop_set_cb(blufi_wifi_event_handler, NULL);
+
+    ret = esp_wifi_connect();
+    MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Connect the ESP32 WiFi station to the AP", mdf_err_to_name(ret));
+#else
+
+    /* mesh try to connect mesh network */
+    ret = esp_mesh_init();
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_init", mdf_err_to_name(ret));
+
+    ret = esp_mesh_set_max_layer(CONFIG_MWIFI_MAX_LAYER);
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_set_max_layer", mdf_err_to_name(ret));
+
+    ret = esp_mesh_set_vote_percentage(1);
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_set_vote_percentage", mdf_err_to_name(ret));
+
+    mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
+
+    cfg.event_cb = &blufi_mesh_event_handler;
+    cfg.channel = g_recv_config->config.channel;
+    cfg.router.ssid_len = strlen(g_recv_config->config.router_ssid);
+    memcpy(cfg.router.ssid, g_recv_config->config.router_ssid, cfg.router.ssid_len);
+    memcpy(cfg.router.password, g_recv_config->config.router_password, strlen(g_recv_config->config.router_password));
+
+    memcpy(cfg.mesh_id.addr, g_recv_config->config.mesh_id, 6);
+#if CONFIG_MCONFIG_VERIFY_ROUTER
+    combine_ap_mesh_password(cfg.mesh_ap.password, (const uint8_t *)g_recv_config->config.router_password, (const uint8_t *)g_recv_config->config.mesh_password);
+    memcpy(g_recv_config->config.mesh_password, cfg.mesh_ap.password, 64);
+#else
+    memcpy(cfg.mesh_ap.password, g_recv_config->config.mesh_password, strlen(g_recv_config->config.mesh_password));
+#endif
+
+    if (strlen((const char *)cfg.mesh_ap.password) > 0) {
+        ret = esp_mesh_set_ap_authmode(WIFI_AUTH_WPA_WPA2_PSK);
+    } else {
+        ret = esp_mesh_set_ap_authmode(WIFI_AUTH_OPEN);
+    }
+
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_set_ap_authmode", mdf_err_to_name(ret));
+
+    cfg.mesh_ap.max_connection = CONFIG_MWIFI_MAX_CONNECTION;
+
+    ret = esp_mesh_set_config(&cfg);
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_set_config", mdf_err_to_name(ret));
+
+    ret = esp_mesh_set_self_organized(true, false);
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_set_self_organized", mdf_err_to_name(ret));
+
+    ret = esp_mesh_start();
+    MDF_ERROR_GOTO(ret != ESP_OK, EXIT, "<%s> esp_mesh_start", mdf_err_to_name(ret));
+    is_mesh_running = true;
+#endif
+    /**< Send MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED event to the event handler */
+    ret = mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED, NULL);
+    MDF_ERROR_GOTO(ret < 0, EXIT, "<%s> Send the event to the event handler", mdf_err_to_name(ret));
+
+EXIT:
+    vTaskDelete(NULL);
+
 }
 
 /**< BLUFI event callback */
@@ -973,74 +1072,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
                 break;
             }
 
-            /**< Disable slave to switch wifi channel */
-            mconfig_chain_slave_channel_switch_disable();
-
-#ifdef CONFIG_MCONFIG_DIRECT_CONNECT_ROUTER
-            /**< Wi-Fi try to connect AP */
-            wifi_config_t sta_config = {0};
-
-            memcpy(sta_config.sta.ssid, g_recv_config->config.router_ssid, strlen(g_recv_config->config.router_ssid));
-            memcpy(sta_config.sta.bssid, g_recv_config->config.router_bssid, sizeof(g_recv_config->config.router_bssid));
-            memcpy(sta_config.sta.password, g_recv_config->config.router_password, strlen(g_recv_config->config.router_password));
-
-            ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Set the configuration of the ESP32 STA", mdf_err_to_name(ret));
-
-            esp_event_loop_set_cb(blufi_wifi_event_handler, NULL);
-
-            ret = esp_wifi_connect();
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Connect the ESP32 WiFi station to the AP", mdf_err_to_name(ret));
-#else
-            /* mesh try to connect mesh network */
-            ret = esp_mesh_init();
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_init", mdf_err_to_name(ret));
-
-            ret = esp_mesh_set_max_layer(CONFIG_MWIFI_MAX_LAYER);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_set_max_layer", mdf_err_to_name(ret));
-
-            ret = esp_mesh_set_vote_percentage(1);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_set_vote_percentage", mdf_err_to_name(ret));
-
-            mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
-
-            cfg.event_cb = &blufi_mesh_event_handler;
-            cfg.channel = g_recv_config->config.channel;
-            cfg.router.ssid_len = strlen(g_recv_config->config.router_ssid);
-            memcpy(cfg.router.ssid, g_recv_config->config.router_ssid, cfg.router.ssid_len);
-            memcpy(cfg.router.password, g_recv_config->config.router_password, strlen(g_recv_config->config.router_password));
-
-            memcpy(cfg.mesh_id.addr, g_recv_config->config.mesh_id, 6);
-#if CONFIG_MCONFIG_VERIFY_ROUTER
-            combine_ap_mesh_password(cfg.mesh_ap.password, (const uint8_t *)g_recv_config->config.router_password, (const uint8_t *)g_recv_config->config.mesh_password);
-            memcpy(g_recv_config->config.mesh_password, cfg.mesh_ap.password, 64);
-#else
-            memcpy(cfg.mesh_ap.password, g_recv_config->config.mesh_password, strlen(g_recv_config->config.mesh_password));
-#endif
-
-            if (strlen((const char *)cfg.mesh_ap.password) > 0) {
-                ret = esp_mesh_set_ap_authmode(WIFI_AUTH_WPA_WPA2_PSK);
-            } else {
-                ret = esp_mesh_set_ap_authmode(WIFI_AUTH_OPEN);
-            }
-
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_set_ap_authmode", mdf_err_to_name(ret));
-
-            cfg.mesh_ap.max_connection = CONFIG_MWIFI_MAX_CONNECTION;
-
-            ret = esp_mesh_set_config(&cfg);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_set_config", mdf_err_to_name(ret));
-
-            ret = esp_mesh_set_self_organized(true, false);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_set_self_organized", mdf_err_to_name(ret));
-
-            ret = esp_mesh_start();
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> esp_mesh_start", mdf_err_to_name(ret));
-#endif
-            /**< Send MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED event to the event handler */
-            ret = mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STA_CONNECTED, NULL);
-            MDF_ERROR_BREAK(ret < 0, "<%s> Send the event to the event handler", mdf_err_to_name(ret));
-
+            xTaskCreate(mconfig_async_wifi_mesh, "mconfig_async", 1024 * 3, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
             break;
         }
 
