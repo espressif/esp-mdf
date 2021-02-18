@@ -241,6 +241,10 @@ static void gamma_table_create(uint16_t *gamma_table, float correction)
         value_tmp = powf(value_tmp, 1.0f / correction);
         gamma_table[i] = (uint16_t)FLOATINT_2_FIXED((value_tmp * GAMMA_TABLE_SIZE), LEDC_FIXED_Q);
     }
+
+    if (gamma_table[255] == 0) {
+        gamma_table[255] = __UINT16_MAX__;
+    }
 }
 
 static IRAM_ATTR uint32_t gamma_value_to_duty(int value)
@@ -300,6 +304,7 @@ static IRAM_ATTR void fade_timercb(void *para)
                                             gamma_value_to_duty(fade_data->cur),
                                             DUTY_SET_CYCLE - LEDC_FADE_MARGIN);
                 } else {
+                    fade_data->cur = fade_data->cycle && fade_data->step < 0 ? 0 : fade_data->final;
                     iot_ledc_set_duty(g_light_config->speed_mode, channel, gamma_value_to_duty(fade_data->cur));
                 }
 
@@ -347,7 +352,8 @@ mdf_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
     MDF_ERROR_CHECK(ret != MDF_OK, ret, "LEDC timer configuration");
 
     if (g_gamma_table == NULL) {
-        g_gamma_table = MDF_CALLOC(GAMMA_TABLE_SIZE, sizeof(uint16_t));
+        /* g_gamma_table[GAMMA_TABLE_SIZE] must be 0 */
+        g_gamma_table = MDF_CALLOC(GAMMA_TABLE_SIZE + 1, sizeof(uint16_t));
         gamma_table_create(g_gamma_table, GAMMA_CORRECTION);
     } else {
         MDF_LOGE("gamma_table has been initialized");
