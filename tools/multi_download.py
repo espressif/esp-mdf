@@ -4,6 +4,7 @@ import sys
 import threading
 import os
 import argparse
+import serial.tools.list_ports
 
 ESP_TOOL = "components/esptool_py/esptool/esptool.py"
 
@@ -22,13 +23,16 @@ class MultiDownloader():
 
     def _select_port(self):
         if 'all' in self.ports:
-            dev_list = os.listdir('/dev')
+            dev_list = serial.tools.list_ports.comports()
             for dev in dev_list:
-                if dev.find('ttyUSB') != -1:
-                    yield f"/dev/{dev}"
+                yield dev.device
         else:
-            for i in self.ports:
-                yield f"/dev/ttyUSB{i}"
+            if sys.platform.startswith('win'):
+                for dev in self.ports:
+                    yield f"COM{dev}"
+            else:
+                for dev in self.ports:
+                    yield f"/dev/ttyUSB{i}"
 
     def _download_performance(self, command):
         loader = os.popen(command)
