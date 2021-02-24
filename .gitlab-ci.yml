@@ -41,7 +41,7 @@ before_script:
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source esp-idf/tools/ci/configure_ci_environment.sh
 
-.build_template: &build_template
+build_template_make: &build_template
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
@@ -51,114 +51,51 @@ before_script:
     DEFAULT_CONFIG: ""
     BATCH_BUILD: "1"
     V: "0"
-  artifacts:
-    when: always
-    paths:
-      - sdkconfig
-      - build/*.bin
-      - build/*.elf
-      - build/*.map
-      - build/bootloader/*.bin
-      - build/download.config
-    expire_in: 1 month
-    name: $ARTIFACTS_NAME
   script:
-    - cd $EXAMPLE_PATH
-    - make defconfig
-    - make -j5
-    - make print_flash_cmd | tail -n 1 > build/download.config
-    #- idf.py defconfig
-    - idf.py build
+    - ./tools/ci/build_examples_make.sh examples/get-started
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mcommon
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mconfig
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mdebug
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mupgrade
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mwifi/console_test
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mwifi/mqtt_example
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mwifi/no_router
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mwifi/root_on_ethernet
+    - ./tools/ci/build_examples_make.sh examples/function_demo/mwifi/router
+    - ./tools/ci/build_examples_make.sh examples/development_kit/light
+    - ./tools/ci/build_examples_make.sh examples/development_kit/button
+#   - ./tools/ci/build_examples_make.sh examples/development_kit/sense  sense can not build by GNU make
+    - ./tools/ci/build_examples_make.sh examples/development_kit/buddy
+    - ./tools/ci/build_examples_make.sh examples/aliyun_linkkit/get-started
+    - ./tools/ci/build_examples_make.sh examples/aliyun_linkkit/mesh-with-aliyun
 
-build_example_get_started:
-  <<: *build_template
+build_template_cmake: &build_template
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
   variables:
-    ARTIFACTS_NAME: "get-started"
-    EXAMPLE_PATH: "examples/get-started"
-
-build_example_mconfig:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mconfig"
-    EXAMPLE_PATH: "examples/function_demo/mconfig"
-
-build_example_mupgrade:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mupgrade"
-    EXAMPLE_PATH: "examples/function_demo/mupgrade"
-
-build_example_mwifi_router:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mwifi"
-    EXAMPLE_PATH: "examples/function_demo/mwifi/router"
-
-build_example_mwifi_norouter:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mwifi"
-    EXAMPLE_PATH: "examples/function_demo/mwifi/no_router"
-
-build_example_mwifi_console_test:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mwifi"
-    EXAMPLE_PATH: "examples/function_demo/mwifi/console_test"
-
-build_example_mwifi_mqtt_example:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mwifi"
-    EXAMPLE_PATH: "examples/function_demo/mwifi/mqtt_example"
-
-build_example_mwifi_ethernet_example:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mwifi"
-    EXAMPLE_PATH: "examples/function_demo/mwifi/root_on_ethernet"
-
-build_example_mcommon:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mcommon"
-    EXAMPLE_PATH: "examples/function_demo/mcommon"
-
-build_example_light:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "light"
-    EXAMPLE_PATH: "examples/development_kit/light"
-
-build_example_button:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "button"
-    EXAMPLE_PATH: "examples/development_kit/button"
-
-build_example_buddy:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "buddy"
-    EXAMPLE_PATH: "examples/development_kit/buddy"
-
-build_example_aliyun_getstarted:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "aliyun_getstarted"
-    EXAMPLE_PATH: "examples/aliyun_linkkit/get-started"
-
-build_example_mesh_with_aliyun:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "mesh_with_aliyun"
-    EXAMPLE_PATH: "examples/aliyun_linkkit/mesh-with-aliyun"
-
-build_example_wireless_debug:
-  <<: *build_template
-  variables:
-    ARTIFACTS_NAME: "wireless_debug"
-    EXAMPLE_PATH: "examples/wireless_debug"
+    ARTIFACTS_NAME: "default"
+    DEFAULT_CONFIG: ""
+    BATCH_BUILD: "1"
+    V: "0"
+  script:
+    - ./tools/ci/build_examples_cmake.sh examples/get-started
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mcommon
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mconfig
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mdebug
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mupgrade
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mwifi/console_test
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mwifi/mqtt_example
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mwifi/no_router
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mwifi/root_on_ethernet
+    - ./tools/ci/build_examples_cmake.sh examples/function_demo/mwifi/router
+    - ./tools/ci/build_examples_cmake.sh examples/development_kit/light
+    - ./tools/ci/build_examples_cmake.sh examples/development_kit/button
+    - ./tools/ci/build_examples_cmake.sh examples/development_kit/sense
+    - ./tools/ci/build_examples_cmake.sh examples/development_kit/buddy
+    - ./tools/ci/build_examples_cmake.sh examples/aliyun_linkkit/get-started
+    - ./tools/ci/build_examples_cmake.sh examples/aliyun_linkkit/mesh-with-aliyun
 
 push_master_to_github:
   stage: deploy
