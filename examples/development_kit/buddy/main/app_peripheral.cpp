@@ -11,8 +11,8 @@
  */
 
 #include <stdio.h>
-#include <time.h>
-#include <sys/time.h>
+
+#include "driver/gpio.h"
 #include "driver/rmt.h"
 
 #include "mdf_common.h"
@@ -22,8 +22,8 @@
 #include "iot_hts221.h"
 #include "iot_button.h"
 #include "esp_log.h"
-#include "ws2812b.h"
 #include "app_peripheral.h"
+#include "led_strip.h"
 
 // Sensor
 #define SENSOR_I2C_PORT          ((i2c_port_t) 1)
@@ -37,11 +37,12 @@
 
 #define BUTTON_ACTIVE_LEVEL         0
 
-static const char* TAG = "Peripheral";
+static const char *TAG = "Peripheral";
 
 static CI2CBus *i2c_bus_sens   = NULL;
 static CHts221 *hts221         = NULL;
 static COled *oled             = NULL;
+static led_strip_t *strip       = NULL;
 
 void COled::init()
 {
@@ -53,10 +54,10 @@ void COled::clean()
     clear_screen(0);
 }
 
-esp_err_t COled::show_iperf(void * context)
+esp_err_t COled::show_iperf(void *context)
 {
     clean();
-    
+
     draw_string(20, 0, (const uint8_t *) "iPerf Test", 16, 1);
 
     // if (((oled_context_t *)context)->iperf_server) {
@@ -74,6 +75,7 @@ esp_err_t COled::show_iperf(void * context)
 
     /*< iperf_ >*/
     char iperf_str[6];
+
     if (((oled_context_t *)context)->iperf_result / 10 > 1) {
         sprintf(iperf_str, "%04.1f", ((oled_context_t *)context)->iperf_result);
         iperf_str[4] = '\0';
@@ -97,7 +99,7 @@ esp_err_t COled::show_iperf(void * context)
     return refresh_gram();
 }
 
-esp_err_t COled::show_status(float temprature, float humidity, void * context)
+esp_err_t COled::show_status(float temprature, float humidity, void *context)
 {
     clean();
     /*< temprature >*/
@@ -126,6 +128,7 @@ esp_err_t COled::show_status(float temprature, float humidity, void * context)
     } else {
         draw_string(0, 16, (const uint8_t *) "NODE", 16, 1);
         sprintf(humiditystr, "%02d", esp_mesh_get_layer());
+
         if (mwifi_is_connected()) {
             draw_3216char(0, 32, humiditystr[0]);
             draw_3216char(16, 32, humiditystr[1]);
@@ -133,6 +136,7 @@ esp_err_t COled::show_status(float temprature, float humidity, void * context)
             draw_string(0, 40, (const uint8_t *) "dis", 16, 1);
         }
     }
+
     draw_string(90, 24, (const uint8_t *)"RSSI", 16, 1);
     sprintf(humiditystr, "%-4d", mwifi_get_parent_rssi());
     draw_string(90, 40, (const uint8_t *)humiditystr, 16, 1);
@@ -146,41 +150,45 @@ esp_err_t COled::show_status(float temprature, float humidity, void * context)
     return refresh_gram();
 }
 
-void oled_show_page(int page, void * context)
+void oled_show_page(int page, void *context)
 {
     static int page_prev = PAGE_MAX;
+
     if (page_prev == page) {
 
     } else {
         page_prev = page;
         oled->clean();
     }
+
     switch (page % PAGE_MAX) {
         case PAGE_IPERF:
             oled->show_iperf(context);
             break;
+
         case PAGE_STATUS:
             oled->show_status(hts221->read_temperature(), hts221->read_humidity(), context);
             break;
+
         default:
             oled->show_status(hts221->read_temperature(), hts221->read_humidity(), context);
             break;
     }
 }
 
-void button_tap_cb(void* arg)
+void button_tap_cb(void *arg)
 {
     ESP_LOGI(TAG, "tap cb(%d), heap: %d\n", *(uint32_t *)arg, esp_get_free_heap_size());
     mdf_event_loop_send(MDF_EVENT_BUTTON_KEY_SHORT_RELEASE, (void *)arg);
 }
 
-void button_press_2s_cb(void* arg)
+void button_press_2s_cb(void *arg)
 {
     ESP_LOGI(TAG, "press 2s(%d), heap: %d\n", *(uint32_t *)arg, esp_get_free_heap_size());
     mdf_event_loop_send(MDF_EVENT_BUTTON_KEY_MIDDLE_RELEASE, (void *)arg);
 }
 
-void button_press_5s_cb(void* arg)
+void button_press_5s_cb(void *arg)
 {
     ESP_LOGI(TAG, "press 5s(%d), heap: %d\n", *(uint32_t *)arg, esp_get_free_heap_size());
     mdf_event_loop_send(MDF_EVENT_BUTTON_KEY_LONG_RELEASE, (void *)arg);
@@ -208,15 +216,28 @@ void button_init()
 void peripherals_init()
 {
     i2c_bus_sens = new CI2CBus((i2c_port_t) SENSOR_I2C_PORT, (gpio_num_t) SENSOR_SCL_IO, (gpio_num_t) SENSOR_SDA_IO);
-    
+
     hts221 = new CHts221(i2c_bus_sens);
     oled = new COled(i2c_bus_sens);
 
     oled->init();
 
-    ws2812b_init(RMT_CHANNEL_0, GPIO_NUM_25, 1);
-    ws_rgb_t rgb[1] = {0x00, 0x00, 0xff};
-    ws2812b_set_leds(rgb, 1);
+    rmt_config_t config = RMT_DEFAULT_CONFIG_TX(GPIO_NUM_25, RMT_CHANNEL_1);
+    config.clk_div = 2;
+    config.tx_config.idle_level = RMT_IDLE_LEVEL_HIGH;
+    ESP_ERROR_CHECK(rmt_config(&config));
+    ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
+
+    led_strip_config_t strip_config = LED_STRIP_DEFAULT_CONFIG(1, (led_strip_dev_t)config.channel);
+    strip = led_strip_new_rmt_ws2812(&strip_config);
+
+    if (!strip) {
+        ESP_LOGE(TAG, "Install WS2812 driver failed");
+    }
+
+    ESP_ERROR_CHECK(strip->clear(strip, 100));
+    ESP_ERROR_CHECK(strip->set_pixel(strip, 0, 15, 0, 0));
+    ESP_ERROR_CHECK(strip->refresh(strip, 100));
 
     attenuator_init();
 
@@ -225,18 +246,18 @@ void peripherals_init()
 
 void ws2812b_green()
 {
-    ws_rgb_t rgb[1] = {0x0f, 0x00, 0x00};
-    ws2812b_set_leds(rgb, 1);
+    strip->set_pixel(strip, 0, 0, 15, 0);
+    strip->refresh(strip, 100);
 }
 
 void ws2812b_blue()
 {
-    ws_rgb_t rgb[1] = {0x00, 0x0f, 0x00};
-    ws2812b_set_leds(rgb, 1);
+    strip->set_pixel(strip, 0, 0, 0, 15);
+    strip->refresh(strip, 100);
 }
 
 void ws2812b_red()
 {
-    ws_rgb_t rgb[1] = {0x00, 0x00, 0x0f};
-    ws2812b_set_leds(rgb, 1);
+    strip->set_pixel(strip, 0, 15, 0, 0);
+    strip->refresh(strip, 100);
 }
