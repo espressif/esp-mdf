@@ -13,5 +13,7 @@ die() {
 CURRENT_DIR=`pwd`
 cd ${BUILD_DIR}
 idf.py set-target ${BUILD_TARGET}
+[ $? != 0 ] && die "idf.py set-target ${BUILD_TARGET} failed"
 idf.py build
+[ $? != 0 ] && die "idf.py build failed"
 cd ${CURRENT_DIR}

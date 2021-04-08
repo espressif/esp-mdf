@@ -77,7 +77,7 @@ build_template_make: &build_template
     - ./tools/ci/build_examples_make.sh examples/function_demo/mwifi/router
     - ./tools/ci/build_examples_make.sh examples/development_kit/light
     - ./tools/ci/build_examples_make.sh examples/development_kit/button
-    - ./tools/ci/build_examples_make.sh examples/development_kit/sense
+#   - ./tools/ci/build_examples_make.sh examples/development_kit/sense  sense can not build by GNU make in idf release/v4.2(af8bc4c4)
     - ./tools/ci/build_examples_make.sh examples/development_kit/buddy
     - ./tools/ci/build_examples_make.sh examples/aliyun_linkkit/get-started
     - ./tools/ci/build_examples_make.sh examples/aliyun_linkkit/mesh-with-aliyun
