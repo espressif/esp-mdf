@@ -36,13 +36,10 @@ before_script:
   - sed -i "s%https://github.com/espressif/esp-idf.git%${GITLAB_SSH_SERVER}/idf/esp-idf.git%" .gitmodules
   # replace submodule Adafruit-GFX-Library to internal repository to speedup cloning
   - sed -i "s%https://github.com/adafruit/Adafruit-GFX-Library.git%${GITLAB_SSH_SERVER}/zzchen/adafruit-gfx-library.git%" .gitmodules
-  - git submodule update --init
+  - git submodule update --init --recursive
   - source esp-idf/tools/ci/setup_python.sh
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source esp-idf/tools/ci/configure_ci_environment.sh
-
-  # fetch the submodules (& if necessary re-fetch repo) from gitlab
-  - time ./esp-idf/tools/ci/get-full-sources.sh
 
 .build_template: &build_template
   stage: build

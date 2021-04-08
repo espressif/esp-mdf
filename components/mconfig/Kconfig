@@ -47,5 +47,19 @@ menu "MDF Mconfig"
         help
             Different length versions are incompatible. Increasing the length
             will affect the network configuration time.
+    
+    config MCONFIG_DIRECT_CONNECT_ROUTER
+        bool "Connect to router directly"
+        default n
+        help
+            If it set, the device will try to connect to router when provisioning, 
+            otherwise the device will try to connect to mesh network with specific mesh_id
 
+    config MCONFIG_VERIFY_ROUTER
+        bool "Verify router password"
+        default y
+        help
+            If it is set, the mesh_password will generate by ap_password and mesh_password which
+            are passed from app.
+            
 endmenu
