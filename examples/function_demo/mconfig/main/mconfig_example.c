@@ -149,7 +149,7 @@ mdf_err_t get_network_config(const char *name, mwifi_config_t *mwifi_config, cha
 void app_main()
 {
     char name[28]        = {0x0};
-    char custom_data[32] = {0x0};
+    char custom_data[32 + CONFIG_MCONFIG_CUSTOM_EXTERN_LEN] = {0x0};
     mwifi_config_t mwifi_config = {0x0};
     mwifi_init_config_t init_config = MWIFI_INIT_CONFIG_DEFAULT();
 
