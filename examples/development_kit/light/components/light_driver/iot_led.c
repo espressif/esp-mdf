@@ -68,13 +68,16 @@ static void iot_timer_create(hw_timer_idx_t *timer_id, bool auto_reload,
                              uint32_t timer_interval_ms, void *isr_handle)
 {
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
+    timer_config_t config = {0x00};
     config.divider     = HW_TIMER_DIVIDER;
     config.counter_dir = TIMER_COUNT_UP;
     config.counter_en  = TIMER_PAUSE;
     config.alarm_en    = TIMER_ALARM_EN;
     config.intr_type   = TIMER_INTR_LEVEL;
     config.auto_reload = auto_reload;
+#if CONFIG_IDF_TARGET_ESP32C3
+    config.clk_src = TIMER_SRC_CLK_APB;
+#endif
     timer_init(timer_id->timer_group, timer_id->timer_id, &config);
 
     /* Timer's counter will initially start from value below.
@@ -343,10 +346,11 @@ mdf_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
 {
     mdf_err_t ret = MDF_OK;
     const ledc_timer_config_t ledc_time_config = {
-        .speed_mode = speed_mode,
-        .timer_num  = timer_num,
-        .freq_hz    = freq_hz,
+        .speed_mode      = speed_mode,
+        .timer_num       = timer_num,
+        .freq_hz         = freq_hz,
         .duty_resolution = LEDC_TIMER_PRECISION,
+        .clk_cfg         = LEDC_USE_APB_CLK,
     };
 
     ret = ledc_timer_config(&ledc_time_config);
