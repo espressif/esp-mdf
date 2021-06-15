@@ -33,7 +33,7 @@
 #endif /**< CONFIG_MLINK_NOTICE_UDP_SERVER_PORT */
 #define MLINK_NOTICE_UDP_SERVER_PORT CONFIG_MLINK_NOTICE_UDP_SERVER_PORT
 
-static QueueHandle_t *g_notice_udp_queue       = NULL;
+static QueueHandle_t g_notice_udp_queue       = NULL;
 static SemaphoreHandle_t g_notice_udp_exit_sem = NULL;
 static bool g_notice_udp_exit_flag             = true;
 static bool g_notice_mdns_init_flag            = false;

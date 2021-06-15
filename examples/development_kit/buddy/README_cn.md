@@ -1,5 +1,7 @@
 [[EN]](./README.md)
 
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
 # ESP32-Buddy 用户指南
 
 ## 概述

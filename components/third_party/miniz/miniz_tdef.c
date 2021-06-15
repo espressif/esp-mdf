@@ -1158,7 +1158,7 @@ static tdefl_status tdefl_flush_output_buffer(tdefl_compressor* d)
     return (d->m_finished && !d->m_output_flush_remaining) ? TDEFL_STATUS_DONE : TDEFL_STATUS_OKAY;
 }
 
-tdefl_status tdefl_compress(tdefl_compressor* d, const void* pIn_buf, size_t* pIn_buf_size, void* pOut_buf, size_t* pOut_buf_size, tdefl_flush flush)
+tdefl_status tdefl_compress_(tdefl_compressor* d, const void* pIn_buf, size_t* pIn_buf_size, void* pOut_buf, size_t* pOut_buf_size, tdefl_flush flush)
 {
     if (!d) {
         if (pIn_buf_size)
@@ -1222,14 +1222,14 @@ tdefl_status tdefl_compress(tdefl_compressor* d, const void* pIn_buf, size_t* pI
     return (d->m_prev_return_status = tdefl_flush_output_buffer(d));
 }
 
-tdefl_status tdefl_compress_buffer(tdefl_compressor* d, const void* pIn_buf, size_t in_buf_size, tdefl_flush flush)
+tdefl_status tdefl_compress_buffer_(tdefl_compressor* d, const void* pIn_buf, size_t in_buf_size, tdefl_flush flush)
 {
     MZ_ASSERT(d->m_pPut_buf_func);
-    return tdefl_compress(d, pIn_buf, &in_buf_size, NULL, NULL, flush);
+    return tdefl_compress_(d, pIn_buf, &in_buf_size, NULL, NULL, flush);
 }
 
 #include "esp_log.h"
-tdefl_status tdefl_init(tdefl_compressor* d, tdefl_put_buf_func_ptr pPut_buf_func, void* pPut_buf_user, int flags)
+tdefl_status tdefl_init_(tdefl_compressor* d, tdefl_put_buf_func_ptr pPut_buf_func, void* pPut_buf_user, int flags)
 {
     d->m_pPut_buf_func = pPut_buf_func;
     d->m_pPut_buf_user = pPut_buf_user;
@@ -1272,17 +1272,17 @@ tdefl_status tdefl_init(tdefl_compressor* d, tdefl_put_buf_func_ptr pPut_buf_fun
     return TDEFL_STATUS_OKAY;
 }
 
-tdefl_status tdefl_get_prev_return_status(tdefl_compressor* d)
+tdefl_status tdefl_get_prev_return_status_(tdefl_compressor* d)
 {
     return d->m_prev_return_status;
 }
 
-mz_uint32 tdefl_get_adler32(tdefl_compressor* d)
+mz_uint32 tdefl_get_adler32_(tdefl_compressor* d)
 {
     return d->m_adler32;
 }
 
-mz_bool tdefl_compress_mem_to_output(const void* pBuf, size_t buf_len, tdefl_put_buf_func_ptr pPut_buf_func, void* pPut_buf_user, int flags)
+mz_bool tdefl_compress_mem_to_output_(const void* pBuf, size_t buf_len, tdefl_put_buf_func_ptr pPut_buf_func, void* pPut_buf_user, int flags)
 {
     tdefl_compressor* pComp;
     mz_bool succeeded;
@@ -1291,8 +1291,8 @@ mz_bool tdefl_compress_mem_to_output(const void* pBuf, size_t buf_len, tdefl_put
     pComp = (tdefl_compressor*)MZ_MALLOC(sizeof(tdefl_compressor));
     if (!pComp)
         return MZ_FALSE;
-    succeeded = (tdefl_init(pComp, pPut_buf_func, pPut_buf_user, flags) == TDEFL_STATUS_OKAY);
-    succeeded = succeeded && (tdefl_compress_buffer(pComp, pBuf, buf_len, TDEFL_FINISH) == TDEFL_STATUS_DONE);
+    succeeded = (tdefl_init_(pComp, pPut_buf_func, pPut_buf_user, flags) == TDEFL_STATUS_OKAY);
+    succeeded = succeeded && (tdefl_compress_buffer_(pComp, pBuf, buf_len, TDEFL_FINISH) == TDEFL_STATUS_DONE);
     MZ_FREE(pComp);
     return succeeded;
 }
@@ -1327,7 +1327,7 @@ static mz_bool tdefl_output_buffer_putter(const void* pBuf, int len, void* pUser
     return MZ_TRUE;
 }
 
-void* tdefl_compress_mem_to_heap(const void* pSrc_buf, size_t src_buf_len, size_t* pOut_len, int flags)
+void* tdefl_compress_mem_to_heap_(const void* pSrc_buf, size_t src_buf_len, size_t* pOut_len, int flags)
 {
     tdefl_output_buffer out_buf;
     MZ_CLEAR_OBJ(out_buf);
@@ -1336,13 +1336,13 @@ void* tdefl_compress_mem_to_heap(const void* pSrc_buf, size_t src_buf_len, size_
     else
         *pOut_len = 0;
     out_buf.m_expandable = MZ_TRUE;
-    if (!tdefl_compress_mem_to_output(pSrc_buf, src_buf_len, tdefl_output_buffer_putter, &out_buf, flags))
+    if (!tdefl_compress_mem_to_output_(pSrc_buf, src_buf_len, tdefl_output_buffer_putter, &out_buf, flags))
         return NULL;
     *pOut_len = out_buf.m_size;
     return out_buf.m_pBuf;
 }
 
-size_t tdefl_compress_mem_to_mem(void* pOut_buf, size_t out_buf_len, const void* pSrc_buf, size_t src_buf_len, int flags)
+size_t tdefl_compress_mem_to_mem_(void* pOut_buf, size_t out_buf_len, const void* pSrc_buf, size_t src_buf_len, int flags)
 {
     tdefl_output_buffer out_buf;
     MZ_CLEAR_OBJ(out_buf);
@@ -1350,7 +1350,7 @@ size_t tdefl_compress_mem_to_mem(void* pOut_buf, size_t out_buf_len, const void*
         return 0;
     out_buf.m_pBuf = (mz_uint8*)pOut_buf;
     out_buf.m_capacity = out_buf_len;
-    if (!tdefl_compress_mem_to_output(pSrc_buf, src_buf_len, tdefl_output_buffer_putter, &out_buf, flags))
+    if (!tdefl_compress_mem_to_output_(pSrc_buf, src_buf_len, tdefl_output_buffer_putter, &out_buf, flags))
         return 0;
     return out_buf.m_size;
 }
@@ -1386,7 +1386,7 @@ mz_uint tdefl_create_comp_flags_from_zip_params(int level, int window_bits, int 
 /* Simple PNG writer function by Alex Evans, 2011. Released into the public domain: https://gist.github.com/908299, more context at
  http://altdevblogaday.org/2011/04/06/a-smaller-jpg-encoder/.
  This is actually a modification of Alex's original code so PNG files generated by this function pass pngcheck. */
-void* tdefl_write_image_to_png_file_in_memory_ex(const void* pImage, int w, int h, int num_chans, size_t* pLen_out, mz_uint level, mz_bool flip)
+void* tdefl_write_image_to_png_file_in_memory_ex_(const void* pImage, int w, int h, int num_chans, size_t* pLen_out, mz_uint level, mz_bool flip)
 {
     /* Using a local copy of this array here in case MINIZ_NO_ZLIB_APIS was defined. */
     static const mz_uint s_tdefl_png_num_probes[11] = { 0, 1, 6, 32, 16, 32, 128, 256, 512, 768, 1500 };
@@ -1408,12 +1408,12 @@ void* tdefl_write_image_to_png_file_in_memory_ex(const void* pImage, int w, int 
     for (z = 41; z; --z)
         tdefl_output_buffer_putter(&z, 1, &out_buf);
     /* compress image data */
-    tdefl_init(pComp, tdefl_output_buffer_putter, &out_buf, s_tdefl_png_num_probes[MZ_MIN(10, level)] | TDEFL_WRITE_ZLIB_HEADER);
+    tdefl_init_(pComp, tdefl_output_buffer_putter, &out_buf, s_tdefl_png_num_probes[MZ_MIN(10, level)] | TDEFL_WRITE_ZLIB_HEADER);
     for (y = 0; y < h; ++y) {
-        tdefl_compress_buffer(pComp, &z, 1, TDEFL_NO_FLUSH);
-        tdefl_compress_buffer(pComp, (mz_uint8*)pImage + (flip ? (h - 1 - y) : y) * bpl, bpl, TDEFL_NO_FLUSH);
+        tdefl_compress_buffer_(pComp, &z, 1, TDEFL_NO_FLUSH);
+        tdefl_compress_buffer_(pComp, (mz_uint8*)pImage + (flip ? (h - 1 - y) : y) * bpl, bpl, TDEFL_NO_FLUSH);
     }
-    if (tdefl_compress_buffer(pComp, NULL, 0, TDEFL_FINISH) != TDEFL_STATUS_DONE) {
+    if (tdefl_compress_buffer_(pComp, NULL, 0, TDEFL_FINISH) != TDEFL_STATUS_DONE) {
         MZ_FREE(pComp);
         MZ_FREE(out_buf.m_pBuf);
         return NULL;
@@ -1460,10 +1460,10 @@ void* tdefl_write_image_to_png_file_in_memory_ex(const void* pImage, int w, int 
     MZ_FREE(pComp);
     return out_buf.m_pBuf;
 }
-void* tdefl_write_image_to_png_file_in_memory(const void* pImage, int w, int h, int num_chans, size_t* pLen_out)
+void* tdefl_write_image_to_png_file_in_memory_(const void* pImage, int w, int h, int num_chans, size_t* pLen_out)
 {
     /* Level 6 corresponds to TDEFL_DEFAULT_MAX_PROBES or MZ_DEFAULT_LEVEL (but we can't depend on MZ_DEFAULT_LEVEL being available in case the zlib API's where #defined out) */
-    return tdefl_write_image_to_png_file_in_memory_ex(pImage, w, h, num_chans, pLen_out, 6, MZ_FALSE);
+    return tdefl_write_image_to_png_file_in_memory_ex_(pImage, w, h, num_chans, pLen_out, 6, MZ_FALSE);
 }
 
 #ifndef MINIZ_NO_MALLOC

@@ -256,12 +256,13 @@ typedef enum {
  * @brief  Get mesh networking IE.
  *
  * @param  mesh_assoc pointer mesh networking IE.
+ * @param  mesh_chain pointer mesh chain layer infomation.
  *
  * @return
  *    - ESP_OK
  *    - ESP_FAIL
  */
-esp_err_t esp_wifi_vnd_mesh_get(mesh_assoc_t *mesh_assoc);
+esp_err_t esp_wifi_vnd_mesh_get(mesh_assoc_t *mesh_assoc, mesh_chain_layer_t *mesh_chain);
 
 /**
  * @brief  Mwifi initialization

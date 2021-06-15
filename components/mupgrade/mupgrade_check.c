@@ -13,6 +13,10 @@
 // limitations under the License.
 #include "mupgrade.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/rtc.h"
+#endif
+
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/rtc.h"
 #endif

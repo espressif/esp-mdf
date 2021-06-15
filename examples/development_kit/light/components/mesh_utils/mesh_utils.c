@@ -15,10 +15,8 @@
 #include "mdf_common.h"
 #include "mwifi.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
 #include "mconfig_blufi.h"
 #include "mconfig_chain.h"
-#endif
 
 #define DEVICE_MASTER_NETWORK_CONFIG_DURATION_MS    (60000)
 #define DEVICE_RESTART_TIMEOUT_MS                   (3000)

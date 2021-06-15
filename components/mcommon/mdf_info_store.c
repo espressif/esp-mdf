@@ -115,7 +115,7 @@ esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t typ
     size_t *length = NULL;
 
     if (type == LENGTH_TYPE_NUMBER) {
-        length  = &type;
+        length  = (size_t *)&type;
         *length = len;
     } else if (type == LENGTH_TYPE_POINTER) {
         length = (size_t *)len;

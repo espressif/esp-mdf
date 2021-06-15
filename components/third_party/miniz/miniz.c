@@ -235,7 +235,7 @@ int mz_deflateInit2(mz_streamp pStream, int level, int method, int window_bits, 
 
     pStream->state = (struct mz_internal_state*)pComp;
 
-    if (tdefl_init(pComp, NULL, NULL, comp_flags) != TDEFL_STATUS_OKAY) {
+    if (tdefl_init_(pComp, NULL, NULL, comp_flags) != TDEFL_STATUS_OKAY) {
         mz_deflateEnd(pStream);
         return MZ_PARAM_ERROR;
     }
@@ -262,7 +262,7 @@ int mz_deflateReset(mz_streamp pStream)
     if ((!pStream) || (!pStream->state) || (!pStream->zalloc) || (!pStream->zfree))
         return MZ_STREAM_ERROR;
     pStream->total_in = pStream->total_out = 0;
-    tdefl_init((tdefl_compressor*)pStream->state, NULL, NULL, ((tdefl_compressor*)pStream->state)->m_flags);
+    tdefl_init_((tdefl_compressor*)pStream->state, NULL, NULL, ((tdefl_compressor*)pStream->state)->m_flags);
     return MZ_OK;
 }
 
@@ -290,11 +290,11 @@ int mz_deflate(mz_streamp pStream, int flush)
         in_bytes = pStream->avail_in;
         out_bytes = pStream->avail_out;
 
-        defl_status = tdefl_compress((tdefl_compressor*)pStream->state, pStream->next_in, &in_bytes, pStream->next_out, &out_bytes, (tdefl_flush)flush);
+        defl_status = tdefl_compress_((tdefl_compressor*)pStream->state, pStream->next_in, &in_bytes, pStream->next_out, &out_bytes, (tdefl_flush)flush);
         pStream->next_in += (mz_uint)in_bytes;
         pStream->avail_in -= (mz_uint)in_bytes;
         pStream->total_in += (mz_uint)in_bytes;
-        pStream->adler = tdefl_get_adler32((tdefl_compressor*)pStream->state);
+        pStream->adler = tdefl_get_adler32_((tdefl_compressor*)pStream->state);
 
         pStream->next_out += (mz_uint)out_bytes;
         pStream->avail_out -= (mz_uint)out_bytes;
@@ -531,7 +531,7 @@ int mz_inflate(mz_streamp pStream, int flush)
         decomp_flags |= TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF;
         in_bytes = pStream->avail_in;
         out_bytes = pStream->avail_out;
-        status = tinfl_decompress(&pState->m_decomp, pStream->next_in, &in_bytes, pStream->next_out, pStream->next_out, &out_bytes, decomp_flags);
+        status = tinfl_decompress_(&pState->m_decomp, pStream->next_in, &in_bytes, pStream->next_out, pStream->next_out, &out_bytes, decomp_flags);
         pState->m_last_status = status;
         pStream->next_in += (mz_uint)in_bytes;
         pStream->avail_in -= (mz_uint)in_bytes;
@@ -568,7 +568,7 @@ int mz_inflate(mz_streamp pStream, int flush)
         in_bytes = pStream->avail_in;
         out_bytes = TINFL_LZ_DICT_SIZE - pState->m_dict_ofs;
 
-        status = tinfl_decompress(&pState->m_decomp, pStream->next_in, &in_bytes, pState->m_dict, pState->m_dict + pState->m_dict_ofs, &out_bytes, decomp_flags);
+        status = tinfl_decompress_(&pState->m_decomp, pStream->next_in, &in_bytes, pState->m_dict, pState->m_dict + pState->m_dict_ofs, &out_bytes, decomp_flags);
         pState->m_last_status = status;
 
         pStream->next_in += (mz_uint)in_bytes;
