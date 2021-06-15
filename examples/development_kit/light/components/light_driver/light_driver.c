@@ -67,7 +67,7 @@ mdf_err_t light_driver_init(light_driver_config_t *config)
         g_light_status.brightness        = 30;
     }
 
-    iot_led_init(LEDC_TIMER_0, LEDC_HIGH_SPEED_MODE, 1000);
+    iot_led_init(LEDC_TIMER_0, LEDC_LOW_SPEED_MODE, 1000);
 
     g_light_status.fade_period_ms  = config->fade_period_ms;
     g_light_status.blink_period_ms = config->blink_period_ms;

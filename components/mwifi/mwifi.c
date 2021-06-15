@@ -63,8 +63,9 @@ bool mwifi_get_root_status()
 {
     if (!g_toDs_status_flag) {
         mesh_assoc_t mesh_assoc = {0x0};
+        mesh_chain_layer_t mesh_chain;
 
-        if (esp_wifi_vnd_mesh_get(&mesh_assoc) == MDF_OK) {
+        if (esp_wifi_vnd_mesh_get(&mesh_assoc, &mesh_chain) == MDF_OK) {
             g_toDs_status_flag = mesh_assoc.toDS;
         }
     }

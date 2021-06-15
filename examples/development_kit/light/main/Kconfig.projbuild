@@ -4,7 +4,8 @@ menu "Example Configuration"
     config LIGHT_GPIO_RED
         int "Light red pin GPIO number"
         range 0 33
-        default 4
+        default 4 if IDF_TARGET_ESP32
+        default 4 if IDF_TARGET_ESP32C3
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
@@ -14,7 +15,8 @@ menu "Example Configuration"
     config LIGHT_GPIO_GREEN
         int "Light green pin GPIO number"
         range 0 33
-        default 16
+        default 16 if IDF_TARGET_ESP32
+        default 5 if IDF_TARGET_ESP32C3
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
@@ -24,7 +26,8 @@ menu "Example Configuration"
     config LIGHT_GPIO_BLUE
         int "Light blue pin GPIO number"
         range 0 33
-        default 5
+        default 5 if IDF_TARGET_ESP32
+        default 6 if IDF_TARGET_ESP32C3
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
@@ -34,7 +37,8 @@ menu "Example Configuration"
     config LIGHT_GPIO_COLD
         int "Light cold colors pin GPIO number"
         range 0 33
-        default 19
+        default 19 if IDF_TARGET_ESP32
+        default 7 if IDF_TARGET_ESP32C3
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
@@ -44,7 +48,8 @@ menu "Example Configuration"
     config LIGHT_GPIO_WARM
         int "Light warm color pin GPIO number"
         range 0 33
-        default 23
+        default 23 if IDF_TARGET_ESP32
+        default 10 if IDF_TARGET_ESP32C3
         help
             There are more enumerations like that
             up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.

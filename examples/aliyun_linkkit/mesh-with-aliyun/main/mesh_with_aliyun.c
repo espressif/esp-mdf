@@ -543,7 +543,8 @@ static void device_print_system_info(xTimerHandle timer)
     assert(err > 0);
 
     mesh_assoc_t assoc = { 0 };
-    esp_wifi_vnd_mesh_get(&assoc);
+    mesh_chain_layer_t mesh_chain;
+    esp_wifi_vnd_mesh_get(&assoc, &mesh_chain);
     memcpy(status.root_mac, assoc.rc_addr, sizeof(status.root_mac));
 
     esp_wifi_get_mac(ESP_IF_WIFI_STA, status.mac);

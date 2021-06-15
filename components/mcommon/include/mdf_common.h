@@ -21,6 +21,11 @@
 #include "errno.h"
 #include "sdkconfig.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/rtc.h"
+#include "esp32c3/rom/crc.h"
+#endif
+
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/crc.h"
@@ -38,6 +43,7 @@
 #include "freertos/event_groups.h"
 
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "esp_partition.h"
 #include "esp_event.h"
 #include "esp_http_client.h"

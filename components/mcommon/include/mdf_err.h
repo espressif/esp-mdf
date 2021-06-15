@@ -22,7 +22,7 @@
 extern "C" {
 #endif /**< _cplusplus */
 
-typedef int32_t mdf_err_t;
+typedef int mdf_err_t;
 
 /* Definitions for error constants. */
 

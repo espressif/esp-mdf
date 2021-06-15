@@ -52,7 +52,7 @@ static void root_write_task(void *arg)
 
     MDF_LOGI("root_write_task is running");
 
-    while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
+    while (esp_mesh_get_layer() == MESH_ROOT) {
         ret = mwifi_root_read(src_addr, &mwifi_type, &data, &size, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK, FREE_MEM, "<%s> mwifi_root_read", mdf_err_to_name(ret));
 
@@ -117,7 +117,7 @@ static void root_read_task(void *arg)
 
     MDF_LOGI("root_read_task is running");
 
-    while (mwifi_is_connected() && esp_mesh_get_layer() == MESH_ROOT) {
+    while (esp_mesh_get_layer() == MESH_ROOT) {
         ret = mlink_httpd_read(&httpd_data, portMAX_DELAY);
         MDF_ERROR_GOTO(ret != MDF_OK || !httpd_data, FREE_MEM, "<%s> mwifi_root_read", mdf_err_to_name(ret));
         MDF_LOGD("Root send, addrs_num: %d, addrs_list: " MACSTR ", size: %d, data: %.*s",
@@ -354,7 +354,7 @@ mdf_err_t mlink_ble_write(void *data, size_t size)
     char *header          = NULL;
     char *body            = NULL;
     char **addr_list_json = NULL;
-    size_t addr_list_num  = 0;
+    uint32_t addr_list_num  = 0;
     mwifi_data_type_t mwifi_type = {
         .protocol = MLINK_PROTO_HTTPD,
     };
@@ -502,13 +502,6 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
         case MDF_EVENT_MWIFI_PARENT_DISCONNECTED:
             MDF_LOGI("Parent is disconnected on station interface");
 
-            /** When the root node switches, sometimes no disconnected packets are received */
-            ret = mlink_notice_deinit();
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_notice_deinit", mdf_err_to_name(ret));
-
-            ret = mlink_httpd_stop();
-            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_stop", mdf_err_to_name(ret));
-
             if (esp_mesh_is_root()) {
                 ret = mwifi_post_root_status(false);
                 MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mwifi_post_root_status", mdf_err_to_name(ret));
@@ -583,6 +576,16 @@ static mdf_err_t event_loop_cb(mdf_event_loop_t event, void *ctx)
 
             break;
         }
+
+        case MDF_EVENT_MWIFI_ROUTER_SWITCH:
+        case MDF_EVENT_MWIFI_ROOT_LOST_IP:
+            /** When the root node switches, sometimes no disconnected packets are received */
+            ret = mlink_notice_deinit();
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_notice_deinit", mdf_err_to_name(ret));
+
+            ret = mlink_httpd_stop();
+            MDF_ERROR_BREAK(ret != MDF_OK, "<%s> mlink_httpd_stop", mdf_err_to_name(ret));
+            break;
 
         case MDF_EVENT_MCONFIG_BLUFI_STA_DISCONNECTED:
             light_driver_breath_start(128, 128, 0); /**< yellow blink */
@@ -782,7 +785,10 @@ void app_main()
      *        It means you can not use the bluetooth mode which you have released by this function.
      *        it can release the .bss, .data and other section to heap
      */
+#ifdef CONFIG_IDF_TARGET_ESP32
     esp_bt_mem_release(ESP_BT_MODE_CLASSIC_BT);
+#endif
+
     /**< When using a BLE gateway, you must ensure that the BLE host stack is not released */
 #ifndef CONFIG_LIGHT_BLE_GATEWAY
     esp_bt_mem_release(ESP_BT_MODE_BLE);
@@ -827,6 +833,7 @@ void app_main()
 #ifndef CONFIG_LIGHT_BLE_GATEWAY
     MDF_ERROR_ASSERT(esp_wifi_set_ps(WIFI_PS_NONE));
 #endif
+
     /**
      * @brief Initialize and start esp-mesh network according to network configuration information.
      */

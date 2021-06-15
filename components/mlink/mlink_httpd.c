@@ -587,7 +587,7 @@ static esp_err_t mlink_ota_firmware(httpd_req_t *req)
 EXIT:
 
     MDF_FREE(buf);
-    MDF_FREE(addrs_list)
+    MDF_FREE(addrs_list);
     MDF_FREE(httpd_hdr_value);
     return ret;
 }
@@ -718,7 +718,7 @@ EXIT:
     }
 
     MDF_FREE(buf);
-    MDF_FREE(addrs_list)
+    MDF_FREE(addrs_list);
     MDF_FREE(firmware_url);
     MDF_FREE(httpd_hdr_value);
     return ret;

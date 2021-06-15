@@ -70,6 +70,20 @@ esp_err_t mdf_info_save(const char *key, const void *value, size_t length);
 #define LENGTH_TYPE_POINTER 2
 esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t type);
 
+#ifdef CONFIG_IDF_TARGET_ARCH_RISCV
+#define mdf_info_load(key, value, len) \
+    __mdf_info_load(key, value, (size_t)(len), \
+                    builtin_types_compatible_p(len, int8_t) * LENGTH_TYPE_NUMBER \
+                    +builtin_types_compatible_p(len, uint8_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, int16_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, uint16_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, int) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, uint32_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, size_t) * LENGTH_TYPE_NUMBER \
+                    + builtin_types_compatible_p(len, int *) * LENGTH_TYPE_POINTER \
+                    + builtin_types_compatible_p(len, uint32_t *) * LENGTH_TYPE_POINTER \
+                    + builtin_types_compatible_p(len, size_t *) * LENGTH_TYPE_POINTER)
+#else
 #define mdf_info_load(key, value, len) \
     __mdf_info_load(key, value, (size_t)(len), \
                     builtin_types_compatible_p(len, int8_t) * LENGTH_TYPE_NUMBER \
@@ -80,6 +94,7 @@ esp_err_t __mdf_info_load(const char *key, void *value, size_t len, uint32_t typ
                     + builtin_types_compatible_p(len, uint32_t) * LENGTH_TYPE_NUMBER \
                     + builtin_types_compatible_p(len, int *) * LENGTH_TYPE_POINTER \
                     + builtin_types_compatible_p(len, uint32_t *) * LENGTH_TYPE_POINTER)
+#endif
 
 /*
  * @brief  Erase the information with given key

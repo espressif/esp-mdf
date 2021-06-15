@@ -1,5 +1,8 @@
 [[EN]](./README.md)
 
++| Supported Targets | ESP32 | ESP32S2 | ESP32C3 |
++| ----------------- | ----- | ------- | ------- |
+
 # ESP32-MeshKit-Light
 
 ## 概述

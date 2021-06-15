@@ -1,5 +1,8 @@
 [[EN]](./README.md)
 
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ESP32-MeshKit-Button
 
 ## 概述

@@ -148,7 +148,7 @@ extern "C" {
     }                                                                                                                               \
     MZ_MACRO_END
 
-tinfl_status tinfl_decompress(tinfl_decompressor* r, const mz_uint8* pIn_buf_next, size_t* pIn_buf_size, mz_uint8* pOut_buf_start, mz_uint8* pOut_buf_next, size_t* pOut_buf_size, const mz_uint32 decomp_flags)
+tinfl_status tinfl_decompress_(tinfl_decompressor* r, const mz_uint8* pIn_buf_next, size_t* pIn_buf_size, mz_uint8* pOut_buf_start, mz_uint8* pOut_buf_next, size_t* pOut_buf_size, const mz_uint32 decomp_flags)
 {
     static const int s_length_base[31] = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0 };
     static const int s_length_extra[31] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0 };
@@ -610,7 +610,7 @@ common_exit:
 }
 
 /* Higher level helper functions. */
-void* tinfl_decompress_mem_to_heap(const void* pSrc_buf, size_t src_buf_len, size_t* pOut_len, int flags)
+void* tinfl_decompress_mem_to_heap_(const void* pSrc_buf, size_t src_buf_len, size_t* pOut_len, int flags)
 {
     tinfl_decompressor decomp;
     void *pBuf = NULL, *pNew_buf;
@@ -619,7 +619,7 @@ void* tinfl_decompress_mem_to_heap(const void* pSrc_buf, size_t src_buf_len, siz
     tinfl_init(&decomp);
     for (;;) {
         size_t src_buf_size = src_buf_len - src_buf_ofs, dst_buf_size = out_buf_capacity - *pOut_len, new_out_buf_capacity;
-        tinfl_status status = tinfl_decompress(&decomp, (const mz_uint8*)pSrc_buf + src_buf_ofs, &src_buf_size, (mz_uint8*)pBuf, pBuf ? (mz_uint8*)pBuf + *pOut_len : NULL, &dst_buf_size,
+        tinfl_status status = tinfl_decompress_(&decomp, (const mz_uint8*)pSrc_buf + src_buf_ofs, &src_buf_size, (mz_uint8*)pBuf, pBuf ? (mz_uint8*)pBuf + *pOut_len : NULL, &dst_buf_size,
             (flags & ~TINFL_FLAG_HAS_MORE_INPUT) | TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
         if ((status < 0) || (status == TINFL_STATUS_NEEDS_MORE_INPUT)) {
             MZ_FREE(pBuf);
@@ -645,16 +645,16 @@ void* tinfl_decompress_mem_to_heap(const void* pSrc_buf, size_t src_buf_len, siz
     return pBuf;
 }
 
-size_t tinfl_decompress_mem_to_mem(void* pOut_buf, size_t out_buf_len, const void* pSrc_buf, size_t src_buf_len, int flags)
+size_t tinfl_decompress_mem_to_mem_(void* pOut_buf, size_t out_buf_len, const void* pSrc_buf, size_t src_buf_len, int flags)
 {
     tinfl_decompressor decomp;
     tinfl_status status;
     tinfl_init(&decomp);
-    status = tinfl_decompress(&decomp, (const mz_uint8*)pSrc_buf, &src_buf_len, (mz_uint8*)pOut_buf, (mz_uint8*)pOut_buf, &out_buf_len, (flags & ~TINFL_FLAG_HAS_MORE_INPUT) | TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
+    status = tinfl_decompress_(&decomp, (const mz_uint8*)pSrc_buf, &src_buf_len, (mz_uint8*)pOut_buf, (mz_uint8*)pOut_buf, &out_buf_len, (flags & ~TINFL_FLAG_HAS_MORE_INPUT) | TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
     return (status != TINFL_STATUS_DONE) ? TINFL_DECOMPRESS_MEM_TO_MEM_FAILED : out_buf_len;
 }
 
-int tinfl_decompress_mem_to_callback(const void* pIn_buf, size_t* pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void* pPut_buf_user, int flags)
+int tinfl_decompress_mem_to_callback_(const void* pIn_buf, size_t* pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void* pPut_buf_user, int flags)
 {
     int result = 0;
     tinfl_decompressor decomp;
@@ -665,7 +665,7 @@ int tinfl_decompress_mem_to_callback(const void* pIn_buf, size_t* pIn_buf_size, 
     tinfl_init(&decomp);
     for (;;) {
         size_t in_buf_size = *pIn_buf_size - in_buf_ofs, dst_buf_size = TINFL_LZ_DICT_SIZE - dict_ofs;
-        tinfl_status status = tinfl_decompress(&decomp, (const mz_uint8*)pIn_buf + in_buf_ofs, &in_buf_size, pDict, pDict + dict_ofs, &dst_buf_size,
+        tinfl_status status = tinfl_decompress_(&decomp, (const mz_uint8*)pIn_buf + in_buf_ofs, &in_buf_size, pDict, pDict + dict_ofs, &dst_buf_size,
             (flags & ~(TINFL_FLAG_HAS_MORE_INPUT | TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF)));
         in_buf_ofs += in_buf_size;
         if ((dst_buf_size) && (!(*pPut_buf_func)(pDict + dict_ofs, (int)dst_buf_size, pPut_buf_user)))

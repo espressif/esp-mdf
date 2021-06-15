@@ -1,5 +1,8 @@
 [[EN]](./README.md)
 
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ESP32-MeshKit-Sense 示例说明
 
 本示例旨在：

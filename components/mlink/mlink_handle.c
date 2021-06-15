@@ -448,7 +448,7 @@ static mdf_err_t mlink_handle_set_status(mlink_handle_data_t *handle_data)
 
     int cid         = 0;
     mdf_err_t ret   = MDF_OK;
-    size_t cids_num = 0;
+    int cids_num = 0;
     characteristic_value_t value = {0};
     char *characteristics_list[CHARACTERISTICS_MAX_NUM] = {NULL};
 
@@ -624,9 +624,10 @@ static mdf_err_t mlink_handle_get_config(mlink_handle_data_t *handle_data)
     char mac_str[17]         = {0};
     int interval_ms          = 0;
     mesh_assoc_t mesh_assoc  = {0x0};
+    mesh_chain_layer_t mesh_chain;
 
     esp_mesh_get_id(&mesh_id);
-    esp_wifi_vnd_mesh_get(&mesh_assoc);
+    esp_wifi_vnd_mesh_get(&mesh_assoc, &mesh_chain);
     esp_mesh_get_beacon_interval(&interval_ms);
     esp_mesh_get_parent_bssid(&parent_bssid);
 
@@ -748,7 +749,7 @@ static mdf_err_t mlink_handle_get_group(mlink_handle_data_t *handle_data)
 static mdf_err_t mlink_handle_remove_group(mlink_handle_data_t *handle_data)
 {
     mdf_err_t ret     = ESP_OK;
-    ssize_t group_num = 0;
+    int group_num = 0;
     char **group_json  = NULL;
     uint8_t group_id[6] = {0x0};
 
@@ -769,14 +770,14 @@ static mdf_err_t mlink_handle_remove_group(mlink_handle_data_t *handle_data)
     }
 
     do {
-        ssize_t group_num = esp_mesh_get_group_num();
+        int group_num = esp_mesh_get_group_num();
 
         if (group_num > 0) {
             mesh_addr_t *group_list = MDF_MALLOC(sizeof(mesh_addr_t) * group_num);
             MDF_ERROR_GOTO(!group_list, EXIT, "");
 
             esp_mesh_get_group_list(group_list, group_num);
-            mdf_info_save("group_num", &group_num, sizeof(ssize_t));
+            mdf_info_save("group_num", &group_num, sizeof(int));
             mdf_info_save("group_list", group_list, sizeof(mesh_addr_t) * group_num);
         } else {
             mdf_info_erase("group_num");

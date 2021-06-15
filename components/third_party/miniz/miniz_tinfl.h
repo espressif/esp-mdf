@@ -27,17 +27,17 @@ enum
 /*  Function returns a pointer to the decompressed data, or NULL on failure. */
 /*  *pOut_len will be set to the decompressed data's size, which could be larger than src_buf_len on uncompressible data. */
 /*  The caller must call mz_free() on the returned block when it's no longer needed. */
-void *tinfl_decompress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
+void *tinfl_decompress_mem_to_heap_(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
 
 /* tinfl_decompress_mem_to_mem() decompresses a block in memory to another block in memory. */
 /* Returns TINFL_DECOMPRESS_MEM_TO_MEM_FAILED on failure, or the number of bytes written on success. */
 #define TINFL_DECOMPRESS_MEM_TO_MEM_FAILED ((size_t)(-1))
-size_t tinfl_decompress_mem_to_mem(void *pOut_buf, size_t out_buf_len, const void *pSrc_buf, size_t src_buf_len, int flags);
+size_t tinfl_decompress_mem_to_mem_(void *pOut_buf, size_t out_buf_len, const void *pSrc_buf, size_t src_buf_len, int flags);
 
 /* tinfl_decompress_mem_to_callback() decompresses a block in memory to an internal 32KB buffer, and a user provided callback function will be called to flush the buffer. */
 /* Returns 1 on success or 0 on failure. */
 typedef int (*tinfl_put_buf_func_ptr)(const void *pBuf, int len, void *pUser);
-int tinfl_decompress_mem_to_callback(const void *pIn_buf, size_t *pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
+int tinfl_decompress_mem_to_callback_(const void *pIn_buf, size_t *pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
 
 struct tinfl_decompressor_tag;
 typedef struct tinfl_decompressor_tag tinfl_decompressor;
@@ -99,7 +99,7 @@ typedef enum {
 
 /* Main low-level decompressor coroutine function. This is the only function actually needed for decompression. All the other functions are just high-level helpers for improved usability. */
 /* This is a universal API, i.e. it can be used as a building block to build any desired higher level decompression API. In the limit case, it can be called once per every byte input or output. */
-tinfl_status tinfl_decompress(tinfl_decompressor *r, const mz_uint8 *pIn_buf_next, size_t *pIn_buf_size, mz_uint8 *pOut_buf_start, mz_uint8 *pOut_buf_next, size_t *pOut_buf_size, const mz_uint32 decomp_flags);
+tinfl_status tinfl_decompress_(tinfl_decompressor *r, const mz_uint8 *pIn_buf_next, size_t *pIn_buf_size, mz_uint8 *pOut_buf_start, mz_uint8 *pOut_buf_next, size_t *pOut_buf_size, const mz_uint32 decomp_flags);
 
 /* Internal/private bits follow. */
 enum

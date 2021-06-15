@@ -33,34 +33,11 @@ extern "C" {
 #endif  /**< CONFIG_MDF_MEM_DBG_INFO_MAX */
 #define MDF_MEM_DBG_INFO_MAX CONFIG_MDF_MEM_DBG_INFO_MAX
 
-#ifdef CONFIG_MDF_MEM_ALLOCATION_DEFAULT
-inline void *mdf_heap_malloc(size_t size)
-{
-    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-}
-inline void *mdf_heap_calloc(size_t n, size_t size)
-{
-    return heap_caps_calloc(n, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-}
-inline void *mdf_heap_realloc(void *ptr, size_t size)
-{
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-}
-#endif
 
 #ifdef CONFIG_MDF_MEM_ALLOCATION_SPIRAM
-inline void *mdf_heap_malloc(size_t size)
-{
-    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-}
-inline void *mdf_heap_calloc(size_t n, size_t size)
-{
-    return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-}
-inline void *mdf_heap_realloc(void *ptr, size_t size)
-{
-    return heap_caps_realloc_prefer(ptr, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-}
+#define MALLOC_CAP_INDICATE MALLOC_CAP_SPIRAM
+#else
+#define MALLOC_CAP_INDICATE MALLOC_CAP_DEFAULT
 #endif
 
 /**
@@ -98,7 +75,6 @@ void mdf_mem_print_heap(void);
  * @brief Print the state of tasks in the system
  */
 void mdf_mem_print_task(void);
-
 /**
  * @brief  Malloc memory
  *
@@ -109,7 +85,7 @@ void mdf_mem_print_task(void);
  *     - NULL when any errors
  */
 #define MDF_MALLOC(size) ({ \
-        void *ptr = mdf_heap_malloc(size); \
+        void *ptr = heap_caps_malloc(size, MALLOC_CAP_INDICATE); \
         if (MDF_MEM_DEBUG) { \
             if(!ptr) { \
                 MDF_LOGW("<ESP_ERR_NO_MEM> Malloc size: %d, ptr: %p, heap free: %d", (int)size, ptr, esp_get_free_heap_size()); \
@@ -131,7 +107,7 @@ void mdf_mem_print_task(void);
  *     - NULL when any errors
  */
 #define MDF_CALLOC(n, size) ({ \
-        void *ptr = mdf_heap_calloc(n, size); \
+        void *ptr = heap_caps_calloc(n, size, MALLOC_CAP_INDICATE); \
         if (MDF_MEM_DEBUG) { \
             if(!ptr) { \
                 MDF_LOGW("<ESP_ERR_NO_MEM> Calloc size: %d, ptr: %p, heap free: %d", (int)(n) * (size), ptr, esp_get_free_heap_size()); \
@@ -153,7 +129,7 @@ void mdf_mem_print_task(void);
  *     - NULL when any errors
  */
 #define MDF_REALLOC(ptr, size) ({ \
-        void *new_ptr = mdf_heap_realloc(ptr, size); \
+        void *new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_INDICATE); \
         if (MDF_MEM_DEBUG) { \
             if(!new_ptr) { \
                 MDF_LOGW("<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
@@ -178,7 +154,7 @@ void mdf_mem_print_task(void);
  */
 #define MDF_REALLOC_RETRY(ptr, size) ({ \
         void *new_ptr = NULL; \
-        while (size > 0 && !(new_ptr = mdf_heap_realloc(ptr, size))) { \
+        while (size > 0 && !(new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_INDICATE))) { \
             MDF_LOGW("<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
             vTaskDelay(pdMS_TO_TICKS(100)); \
         } \
@@ -194,7 +170,7 @@ void mdf_mem_print_task(void);
  *
  * @param  ptr  Memory pointer
  */
-#define MDF_FREE(ptr) { \
+#define MDF_FREE(ptr) do { \
         if(ptr) { \
             free(ptr); \
             if (MDF_MEM_DEBUG) { \

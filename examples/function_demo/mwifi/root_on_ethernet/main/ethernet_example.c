@@ -15,6 +15,10 @@
 #include "mdf_common.h"
 #include "mwifi.h"
 
+#if CONFIG_EXAMPLE_USE_DM9051
+#include "driver/spi_master.h"
+#endif
+
 // #define MEMORY_DEBUG
 
 static bool g_root_got_ip = false;

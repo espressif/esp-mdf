@@ -72,4 +72,5 @@ examples/test
 
 # clangd cache
 .clangd
+.cache
 
