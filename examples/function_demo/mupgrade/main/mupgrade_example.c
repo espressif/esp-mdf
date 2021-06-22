@@ -98,7 +98,7 @@ static void ota_task()
     mdf_err_t ret       = MDF_OK;
     uint8_t *data       = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
     char name[32]       = {0x0};
-    size_t total_size   = 0;
+    int total_size   = 0;
     int start_time      = 0;
     mupgrade_result_t upgrade_result = {0};
     mwifi_data_type_t data_type = {.communicate = MWIFI_COMMUNICATE_MULTICAST};
