@@ -15,7 +15,7 @@ According to the two generation ways of root node, the networking mode can be si
 
 When there is no router in the case, we can only choose the fixed root node mode. Refer to [No Routing Sample Program] (./no_router)
 
-##With router
+## With router
 
 When there are routers in the case, we can choose either of the two modes for networking. In the example we use the automatically selected root node. The automatical selection of the root node involves the election process between all idle nodes based on their signal strength with the router, so only in the presence of a router, each idle node will send its MAC address and router RSSI through the Wi-Fi beacon frame. The MAC address is used to uniquely identify each node in the network, and the router RSSI is used to indicate the signal strength of the node reference router. See [routed TCP communication sample program] (./router), [routed MQTT communication sample program] (./mqtt_example)
 
