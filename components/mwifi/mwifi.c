@@ -175,11 +175,7 @@ static void esp_mesh_event_cb(void *arg, esp_event_base_t event_base, int32_t ev
             MDF_LOGI("Parent is connected");
             mwifi_connected_flag = true;
             s_disconnected_count = 0;
-
-            if (esp_mesh_is_root()) {
-                g_rootless_flag = false;
-            }
-
+            g_rootless_flag = false;
             break;
         }
 
