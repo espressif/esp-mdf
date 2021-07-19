@@ -97,7 +97,7 @@ static bool mconfig_device_verify(mconfig_whitelist_t *whitelist_data, size_t wh
     return true;
 #endif /**< CONFIG_MCONFIG_WHITELIST_ENABLE */
 
-    if (MWIFI_ADDR_IS_ANY(addr)) {
+    if (MWIFI_ADDR_IS_ANY((uint8_t *)whitelist_data)) {
         return true;
     }
 
