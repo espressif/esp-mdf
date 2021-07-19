@@ -45,7 +45,7 @@ Besides the toolchain (that contains programs to compile and build the applicati
 Set up path to ESP-MDF
 =======================
 
-The toolchain progarms access ESP-MDF using ``MDF_PATH`` environment variable. This variable should be set up on your PC, otherwise projects will not build. The setup method is same as ``IDF_PATH``.
+The toolchain programs access ESP-MDF using ``MDF_PATH`` environment variable. This variable should be set up on your PC, otherwise projects will not build. The setup method is same as ``IDF_PATH``. These instructions show this method for ``IDF_PATH``: https://docs.espressif.com/projects/esp-idf/en/stable/get-started/add-idf_path-to-profile.html.
 
 
 .. _get-started-configure:
@@ -53,9 +53,9 @@ The toolchain progarms access ESP-MDF using ``MDF_PATH`` environment variable. T
 Configure
 ===============
 
-In the terminal window, go to the directory of ``get-started`` by typing ``cd ~/esp/get-started``, and then start project configuation utility ``menuconfig``:  ::
+In the terminal window, go to the directory of ``get-started`` by typing ``cd ~/esp/esp-mdf/examples/get-started``, and then start project configuation utility ``menuconfig``:  ::
 
-    cd ~/esp/get-started
+    cd ~/esp/esp-mdf/examples/get-started
     make menuconfig
 
 * Configure ``examples`` under the submenu ``Example Configuration`` 
