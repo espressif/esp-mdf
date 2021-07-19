@@ -148,7 +148,7 @@ static void ota_task()
     } while (ret != MDF_OK);
 
     total_size = esp_http_client_fetch_headers(client);
-    sscanf(CONFIG_FIRMWARE_UPGRADE_URL, "%*[^//]//%*[^/]/%[^.bin]", name);
+    sscanf(CONFIG_FIRMWARE_UPGRADE_URL, "%*[^/]//%*[^/]/%[^.]", name);
 
     if (total_size <= 0) {
         MDF_LOGW("Please check the address of the server");
