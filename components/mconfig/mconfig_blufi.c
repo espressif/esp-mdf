@@ -15,6 +15,8 @@
 #include "sdkconfig.h"
 
 #if CONFIG_BT_ENABLED
+#if !CONFIG_BT_NIMBLE_ENABLED
+
 
 #include "esp_bt.h"
 #include "esp_blufi_api.h"
@@ -1183,5 +1185,6 @@ mdf_err_t mconfig_blufi_send(uint8_t *data, size_t size)
 
     return MDF_OK;
 }
-
+#endif /**< !CONFIG_BT_NIMBLE_ENABLED */
 #endif /**< CONFIG_BT_ENABLED */
+

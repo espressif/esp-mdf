@@ -198,13 +198,15 @@ static void sniffer_wifi_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
 }
 
 #if CONFIG_BT_ENABLED
+#if !CONFIG_BT_NIMBLE_ENABLED
 #include "esp_gap_ble_api.h"
 #endif /**< CONFIG_BT_ENABLED */
-
+#endif /**< !CONFIG_BT_NIMBLE_ENABLED */
 #ifdef CONFIG_IDF_TARGET_ESP32
 static mdf_err_t mlink_sniffer_ble_cb(void *data, size_t size)
 {
 #if CONFIG_BT_ENABLED
+#if !CONFIG_BT_NIMBLE_ENABLED
 
     esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)data;
     uint8_t adv_name_len = 0;
@@ -239,7 +241,7 @@ static mdf_err_t mlink_sniffer_ble_cb(void *data, size_t size)
     mlink_sniffer_list_insert(sniffer_data);
 
     MDF_FREE(sniffer_data);
-
+#endif /**< !CONFIG_BT_NIMBLE_ENABLED */
 #endif /**< CONFIG_BT_ENABLED */
 
     return ESP_OK;
