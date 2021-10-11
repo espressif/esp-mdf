@@ -669,9 +669,7 @@ static mdf_err_t mconfig_ble_connect_timer_create(void)
 /**< BLUFI event callback */
 static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param)
 {
-    mdf_err_t ret              = MDF_OK;
-    static uint8_t s_server_if = 0;
-    static uint16_t s_conn_id  = 0;
+    mdf_err_t ret = MDF_OK;
 
     switch (event) {
         case ESP_BLUFI_EVENT_INIT_FINISH:
@@ -684,13 +682,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
             break;
 
         case ESP_BLUFI_EVENT_BLE_CONNECT:
-            ret = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_CONN_HDL0, ESP_PWR_LVL_P9);
-            MDF_ERROR_BREAK(ret != ESP_OK, "<%s> Set BLE connection TX power", mdf_err_to_name(ret));
-
-            MDF_LOGD("BLUFI ble connect, server_if: %d, conn_id: %d",
-                     param->connect.server_if, param->connect.conn_id);
-            s_server_if = param->connect.server_if;
-            s_conn_id   = param->connect.conn_id;
+            MDF_LOGD("BLUFI ble connect, server_if: %d, conn_id: %d", param->connect.server_if, param->connect.conn_id);
             memcpy(&g_spp_remote_bda, &param->connect.remote_bda, sizeof(esp_bd_addr_t));
             ESP_ERROR_CHECK(esp_ble_gap_stop_advertising());
 
@@ -734,7 +726,7 @@ static void mconfig_blufi_event_callback(esp_blufi_cb_event_t event, esp_blufi_c
 
         case ESP_BLUFI_EVENT_RECV_SLAVE_DISCONNECT_BLE:
             MDF_LOGI("BLUFI close a gatt connection");
-            esp_blufi_close(s_server_if, s_conn_id);
+            esp_ble_gap_disconnect(g_spp_remote_bda);
             break;
 
         case ESP_BLUFI_EVENT_RECV_MDF_CUSTOM: {
@@ -1101,9 +1093,7 @@ mdf_err_t mconfig_blufi_init(const mconfig_blufi_config_t *cfg)
     ret = mconfig_blufi_security_init();
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "mconfig_blufi_security_init");
 
-#ifdef CONFIG_IDF_TARGET_ESP32
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
-#endif
 
     ret = esp_bt_controller_init(&bt_cfg);
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "Initialize bt controller");
@@ -1142,6 +1132,14 @@ mdf_err_t mconfig_blufi_deinit()
 
     MDF_FREE(g_recv_config);
 
+#ifdef CONFIG_MCONFIG_DIRECT_CONNECT_ROUTER
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &blufi_wifi_event_handler);
+    esp_wifi_disconnect();
+#else
+    esp_event_handler_unregister(MESH_EVENT, ESP_EVENT_ANY_ID, &blufi_mesh_event_handler);
+    esp_mesh_stop();
+#endif
+
     ret = esp_blufi_profile_deinit();
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_blufi_profile_deinit");
 
@@ -1158,14 +1156,6 @@ mdf_err_t mconfig_blufi_deinit()
 
     ret = esp_bt_controller_deinit();
     MDF_ERROR_CHECK(ret != ESP_OK, ret, "esp_bt_controller_deinit");
-
-#ifdef CONFIG_MCONFIG_DIRECT_CONNECT_ROUTER
-    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &blufi_wifi_event_handler);
-    esp_wifi_disconnect();
-#else
-    esp_event_handler_unregister(MESH_EVENT, ESP_EVENT_ANY_ID, &blufi_mesh_event_handler);
-    esp_mesh_stop();
-#endif
 
     /**< Send MDF_EVENT_MCONFIG_BLUFI_STOPED event to the event handler */
     mdf_event_loop_send(MDF_EVENT_MCONFIG_BLUFI_STOPED, NULL);
@@ -1187,4 +1177,3 @@ mdf_err_t mconfig_blufi_send(uint8_t *data, size_t size)
 }
 #endif /**< !CONFIG_BT_NIMBLE_ENABLED */
 #endif /**< CONFIG_BT_ENABLED */
-
