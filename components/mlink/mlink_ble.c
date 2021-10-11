@@ -16,6 +16,7 @@
 #include "mlink_ble.h"
 
 #if CONFIG_BT_ENABLED
+#if !CONFIG_BT_NIMBLE_ENABLED
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -616,3 +617,4 @@ mdf_err_t mlink_ble_set_cb(const mlink_ble_cb_t read_cb, const mlink_ble_cb_t wr
 }
 
 #endif /**< CONFIG_BT_ENABLED */
+#endif /**< !CONFIG_BT_NIMBLE_ENABLED */
