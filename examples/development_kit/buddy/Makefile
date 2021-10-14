@@ -5,5 +5,5 @@
 
 PROJECT_NAME := $(notdir $(shell pwd))
 
-EXTRA_COMPONENT_DIRS := ${MDF_PATH}/esp-idf/examples/peripherals/rmt/led_strip/components
+EXTRA_COMPONENT_DIRS := ${IDF_PATH}/examples/peripherals/rmt/led_strip/components
 include $(MDF_PATH)/project.mk

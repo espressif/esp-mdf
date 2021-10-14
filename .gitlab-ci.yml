@@ -3,60 +3,28 @@ stages:
   - deploy
 
 variables:
-# System environment
-
-  # Common parameters for the 'make' during CI tests
+  BATCH_BUILD: "1"
+  V: "0"
   MAKEFLAGS: "-j5 --no-keep-going"
-
-# GitLab-CI environment
-  SUBMODULE_FETCH_TOOL: "esp-idf/tools/ci/ci_fetch_submodule.py"
-  # by default we will fetch all submodules
-  # jobs can overwrite this variable to only fetch submodules they required
-  # set to "none" if don't need to fetch submodules
-  SUBMODULES_TO_FETCH: "all"
-  # more attempts for more robust
-  GET_SOURCES_ATTEMPTS: "10"
-  ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
-
-  # We use get_sources.sh script to fetch the submodules and/or re-fetch the repo
-  # if it was corrupted (if submodule update fails this can happen)
-  GIT_STRATEGY: clone
-  GIT_SUBMODULE_STRATEGY: none
   MDF_PATH: "$CI_PROJECT_DIR"
-  IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
+  IDF_CI_BUILD: "1"
   # Docker images
-  BOT_DOCKER_IMAGE_TAG: ":latest"
-
-.setup_tools_unless_target_test: &setup_tools_unless_target_test |
-  if [ "$CI_JOB_STAGE" != "target_test" ]; then
-  esp-idf/tools/idf_tools.py --non-interactive install && eval "$(esp-idf/tools/idf_tools.py --non-interactive export)" || exit 1
-  fi
-
-.fetch_submodules: &fetch_submodules |
-  python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
-
+  BOT_DOCKER_IMAGE_TAG: ":latest-96719e52"
 
 before_script:
-  # add gitlab ssh key
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
-  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-  # replace submodule esp-idf to internal repository to speedup cloning
-  - sed -i "s%https://github.com/espressif/esp-idf.git%${GITLAB_SSH_SERVER}/idf/esp-idf.git%" .gitmodules
-  # (the same regular expressions are used to set these are used in 'only:' sections below
+  - export IDF_PATH=~/.espressif/idf/esp-idf-v4.3
+  - cd $IDF_PATH
+  - git fetch origin tag v4.3.1
+  - git checkout v4.3.1
   - git submodule update --init --recursive
-  - source esp-idf/tools/ci/setup_python.sh
-  - source esp-idf/tools/ci/configure_ci_environment.sh
-  - *setup_tools_unless_target_test
-  - export PATH="$MDF_PATH/esp-idf/tools:$PATH"
-  - unset IDF_PATH
+  - ./install.sh
+  - . ./export.sh
+  - cd -
+  - git clone -b v1.2.3 https://github.com/adafruit/Adafruit-GFX-Library.git examples/wireless_debug/components/lcd/Adafruit-GFX-Library
 
 build_template_make: &build_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   variables:
@@ -84,7 +52,7 @@ build_template_make: &build_template
 
 build_template_cmake: &build_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
   variables:
@@ -154,7 +122,7 @@ push_master_to_github:
 
 build_docs:
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build_docs
   artifacts:
@@ -173,7 +141,7 @@ build_docs:
     expire_in: 1 mos
   script:
     - export PYTHON_VER=2.7.15
-    - source esp-idf/tools/ci/setup_python.sh
+    - source $IDF_PATH/tools/ci/setup_python.sh
     - cd docs
     - ./check_lang_folder_sync.sh
     - cd en

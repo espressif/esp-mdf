@@ -1138,6 +1138,7 @@ mdf_err_t mconfig_blufi_deinit()
 #else
     esp_event_handler_unregister(MESH_EVENT, ESP_EVENT_ANY_ID, &blufi_mesh_event_handler);
     esp_mesh_stop();
+    vTaskDelay(pdMS_TO_TICKS(100));
 #endif
 
     ret = esp_blufi_profile_deinit();

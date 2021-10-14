@@ -118,6 +118,15 @@ This section provides the steps for quick start with your development of ESP-MDF
 
 The directory ``~/esp`` will be used further to install the compiling toolchain, ESP-MDF and demo programs. You can use another directory, but make sure to modify the commands accordingly.
 
+1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/index.html#step-1-set-up-the-toolchain): please set up according to your PC's operating system ([Windows](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/windows-setup.html), [Linux](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/linux-setup.html) or [Mac OS](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/macos-setup.html)). If you use linux, you can use this commands.
+
+    ```shell
+    git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
+    cd ~/esp/esp-idf
+    ./install.sh
+    . ./export.sh
+    ```
+
 1. **Get ESP-MDF**:
 
     ```shell
@@ -126,18 +135,11 @@ The directory ``~/esp`` will be used further to install the compiling toolchain,
 
     If you clone without the `--recursive` option, please navigate to the esp-mdf directory and run the command `git submodule update --init`
 
-1. [**Setup Toolchain**](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/index.html#step-1-set-up-the-toolchain): please set up according to your PC's operating system ([Windows](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/windows-setup.html), [Linux](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/linux-setup.html) or [Mac OS](https://docs.espressif.com/projects/esp-idf/en/stable/get-started-cmake/macos-setup.html)). If you use linux, you can use this commands.
-
-    ```shell
-    cd ~/esp/esp-mdf/esp-idf
-    ./install.sh
-    ```
-
 1. **Set up ESP-MDF Path**: Toolchain uses the environment variable ``MDF_PATH`` to access ESP-MDF. The setup of this variable is similar to that of the variable ``IDF_PATH``. Please refer to [`Add IDF_PATH & idf.py PATH to User Profile`](https://docs.espressif.com/projects/esp-idf/en/v4.0.1/get-started/index.html#step-4-set-up-the-environment-variables). If you use linux, you can use this commands.
 
     ```shell
     cd ~/esp/esp-mdf
-    source export.sh
+    export MDF_PATH=~/esp/esp-mdf
     ```
 
 1. **Start a Project**: The word *project* refers to the communication example between two ESP-WIFI-MESH devices.

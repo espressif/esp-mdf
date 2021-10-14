@@ -109,6 +109,15 @@ ESP32-Buddy 是专为 ESP-WIFI-MESH 开发测试而设计的开发板。体积�
 
 通过如下的步骤，可以快速开始开发 ESP-MDF 应用程序，如果需要了解详细的过程，参见 [ESP-IDF 入门指南](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html)。
 
+1. [**设置工具**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html#get-started-setup-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/macos-setup.html)）进行配置。Linux 系统可以直接执行下面的命令。
+
+    ```shell
+    git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git
+    cd ~/esp/esp-idf
+    ./install.sh
+    . ./export.sh
+    ```
+
 1. **获取 ESP-MDF**：
 
     ```shell
@@ -117,40 +126,34 @@ ESP32-Buddy 是专为 ESP-WIFI-MESH 开发测试而设计的开发板。体积�
 
     > 如果您在没有 `--recursive` 标记的情况下克隆项目，转到 esp-mdf 目录并运行命令 `git submodule update --init --recursive`
 
-1. [**设置工具**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/index.html#get-started-setup-toolchain)：根据您的电脑操作系统（[Windows](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/windows-setup.html)，[Linux](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/linux-setup.html) 或 [Mac OS](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/macos-setup.html)）进行配置。Linux 系统可以直接执行下面的命令。
 
-    ```shell
-    cd ~/esp/esp-mdf/esp-idf
-    ./install.sh
-    ```
-
-1. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/add-idf_path-to-profile.html)。Linux 系统可以直接执行下面的命令。
+2. **设置 ESP-MDF 路径**：工具链程序使用环境变量 ``MDF_PATH`` 来访问 ESP-MDF，设置它的过程类似于设置 ``IDF_PATH`` 变量，请参阅[`添加 IDF_PATH 到用户配置文件`](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/add-idf_path-to-profile.html)。Linux 系统可以直接执行下面的命令。
 
     ```shell
     cd ~/esp/esp-mdf
-    source export.sh
+    export MDF_PATH=~/esp/esp-mdf
     ```
 
-1. **创建一个工程**：此工程为 ESP-WIFI-MESH 两个设备之间通信的示例
+3. **创建一个工程**：此工程为 ESP-WIFI-MESH 两个设备之间通信的示例
 
     ```shell
     cp -r $MDF_PATH/examples/get-started/ .
     cd get-started/
     ```
 
-1. **编译和烧写**：使用默认配置即可
+4. **编译和烧写**：使用默认配置即可
 
     ```shell
     idf.py build
     ```
 
-1. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
+5. [**监视/调试**](https://docs.espressif.com/projects/esp-idf/zh_CN/stable/get-started/idf-monitor.html)：要退出监视器，请使用快捷键 ``Ctrl+]``
 
     ```shell
     idf.py -p [port] -b [baudrate] monitor
     ```
 
-1. **更新 ESP-MDF**：
+6. **更新 ESP-MDF**：
 
     ```shell
     cd ~/esp/esp-mdf
