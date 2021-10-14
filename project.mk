@@ -1,4 +1,4 @@
-IDF_PATH := $(MDF_PATH)/esp-idf
+# IDF_PATH := $(MDF_PATH)/esp-idf
 
 MDF_VER := $(shell cd ${MDF_PATH} && git describe --always --tags --dirty)
 CPPFLAGS := -D MDF_VER=\"$(MDF_VER)\"

@@ -214,4 +214,77 @@ menu "MDF Mwifi"
 
     endmenu
 
+    menu "Power save config"
+        config MWIFI_ENABLE_PS
+            bool "Enable mesh PS (power save) function"
+            default y
+            help
+                Enable/Disable Power Save function.
+
+        choice
+            bool "Mesh PS device duty cycle type"
+            depends on MWIFI_ENABLE_PS
+            default MWIFI_PS_DEV_DUTY_TYPE_REQUEST
+            help
+                Mesh PS device duty cycle type.
+
+            config MWIFI_PS_DEV_DUTY_TYPE_REQUEST
+                bool "MWIFI_PS_DEV_DUTY_TYPE_REQUEST"
+            config MWIFI_PS_DEV_DUTY_TYPE_DEMAND
+                bool "MWIFI_PS_DEV_DUTY_TYPE_DEMAND"
+        endchoice
+
+        config MWIFI_PS_DEV_DUTY_TYPE
+            int
+            depends on MWIFI_ENABLE_PS
+            default 1 if MWIFI_PS_DEV_DUTY_TYPE_REQUEST
+            default 4 if MWIFI_PS_DEV_DUTY_TYPE_DEMAND
+            help
+                Mesh PS device duty cycle type.
+
+        config MWIFI_PS_DEV_DUTY
+            int "Mesh PS device duty cycle"
+            depends on MWIFI_ENABLE_PS
+            range 1 100
+            default 10
+            help
+                Mesh PS device duty cycle.
+
+        config MWIFI_PS_NWK_DUTY
+            int "Mesh PS network duty cycle"
+            depends on MWIFI_ENABLE_PS
+            range 1 100
+            default 10
+            help
+                Mesh PS network duty cycle.
+
+        config MWIFI_PS_NWK_DUTY_DURATION
+            int "Mesh PS network duty cycle duration (unit: minutes)"
+            depends on MWIFI_ENABLE_PS
+            range -1 100
+            default -1
+            help
+                Mesh PS network duty cycle duration.
+
+        choice
+            bool "Mesh PS network duty cycle rule"
+            depends on MWIFI_ENABLE_PS
+            default MWIFI_PS_NETWORK_DUTY_APPLIED_ENTIRE
+            help
+                Mesh PS network duty cycle rule.
+
+            config MWIFI_PS_NETWORK_DUTY_APPLIED_ENTIRE
+                bool "MWIFI_PS_NETWORK_DUTY_APPLIED_ENTIRE"
+            config MWIFI_PS_NETWORK_DUTY_APPLIED_UPLINK
+                bool "MWIFI_PS_NETWORK_DUTY_APPLIED_UPLINK"
+        endchoice
+
+        config MWIFI_PS_NWK_DUTY_RULE
+            int
+            depends on MWIFI_ENABLE_PS
+            default 0 if MWIFI_PS_NETWORK_DUTY_APPLIED_ENTIRE
+            default 1 if MWIFI_PS_NETWORK_DUTY_APPLIED_UPLINK
+            help
+                Mesh PS network duty cycle rule.
+    endmenu
 endmenu

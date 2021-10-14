@@ -54,6 +54,7 @@ esp_err_t __mlink_json_parse(const char *json_str, const char *key,
             break;
 
         case MLINK_JSON_TYPE_INT32:
+        case MLINK_JSON_TYPE_INT32 * 2:
             *((int *)value) = pSub->valueint;
             break;
 
@@ -213,6 +214,7 @@ ssize_t __mlink_json_pack(char **json_ptr, const char *key, int value, int value
         case MLINK_JSON_TYPE_INT8: /**< integral number */
         case MLINK_JSON_TYPE_INT16: /**< integral number */
         case MLINK_JSON_TYPE_INT32: /**< integral number */
+        case MLINK_JSON_TYPE_INT32 * 2: /**< integral number */
             tmp_len = sprintf(json_str, "%d", value);
             break;
 

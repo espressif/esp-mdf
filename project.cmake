@@ -12,7 +12,7 @@ endif()
 file(TO_CMAKE_PATH "${MDF_PATH}" MDF_PATH)
 set(ENV{MDF_PATH} ${MDF_PATH})
 
-set(ENV{IDF_PATH} "$ENV{MDF_PATH}/esp-idf/")
+# set(ENV{IDF_PATH} "$ENV{MDF_PATH}/esp-idf/")
 
 set(EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} $ENV{MDF_PATH}/components/")
 set(EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} $ENV{MDF_PATH}/components/third_party")
