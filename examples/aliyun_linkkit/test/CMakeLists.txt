@@ -12,7 +12,7 @@ set(EXTRA_COMPONENT_DIRS "../../../components")
 #
 set(TEST_COMPONENTS "aliyun_sdk" CACHE STRING "List of components to test")
 
-if(NOT DEFINED $ENV{MDF_PATH})
+if(NOT DEFINED ENV{MDF_PATH})
     set(ENV{MDF_PATH} ${CMAKE_CURRENT_LIST_DIR}/../../..)
 endif()
 include($ENV{MDF_PATH}/project.cmake)

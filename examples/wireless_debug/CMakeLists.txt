@@ -8,7 +8,7 @@ message(FATAL_ERROR "Adafruit-GFX-Library is not downloaded and run, the followi
 message(FATAL_ERROR "git clone -b v1.2.3 https://github.com/adafruit/Adafruit-GFX-Library.git components/lcd/Adafruit-GFX-Library")
 endif()
 
-if(NOT DEFINED $ENV{MDF_PATH})
+if(NOT DEFINED ENV{MDF_PATH})
     set(ENV{MDF_PATH} ${CMAKE_CURRENT_LIST_DIR}/../..)
 endif()
 include($ENV{MDF_PATH}/project.cmake)
