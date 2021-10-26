@@ -217,7 +217,7 @@ menu "MDF Mwifi"
     menu "Power save config"
         config MWIFI_ENABLE_PS
             bool "Enable mesh PS (power save) function"
-            default y
+            default n
             help
                 Enable/Disable Power Save function.
 
