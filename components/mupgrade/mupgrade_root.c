@@ -52,10 +52,15 @@ mdf_err_t mupgrade_firmware_init(const char *name, size_t size)
     if (!g_upgrade_config) {
         g_upgrade_config = MDF_CALLOC(1, sizeof(mupgrade_config_t));
         MDF_ERROR_CHECK(!g_upgrade_config, MDF_ERR_NO_MEM, "");
+        g_upgrade_config->queue  = xQueueCreate(3, sizeof(void *));
+    } else {
+        for (mupgrade_queue_t *q_data = NULL; xQueueReceive(g_upgrade_config->queue, &q_data, 0);) {
+            MDF_FREE(q_data);
+        }
+        esp_ota_end(g_upgrade_config->handle);
     }
 
     g_upgrade_config->start_time          = xTaskGetTickCount();
-    g_upgrade_config->queue               = xQueueCreate(3, sizeof(void *));
     g_upgrade_config->partition           = update;
     g_upgrade_config->status.total_size   = size;
     g_upgrade_config->status.written_size = 0;
@@ -526,6 +531,14 @@ mdf_err_t mupgrade_firmware_stop()
     xSemaphoreTake(g_mupgrade_send_exit_sem, portMAX_DELAY);
     vQueueDelete(g_mupgrade_send_exit_sem);
     g_mupgrade_send_exit_sem = NULL;
+
+    for (mupgrade_queue_t *q_data = NULL; xQueueReceive(g_upgrade_config->queue, &q_data, 0);) {
+        MDF_FREE(q_data);
+    }
+
+    vQueueDelete(g_upgrade_config->queue);
+    esp_ota_end(g_upgrade_config->handle);
+    MDF_FREE(g_upgrade_config);
 
     return MDF_OK;
 }
