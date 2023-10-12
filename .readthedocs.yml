@@ -2,16 +2,18 @@
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
-# Required
+# Required. version: 2 must be used with build.os. To specify Python version, have to use build.tools.python
 version: 2
+build:
+  os: "ubuntu-18.04" # keep it the same as used in build doc image, for easy debugging
+  tools: "3.6" # keep it the same as used in build doc image, for easy debugging
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats:
   - htmlzip
   - pdf
 
-# Optionally set the version of Python and requirements required to build your docs
+# Optionally set the requirements required to build your docs
 python:
-  version: 2.7
   install:
     - requirements: docs/requirements.txt

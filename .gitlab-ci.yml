@@ -8,11 +8,12 @@ variables:
   MAKEFLAGS: "-j5 --no-keep-going"
   MDF_PATH: "$CI_PROJECT_DIR"
   IDF_CI_BUILD: "1"
-  # Docker images
-  BOT_DOCKER_IMAGE_TAG: ":latest-96719e52"
 
 before_script:
-  - export IDF_PATH=~/.espressif/idf/esp-idf-v4.3
+  - export IDF_PATH=/opt/esp/idf
+  - git clone -b v1.2.3 https://github.com/adafruit/Adafruit-GFX-Library.git examples/wireless_debug/components/lcd/Adafruit-GFX-Library
+
+.setup_idf_4_3: &setup_idf_4_3
   - cd $IDF_PATH
   - git fetch origin tag v4.3.1
   - git checkout v4.3.1
@@ -20,11 +21,10 @@ before_script:
   - ./install.sh
   - . ./export.sh
   - cd -
-  - git clone -b v1.2.3 https://github.com/adafruit/Adafruit-GFX-Library.git examples/wireless_debug/components/lcd/Adafruit-GFX-Library
 
 build_template_make: &build_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: espressif/idf:release-v4.3
   tags:
     - build
   variables:
@@ -33,6 +33,7 @@ build_template_make: &build_template
     BATCH_BUILD: "1"
     V: "0"
   script:
+    - *setup_idf_4_3
     - ./tools/ci/build_examples_make.sh examples/get-started
     - ./tools/ci/build_examples_make.sh examples/function_demo/mcommon
     - ./tools/ci/build_examples_make.sh examples/function_demo/mconfig
@@ -52,7 +53,7 @@ build_template_make: &build_template
 
 build_template_cmake: &build_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: espressif/idf:release-v4.3
   tags:
     - build
   variables:
@@ -61,6 +62,7 @@ build_template_cmake: &build_template
     BATCH_BUILD: "1"
     V: "0"
   script:
+    - *setup_idf_4_3
     - ./tools/ci/build_examples_cmake.sh examples/get-started esp32
     - ./tools/ci/build_examples_cmake.sh examples/get-started esp32s2
     - ./tools/ci/build_examples_cmake.sh examples/function_demo/mcommon esp32
@@ -122,7 +124,7 @@ push_master_to_github:
 
 build_docs:
   stage: build
-  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v10
   tags:
     - build_docs
   artifacts:
@@ -140,6 +142,7 @@ build_docs:
       - docs/zh_CN/_build/html
     expire_in: 1 mos
   script:
+    - git clone -b release/v4.3 https://github.com/espressif/esp-idf.git $IDF_PATH
     - export PYTHON_VER=2.7.15
     - source $IDF_PATH/tools/ci/setup_python.sh
     - cd docs
@@ -152,4 +155,3 @@ build_docs:
     - make gh-linkcheck
     - make html
     - ../check_doc_warnings.sh
-
